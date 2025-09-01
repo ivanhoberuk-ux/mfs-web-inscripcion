@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Misiones Familias (Cloud)",
+    "slug": "misiones-familiares-cloud",
+    "scheme": "misiones",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b8d62"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b8d62"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7db8ed06-4b61-4561-b822-8e3aee8b37ab"
+      }
+    },
+    "owner": "ivanhoberuk"
+  }
+}
