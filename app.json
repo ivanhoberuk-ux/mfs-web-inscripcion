@@ -18,7 +18,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b8d62"
-      }
+      },
+      "package": "com.ivanhoberuk.mfsapp"
     },
     "plugins": [
       "expo-router"
