@@ -21,3 +21,45 @@
 ## Seguridad
 - Las políticas RLS del SQL adjunto dejan **insertar** en `registros` (inscripción) y **leer** `pueblos` a usuarios anónimos. Lectura de `registros` y modificación de `pueblos` requieren **usuario autenticado** y pertenecer a la tabla `admins`.
 - Ajustá esto según tus necesidades de privacidad.
+# 🌿 Misiones Familiares – Web App (MFS WEB)
+
+Aplicación oficial de **Misiones Familiares Schoenstattianas del Paraguay**, desarrollada en **React Native + Expo** y migrada a versión **web** con soporte para **Supabase**, **Netlify** y **GitHub Pages**.
+
+---
+
+## 🧭 Descripción general
+
+Esta aplicación permite:
+- Gestionar inscripciones de misioneros y tíos.
+- Visualizar pueblos y cupos disponibles.
+- Subir documentos y firmas digitales.
+- Acceder a un panel administrativo con exportaciones CSV/JSON.
+- Integrar autenticación y roles mediante **Supabase Auth**.
+
+---
+
+## ⚙️ Tecnologías principales
+
+| Área | Tecnología |
+|------|-------------|
+| Frontend | [Expo Router](https://expo.github.io/router), React Native Web |
+| Backend | [Supabase](https://supabase.com) (Auth + Storage + Postgres) |
+| Hosting | [Netlify](https://www.netlify.com) |
+| Lenguaje | TypeScript |
+| Estilos | React Native StyleSheet (tema unificado) |
+| Build Web | `expo export --platform web` (output: `/dist`) |
+
+---
+
+## 🛠️ Instalación local
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/ivanhoberuk-ux/mfsweb.git
+cd mfsweb
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Ejecutar en modo desarrollo
+npm run web
