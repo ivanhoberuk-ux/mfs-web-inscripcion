@@ -1,9 +1,24 @@
 // FILE: app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
+import { useAuth } from '../../src/context/AuthProvider';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Platform } from 'react-native';
 
+function useIsAdmin(user: any): boolean {
+  if (!user) return false;
+  const um = user?.user_metadata ?? {};
+  const am = user?.app_metadata ?? {};
+  if (um?.is_admin === true) return true;
+  if (Array.isArray(am?.roles) && am.roles.includes('admin')) return true;
+  if (user?.role === 'admin' || user?.is_admin === true) return true;
+  return false;
+}
+
 export default function TabLayout() {
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+  const isAdmin = useIsAdmin(user);
+
   return (
     <Tabs
       screenOptions={{
@@ -11,7 +26,6 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#0a7ea4',
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 12 },
-        // ⚠️ No fijes height. Dejá que use el safe area.
         tabBarStyle: {
           paddingTop: 6,
           paddingBottom: Platform.OS === 'ios' ? 10 : 8,
@@ -66,16 +80,38 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="admin"
-        options={{
-          title: 'Admin',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* Si 'firma' existe pero no querés que sea tab visible */}
+
+      {/* Inscriptos: visible solo logueado */}
+      {isLoggedIn ? (
+        <Tabs.Screen
+          name="inscriptos"
+          options={{
+            title: 'Inscriptos',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="people-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      ) : (
+        <Tabs.Screen name="inscriptos" options={{ href: null }} />
+      )}
+
+      {/* Admin: visible solo admin */}
+      {isAdmin ? (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: 'Admin',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="settings-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      ) : (
+        <Tabs.Screen name="admin" options={{ href: null }} />
+      )}
+
+      {/* Rutas que no deben verse como tab */}
       <Tabs.Screen name="firma" options={{ href: null }} />
     </Tabs>
   );

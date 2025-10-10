@@ -1,45 +1,222 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
-import Signature from 'react-native-signature-canvas';
-import { s } from '../../src/lib/theme';
-import { generarAutorizacionPDF } from '../../src/lib/pdf';
-import { uploadToStorage, updateDocumento } from '../../src/lib/api';
+// FILE: app/(tabs)/firma.tsx
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { View, Text, Pressable, Alert, Image, ActivityIndicator } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { s } from '../../src/lib/theme'
+import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad'
+import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf'
+// Si tenés un generador específico para menores, podés habilitarlo:
+// import { generarPermisoPDF } from '../../src/lib/pdf'
+import { uploadToStorage, updateDocumento } from '../../src/lib/api'
+import { supabase } from '../../src/lib/supabase'
+
+type Registro = {
+  id: string
+  nombres: string
+  apellidos: string
+  ci: string | null
+  nacimiento: string | null
+  email: string | null
+  telefono: string | null
+  direccion?: string | null
+  pueblo_id: string
+  rol: 'Tio' | 'Misionero' | 'Participante' | string
+  es_jefe?: boolean | null
+  autorizacion_url?: string | null
+  ficha_medica_url?: string | null
+  created_at?: string
+}
+
+type Pueblo = { id: string; nombre: string }
+
+function parseDate(iso?: string | null): Date | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  return isNaN(d.getTime()) ? null : d
+}
+function calcAge(date: Date | null): number | null {
+  if (!date) return null
+  const today = new Date()
+  let age = today.getFullYear() - date.getFullYear()
+  const m = today.getMonth() - date.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < date.getDate())) age--
+  return age
+}
 
 export default function Firma() {
-  const [sig, setSig] = useState<string | null>(null);
-  const ref = useRef<any>();
+  const { id } = useLocalSearchParams<{ id?: string }>()
+  const router = useRouter()
 
-  const handleOK = (signature: string) => setSig(signature); // dataURL base64
-  const handleClear = () => setSig(null);
+  const [loading, setLoading] = useState(true)
+  const [registro, setRegistro] = useState<Registro | null>(null)
+  const [pueblo, setPueblo] = useState<Pueblo | null>(null)
+
+  const [sig, setSig] = useState<string | null>(null)
+  const padRef = useRef<SignaturePadHandle | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  // ------- Cargar registro y pueblo -------
+  const load = useCallback(async () => {
+    if (!id) {
+      Alert.alert('Falta parámetro', 'Esta pantalla requiere un id de registro.')
+      router.replace('/pueblos')
+      return
+    }
+    try {
+      setLoading(true)
+      const { data: reg, error: er } = await supabase
+        .from('registros')
+        .select('id,nombres,apellidos,ci,nacimiento,email,telefono,direccion,pueblo_id,rol,es_jefe,autorizacion_url,ficha_medica_url,created_at')
+        .eq('id', id)
+        .maybeSingle<Registro>()
+      if (er) throw er
+      if (!reg) {
+        Alert.alert('No encontrado', 'No se encontró el registro.')
+        router.replace('/pueblos')
+        return
+      }
+      setRegistro(reg)
+
+      const { data: p, error: ep } = await supabase
+        .from('pueblos')
+        .select('id,nombre')
+        .eq('id', reg.pueblo_id)
+        .maybeSingle<Pueblo>()
+      if (ep) throw ep
+      setPueblo(p ?? null)
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    } finally {
+      setLoading(false)
+    }
+  }, [id, router])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const age = useMemo(() => calcAge(parseDate(registro?.nacimiento ?? null)), [registro?.nacimiento])
+  const isAdult = useMemo(() => (age == null ? true : age >= 18), [age])
+
+  const docLabel = useMemo(() => (isAdult ? 'Aceptación de Protocolo (Adultos)' : 'Permiso del Menor'), [isAdult])
+  const docKey: 'autorizacion_url' | 'ficha_medica_url' = isAdult ? 'autorizacion_url' : 'ficha_medica_url'
+
+  async function tomarFirma() {
+    try {
+      const dataUrl = await padRef.current?.getDataURL()
+      if (!dataUrl) return Alert.alert('Sin firma', 'Por favor, firmá en el recuadro.')
+      setSig(dataUrl)
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    }
+  }
 
   async function guardarPDF() {
-    if (!sig) return Alert.alert('Falta la firma');
-    const pdf = await generarAutorizacionPDF({
-      nombres: 'Juan', apellidos: 'Pérez', ci: '1234567', nacimiento: '2001-01-01',
-      email: 'juan@test.com', telefono: '0981 123 456', direccion: 'Asunción',
-      puebloNombre: 'Pueblo 1', rol: 'Misionero', esJefe: false
-    }, sig);
-    const url = await uploadToStorage('documentos', `autorizaciones/firmada-${Date.now()}.pdf`, pdf);
-    if (url) await updateDocumento('demo-1', { autorizacion_url: url, firma_url: sig });
-    Alert.alert('Listo', 'PDF generado y subido.');
+    if (!registro) return Alert.alert('Error', 'No hay registro cargado.')
+    if (!sig) return Alert.alert('Falta la firma', 'Tomá la firma antes de generar el PDF.')
+
+    try {
+      setSaving(true)
+
+      // Armar datos para el PDF (incluí CI aquí; en UI lo ocultamos si hace falta, pero en documentos es necesario)
+      const datos: Datos = {
+        nombres: registro.nombres,
+        apellidos: registro.apellidos,
+        ci: registro.ci ?? '',
+        nacimiento: registro.nacimiento ?? '',
+        email: registro.email ?? '',
+        telefono: registro.telefono ?? '',
+        direccion: registro.direccion ?? '',
+        puebloNombre: pueblo?.nombre ?? '',
+        rol: registro.rol || 'Participante',
+        esJefe: !!registro.es_jefe,
+      }
+
+      // Elegí el generador: si tenés dos funciones, cambia acá según isAdult
+      // const pdfUriOrUrl = isAdult ? await generarAutorizacionPDF(datos, sig) : await generarPermisoPDF(datos, sig)
+      const pdfUriOrUrl = await generarAutorizacionPDF(datos, sig)
+
+      // Subir SIEMPRE a Supabase (web o nativo) para uniformidad
+      const storagePath = `${isAdult ? 'autorizaciones' : 'permisos'}/${registro.id}_${Date.now()}.pdf`
+      const publicUrl = await uploadToStorage('documentos', pdfUriOrUrl, storagePath)
+      if (!publicUrl) throw new Error('No se pudo subir el PDF a Storage')
+
+      // Actualizar el campo correcto del registro
+      await updateDocumento(registro.id, { [docKey]: publicUrl })
+
+      Alert.alert('Listo', `PDF generado y subido (${docLabel}).`)
+      // Opcional: navegar atrás
+      // router.back()
+    } catch (e: any) {
+      Alert.alert('Error al generar/subir PDF', e?.message ?? String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator />
+        <Text style={[s.small, { marginTop: 8, color: '#666' }]}>Cargando…</Text>
+      </View>
+    )
+  }
+
+  if (!registro) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={s.text}>No se pudo cargar el registro.</Text>
+      </View>
+    )
   }
 
   return (
-    <View style={s.screen}>
-      <Text style={s.title}>Firma digital</Text>
-      <View style={[s.card, { height: 260 }]}>
-        <Signature
-          ref={ref}
-          onOK={handleOK}
-          onEmpty={()=>{}}
-          descriptionText="Firmá aquí"
-          clearText="Borrar"
-          confirmText="Usar firma"
-          webStyle=".m-signature-pad--footer {display:flex; gap:12px;}"
-        />
+    <View style={[s.screen, { gap: 12 }]}>
+      <Text style={s.title}>Firma</Text>
+
+      {/* Resumen del inscrito (sin mostrar CI aquí para privacidad visual) */}
+      <View style={s.card}>
+        <Text style={[s.text, { fontWeight: '700' }]}>
+          {registro.nombres} {registro.apellidos}
+        </Text>
+        <Text style={[s.small, { color: '#666' }]}>
+          Pueblo: {pueblo?.nombre || registro.pueblo_id} · Rol: {registro.rol}
+        </Text>
+        <Text style={[s.small, { color: '#666' }]}>
+          Edad: {age == null ? '—' : age} {age == null ? '' : isAdult ? '(Adulto)' : '(Menor)'}
+        </Text>
+        <View style={{ marginTop: 6, padding: 8, borderRadius: 8, backgroundColor: '#f1f5f9' }}>
+          <Text style={[s.small, { fontWeight: '700', marginBottom: 4 }]}>Documento requerido</Text>
+          <Text style={s.small}>{docLabel}</Text>
+        </View>
       </View>
-      <Pressable style={s.button} onPress={guardarPDF}><Text style={s.buttonText}>Generar PDF con firma</Text></Pressable>
-      <Pressable style={[s.button, s.danger]} onPress={handleClear}><Text style={s.buttonText}>Borrar firma</Text></Pressable>
+
+      {/* Pad de firma */}
+      <SignaturePad ref={padRef} height={280} />
+
+      {/* Acciones del pad */}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <Pressable style={s.button} onPress={tomarFirma}>
+          <Text style={s.buttonText}>Usar firma</Text>
+        </Pressable>
+        <Pressable style={[s.button, s.danger]} onPress={() => { padRef.current?.clear(); setSig(null) }}>
+          <Text style={s.buttonText}>Borrar</Text>
+        </Pressable>
+      </View>
+
+      {/* Vista previa de la firma capturada */}
+      {sig && (
+        <View style={[s.card, { alignItems: 'center' }]}>
+          <Text style={[s.small, { marginBottom: 6, color: '#666' }]}>Vista previa</Text>
+          <Image source={{ uri: sig }} style={{ width: '100%', height: 140, resizeMode: 'contain' }} />
+        </View>
+      )}
+
+      {/* Generar y subir PDF */}
+      <Pressable style={[s.button, { opacity: saving ? 0.7 : 1 }]} onPress={guardarPDF} disabled={saving}>
+        <Text style={s.buttonText}>{saving ? 'Generando…' : `Generar PDF (${isAdult ? 'Aceptación' : 'Permiso'})`}</Text>
+      </Pressable>
     </View>
-  );
+  )
 }

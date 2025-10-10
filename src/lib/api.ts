@@ -2,7 +2,7 @@
 // Funciones de acceso a datos (Supabase) y helpers de Storage para la app MFS
 
 import * as FileSystem from 'expo-file-system';
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase.native';
 
 // --------- Tipos ----------
 export type Pueblo = {

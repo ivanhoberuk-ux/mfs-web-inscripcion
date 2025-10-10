@@ -1,4 +1,4 @@
-// FILE: app/(tabs)/documentos.tsx — Plantillas + Subida (solo foto) + Firma + PDF + Thumbnails + Delete
+// FILE: app/(tabs)/documentos.tsx — Plantillas + Subida (foto) + Firma + PDF + Thumbnails + Delete — COMPATIBLE WEB/NATIVO (sin expo-print directo)
 
 import React, { useRef, useState } from 'react';
 import {
@@ -11,13 +11,15 @@ import {
   Image,
   ScrollView,
   Linking,
+  Platform,
 } from 'react-native';
 import { s } from '../../src/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
-import * as Print from 'expo-print';
-import Signature from 'react-native-signature-canvas';
+import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad';
+import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf';
 import { uploadToStorage, updateDocumento, publicUrl } from '../../src/lib/api';
 import { supabase } from '../../src/lib/supabase';
+import { shareOrDownload } from '../../src/lib/sharing';
 
 export default function Documentos() {
   const [mode, setMode] = useState<'code' | 'ci'>('code');
@@ -34,15 +36,15 @@ export default function Documentos() {
   const [loading, setLoading] = useState(false);
 
   // Firma
-  const [showSign, setShowSign] = useState(false);
-  const [signing, setSigning] = useState(false); // (ya no bloquea el scroll, pero lo dejamos para begin/end)
-  const [savingSign, setSavingSign] = useState(false); // spinner mientras sube
-  const sigRef = useRef<any>(null);
+  const [savingSign, setSavingSign] = useState(false);
+  const padRef = useRef<SignaturePadHandle | null>(null);
+  const [firmaPreview, setFirmaPreview] = useState<string | null>(null);
 
   // ========= PLANTILLAS =========
   const URL_PERMISO = publicUrl('plantillas', 'permiso_menor.pdf');
   const URL_PROTOCOLO = publicUrl('plantillas', 'protocolo_prevencion.pdf');
   const URL_ACEPTACION = publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf');
+  const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf');
 
   // === Helpers ===
   async function openUrl(url?: string | null) {
@@ -76,12 +78,36 @@ export default function Documentos() {
     );
   }
   function storagePathFromPublicUrl(url: string): string | null {
-    // Espera URLs como: {SUPABASE_URL}/storage/v1/object/public/documentos/<path>
     const marker = '/storage/v1/object/public/documentos/';
     const idx = url.indexOf(marker);
     if (idx === -1) return null;
     return url.slice(idx + marker.length).split('?')[0];
   }
+
+  // === Edad ===
+  function parseNacimiento(n?: string | null): Date | null {
+    if (!n) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(n)) {
+      const [Y, M, D] = n.split('-').map((x) => parseInt(x, 10));
+      return new Date(Date.UTC(Y, M - 1, D));
+    }
+    if (/^\d{2}-\d{2}-\d{4}$/.test(n)) {
+      const [D, M, Y] = n.split('-').map((x) => parseInt(x, 10));
+      return new Date(Date.UTC(Y, M - 1, D));
+    }
+    return null;
+  }
+  function calcAge(d: Date): number {
+    const t = new Date();
+    let a = t.getUTCFullYear() - d.getUTCFullYear();
+    const m = t.getUTCMonth() - d.getUTCMonth();
+    if (m < 0 || (m === 0 && t.getUTCDate() < d.getUTCDate())) a--;
+    return a;
+  }
+  const nacimientoDate = record ? parseNacimiento(record.nacimiento) : null;
+  const edad = nacimientoDate ? calcAge(nacimientoDate) : null;
+  const docMode: 'menor' | 'mayor' | 'desconocido' =
+    edad == null ? 'desconocido' : edad < 18 ? 'menor' : 'mayor';
 
   // === BUSCAR POR CÓDIGO ===
   async function buscarPorCodigo() {
@@ -91,7 +117,7 @@ export default function Documentos() {
       const { data, error } = await supabase
         .from('registros')
         .select(
-          'id,nombres,apellidos,pueblo_id,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
+          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
         )
         .eq('id', code.trim())
         .maybeSingle();
@@ -116,7 +142,7 @@ export default function Documentos() {
       let q = supabase
         .from('registros')
         .select(
-          'id,nombres,apellidos,pueblo_id,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
+          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
         )
         .eq('ci', ciSan)
         .order('created_at', { ascending: false })
@@ -244,7 +270,6 @@ export default function Documentos() {
       });
       if (!ok) return;
 
-      // 1) Intentar borrar del Storage
       const path = storagePathFromPublicUrl(url);
       if (path) {
         const { error: delErr } = await supabase.storage.from('documentos').remove([path]);
@@ -257,7 +282,6 @@ export default function Documentos() {
         }
       }
 
-      // 2) Quitar referencia en la tabla
       await updateDocumento(record.id, { [field]: null } as any);
       setRecord({ ...record, [field]: null });
 
@@ -267,87 +291,147 @@ export default function Documentos() {
     }
   }
 
-  // === Guardar firma (Signature) ===
-  function onOK(base64: string) {
-    (async () => {
-      try {
-        if (!record) return;
-        setSavingSign(true);
-        const path = `registros/${record.id}/firma.png`;
-        const url = await uploadToStorage('documentos', path, base64); // dataURL
-        if (!url) throw new Error('No se pudo subir la firma');
-        await updateDocumento(record.id, { firma_url: url });
-        setRecord({ ...record, firma_url: url });
-        setShowSign(false);
-        Alert.alert('Firma guardada', 'Se subió la firma correctamente.');
-      } catch (e: any) {
-        Alert.alert('Error al subir la firma', e?.message ?? String(e));
-      } finally {
-        setSavingSign(false);
-        setSigning(false);
+  // === Guardar firma (usando SignaturePad multiplataforma) ===
+  async function capturarYSubirFirma() {
+    try {
+      if (!record) {
+        Alert.alert('Seleccioná un inscripto', 'Buscá por código o cédula y elegí uno primero.');
+        return;
       }
-    })();
+      setSavingSign(true);
+      const dataUrl = await padRef.current?.getDataURL();
+      if (!dataUrl) {
+        Alert.alert('Sin trazos', 'Dibujá tu firma antes de guardar.');
+        return;
+      }
+      setFirmaPreview(dataUrl);
+      const path = `registros/${record.id}/firma.png`;
+      const url = await uploadToStorage('documentos', path, dataUrl);
+      if (!url) throw new Error('No se pudo subir la firma');
+      await updateDocumento(record.id, { firma_url: url });
+      setRecord({ ...record, firma_url: url });
+      Alert.alert('Firma guardada', 'Se subió la firma correctamente.');
+    } catch (e: any) {
+      Alert.alert('Error al subir la firma', e?.message ?? String(e));
+    } finally {
+      setSavingSign(false);
+    }
   }
 
-  // === Generar PDF con la firma y datos ===
+  // === Generar PDF con la firma y datos (helper multiplataforma) ===
   async function generarPDFConsentimiento() {
     try {
       if (!record) return Alert.alert('Seleccioná un inscripto primero');
-      if (!record.firma_url) {
+
+      // necesitamos una imagen de firma: priorizamos la recién capturada; si no, usamos la guardada
+      let firmaDataUrl: string | null = firmaPreview;
+      if (!firmaDataUrl && record.firma_url) {
+        // si hay una URL pública, la convertimos a dataURL para el PDF
+        const resp = await fetch(record.firma_url);
+        const blob = await resp.blob();
+        firmaDataUrl = await blobToDataURL(blob);
+      }
+      if (!firmaDataUrl) {
         Alert.alert('Falta la firma', 'Capturá la firma antes de generar el PDF.');
         return;
       }
-      const fecha = new Date().toLocaleString();
-      const html = `
-        <html><head><meta charset="utf-8" />
-        <style>
-          body { font-family: -apple-system, Roboto, Arial, sans-serif; padding: 24px; }
-          h1 { font-size: 20px; margin-bottom: 8px; }
-          p { font-size: 14px; line-height: 1.5; margin: 6px 0; }
-          .box { border:1px solid #ccc; padding:12px; border-radius:8px; }
-          .sig { margin-top: 16px; height: 140px; }
-          .row { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
-          small { color:#666; }
-          img { max-width: 100%; }
-        </style></head><body>
-          <h1>Autorización / Consentimiento</h1>
-          <div class="box">
-            <p><b>Inscripto:</b> ${record.nombres} ${record.apellidos}</p>
-            <p><b>CI:</b> ${record.ci || '-'}</p>
-            <p><b>Email:</b> ${record.email || '-'}</p>
-            <p><b>Pueblo:</b> ${record.pueblo_id}</p>
-            <p><b>Fecha:</b> ${fecha}</p>
-            <div class="sig"><img src="${record.firma_url}" style="height:100%;" /></div>
-            <div class="row"><small>Firma</small><small>Código: ${record.id}</small></div>
-          </div>
-        </body></html>
-      `;
-      const { uri } = await Print.printToFileAsync({ html });
-      const path = `registros/${record.id}/consentimiento.pdf`;
-      const url = await uploadToStorage('documentos', path, uri);
-      Alert.alert('PDF generado', 'Se subió el consentimiento.', [
-        { text: 'Abrir', onPress: () => openUrl(url) },
-        { text: 'OK' },
-      ]);
+
+      // TODO: cargar los datos reales (si tenés más campos en tu tabla)
+      const d: Datos = {
+        nombres: record.nombres || '',
+        apellidos: record.apellidos || '',
+        ci: record.ci || '',
+        nacimiento: record.nacimiento || '',
+        email: record.email || '',
+        telefono: '', // si lo tenés en la tabla, pásalo aquí
+        direccion: '',
+        puebloNombre: record.pueblo_id || '',
+        rol: 'Participante',
+        esJefe: false,
+      };
+
+      const uriOrUrl = await generarAutorizacionPDF(d, firmaDataUrl);
+
+      // Subimos el PDF al storage (web: blob: URL; nativo: file:// URI)
+      const storagePath = `registros/${record.id}/consentimiento.pdf`;
+      const publicURL = await uploadToStorage('documentos', storagePath, uriOrUrl);
+      if (!publicURL) throw new Error('No se pudo subir el PDF');
+
+      // Actualizá tu registro si corresponde (descomentar si lo usás)
+      // await updateDocumento(record.id, { autorizacion_url: publicURL });
+
+      // Abrir y/o descargar
+      if (Platform.OS === 'web') {
+        await shareOrDownload(publicURL, `consentimiento_${record.id}.pdf`);
+      } else {
+        await openUrl(publicURL);
+      }
+
+      Alert.alert('PDF generado', 'Se subió el consentimiento.');
     } catch (e: any) {
       Alert.alert('No se pudo generar el PDF', e?.message ?? String(e));
     }
   }
+
+  async function blobToDataURL(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  const badge = (txt: string) => (
+    <Text
+      style={{
+        marginLeft: 8,
+        fontSize: 12,
+        color: 'white',
+        backgroundColor: '#d97706',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        overflow: 'hidden',
+      }}
+    >
+      {txt}
+    </Text>
+  );
 
   // ======== UI ========
   return (
     <ScrollView
       contentContainerStyle={{ paddingBottom: 32 }}
       style={s.screen}
-      scrollEnabled={!signing}                // dejamos siempre el scroll habilitado
       keyboardShouldPersistTaps="handled"
       bounces={false}
     >
       <Text style={s.title}>Documentos</Text>
 
-      {/* === PLANTILLAS PARA FIRMAR === */}
+      {/* Banner edad */}
+      {record && (
+        <View style={[s.card, { marginBottom: 12, backgroundColor: '#f3f4f6' }]}>
+          <Text style={s.text}>
+            {edad == null
+              ? 'No hay fecha de nacimiento: podés cargar cualquiera de los documentos.'
+              : edad < 18
+              ? `Edad: ${edad} años — Requerido: Permiso del Menor.`
+              : `Edad: ${edad} años — Requerido: Aceptación del Protocolo.`}
+          </Text>
+        </View>
+      )}
+
+      {/* === PLANTILLAS === */}
       <View style={[s.card, { marginBottom: 12 }]}>
-        <Text style={s.text}>Descargar Plantillas para firmar</Text>
+        <Text style={s.text}>Plantillas para leer y firmar</Text>
+
+        <Pressable
+          style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
+          onPress={() => openUrl(bust(URL_ESTATUTOS))}
+        >
+          <Text style={s.buttonText}>Estatutos de las MFS (PDF)</Text>
+        </Pressable>
 
         <Pressable
           style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
@@ -478,89 +562,98 @@ export default function Documentos() {
             {record.nombres} {record.apellidos}
           </Text>
 
-          {/* Aceptación de Protocolo */}
-          <View style={{ marginTop: 12 }}>
-            <Text style={s.label}>Aceptación de Protocolo firmada</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable
-                style={[s.button, { paddingVertical: 8 }]}
-                onPress={() => pickImage('autorizacion')}
-              >
-                <Text style={s.buttonText}>Subir foto</Text>
-              </Pressable>
-            </View>
-            {!!record.autorizacion_url && (
-              <View style={{ marginTop: 6 }}>
-                <Text style={s.small}>Cargada</Text>
-                {isImageUrl(record.autorizacion_url) && (
-                  <Image
-                    source={{ uri: bust(record.autorizacion_url) }}
-                    style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                    resizeMode="cover"
-                  />
-                )}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(bust(record.autorizacion_url))}
-                  >
-                    <Text style={s.buttonText}>Ver archivo</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
-                    onPress={() => deleteUploaded('autorizacion')}
-                  >
-                    <Text style={s.buttonText}>Eliminar</Text>
-                  </Pressable>
-                </View>
+          {/* Permiso del Menor (requerido si menor) */}
+          {((docMode !== 'mayor') || !!record.ficha_medica_url) && (
+            <View style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={s.label}>Permiso del Menor firmado</Text>
+                {docMode === 'menor' && badge('Requerido')}
               </View>
-            )}
-          </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable
+                  style={[s.button, { paddingVertical: 8 }]}
+                  onPress={() => pickImage('ficha')}
+                >
+                  <Text style={s.buttonText}>Subir foto</Text>
+                </Pressable>
+              </View>
+              {!!record.ficha_medica_url && (
+                <View style={{ marginTop: 6 }}>
+                  <Text style={s.small}>Cargada</Text>
+                  {isImageUrl(record.ficha_medica_url) && (
+                    <Image
+                      source={{ uri: bust(record.ficha_medica_url) }}
+                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                    <Pressable
+                      style={[s.button, { paddingVertical: 8 }]}
+                      onPress={() => openUrl(bust(record.ficha_medica_url))}
+                    >
+                      <Text style={s.buttonText}>Ver archivo</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
+                      onPress={() => deleteUploaded('ficha')}
+                    >
+                      <Text style={s.buttonText}>Eliminar</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
 
-          {/* Permiso del Menor */}
-          <View style={{ marginTop: 12 }}>
-            <Text style={s.label}>Permiso del Menor firmado</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable
-                style={[s.button, { paddingVertical: 8 }]}
-                onPress={() => pickImage('ficha')}
-              >
-                <Text style={s.buttonText}>Subir foto</Text>
-              </Pressable>
-            </View>
-            {!!record.ficha_medica_url && (
-              <View style={{ marginTop: 6 }}>
-                <Text style={s.small}>Cargada</Text>
-                {isImageUrl(record.ficha_medica_url) && (
-                  <Image
-                    source={{ uri: bust(record.ficha_medica_url) }}
-                    style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                    resizeMode="cover"
-                  />
-                )}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(bust(record.ficha_medica_url))}
-                  >
-                    <Text style={s.buttonText}>Ver archivo</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
-                    onPress={() => deleteUploaded('ficha')}
-                  >
-                    <Text style={s.buttonText}>Eliminar</Text>
-                  </Pressable>
-                </View>
+          {/* Aceptación de Protocolo (requerido si mayor) */}
+          {((docMode !== 'menor') || !!record.autorizacion_url) && (
+            <View style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={s.label}>Aceptación de Protocolo firmada</Text>
+                {docMode === 'mayor' && badge('Requerido')}
               </View>
-            )}
-          </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable
+                  style={[s.button, { paddingVertical: 8 }]}
+                  onPress={() => pickImage('autorizacion')}
+                >
+                  <Text style={s.buttonText}>Subir foto</Text>
+                </Pressable>
+              </View>
+              {!!record.autorizacion_url && (
+                <View style={{ marginTop: 6 }}>
+                  <Text style={s.small}>Cargada</Text>
+                  {isImageUrl(record.autorizacion_url) && (
+                    <Image
+                      source={{ uri: bust(record.autorizacion_url) }}
+                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                    <Pressable
+                      style={[s.button, { paddingVertical: 8 }]}
+                      onPress={() => openUrl(bust(record.autorizacion_url))}
+                    >
+                      <Text style={s.buttonText}>Ver archivo</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
+                      onPress={() => deleteUploaded('autorizacion')}
+                    >
+                      <Text style={s.buttonText}>Eliminar</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Cédula de identidad (frente/dorso) */}
           <View style={{ marginTop: 12 }}>
             <Text style={s.label}>Cédula de identidad</Text>
 
-            {/* Si hay las dos -> miniaturas lado a lado */}
             {record.cedula_frente_url &&
             record.cedula_dorso_url &&
             isImageUrl(record.cedula_frente_url) &&
@@ -608,7 +701,6 @@ export default function Documentos() {
               </View>
             ) : (
               <>
-                {/* Frente (subida + preview individual si no hay ambas) */}
                 <Text style={[s.small, { marginTop: 6 }]}>Frente</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <Pressable
@@ -645,7 +737,6 @@ export default function Documentos() {
                   </View>
                 )}
 
-                {/* Dorso */}
                 <Text style={[s.small, { marginTop: 12 }]}>Dorso</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <Pressable
@@ -685,107 +776,49 @@ export default function Documentos() {
             )}
           </View>
 
-          {/* Firma digital in-app */}
+          {/* Firma digital in-app (SignaturePad multiplataforma) */}
           <View style={{ marginTop: 12 }}>
             <Text style={s.label}>Firma en el teléfono</Text>
 
-            {!showSign && (
-              <View style={{ gap: 8 }}>
-                <Pressable
-                  style={[s.button, { paddingVertical: 8 }]}
-                  onPress={() => setShowSign(true)}
-                >
-                  <Text style={s.buttonText}>
-                    {record?.firma_url ? 'Re-capturar firma' : 'Capturar firma'}
-                  </Text>
-                </Pressable>
+            <SignaturePad ref={padRef} height={260} />
 
-                {savingSign && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <ActivityIndicator />
-                    <Text style={s.small}>Subiendo firma…</Text>
-                  </View>
-                )}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={capturarYSubirFirma} disabled={savingSign}>
+                <Text style={s.buttonText}>{savingSign ? 'Subiendo…' : 'Guardar firma'}</Text>
+              </Pressable>
+              <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={() => { padRef.current?.clear(); setFirmaPreview(null); }}>
+                <Text style={s.buttonText}>Borrar</Text>
+              </Pressable>
+            </View>
 
-                {!!record?.firma_url && !savingSign && (
-                  <View style={{ marginTop: 6 }}>
-                    <Text style={s.small}>Guardada</Text>
-                    <Image
-                      source={{ uri: bust(record.firma_url) }}
-                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                      resizeMode="contain"
-                    />
-                    <View
-                      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}
+            {(record?.firma_url || firmaPreview) && (
+              <View style={{ marginTop: 10 }}>
+                <Text style={s.small}>Vista previa de la firma:</Text>
+                <Image
+                  source={{ uri: bust(firmaPreview || record.firma_url) }}
+                  style={{ width: '100%', height: 150, borderRadius: 6 }}
+                  resizeMode="contain"
+                />
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                  {record?.firma_url && (
+                    <Pressable style={[s.button, { paddingVertical: 8 }]} onPress={() => openUrl(bust(record.firma_url))}>
+                      <Text style={s.buttonText}>Ver archivo</Text>
+                    </Pressable>
+                  )}
+                  <Pressable
+                    style={[s.button, { paddingVertical: 8 }]}
+                    onPress={generarPDFConsentimiento}
+                  >
+                    <Text style={s.buttonText}>Generar PDF con firma</Text>
+                  </Pressable>
+                  {record?.firma_url && (
+                    <Pressable
+                      style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
+                      onPress={() => deleteUploaded('firma')}
                     >
-                      <Pressable
-                        style={[s.button, { paddingVertical: 8 }]}
-                        onPress={() => openUrl(bust(record.firma_url))}
-                      >
-                        <Text style={s.buttonText}>Ver archivo</Text>
-                      </Pressable>
-                      <Pressable
-                        style={[s.button, { paddingVertical: 8, backgroundColor: '#d94646' }]}
-                        onPress={() => deleteUploaded('firma')}
-                      >
-                        <Text style={s.buttonText}>Eliminar</Text>
-                      </Pressable>
-                      <Pressable
-                        style={[s.button, { paddingVertical: 8 }]}
-                        onPress={generarPDFConsentimiento}
-                      >
-                        <Text style={s.buttonText}>Generar PDF con firma</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {showSign && (
-              <View style={{ marginTop: 8 }}>
-                <View style={{ height: 320 }}>
-                    onStartShouldSetResponder={() => true}
-                    onMoveShouldSetResponder={() => true}
-                  <Signature
-                    ref={sigRef}
-                    onBegin={() => setSigning(true)}   // mientras dibuja
-                    onEnd={() => setSigning(false)}    // al soltar el dedo
-                    onOK={onOK}
-                    onEmpty={() => Alert.alert('Sin trazos')}
-                    descriptionText="Firmá aquí"
-                    clearText="Borrar"
-                    confirmText="Guardar"
-                    webStyle={`
-                      body, html { margin:0; padding:0; overscroll-behavior: contain; }
-                      .m-signature-pad { box-shadow: none; border: 1px solid #ccc; }
-                      .m-signature-pad--footer { display:none; } /* escondemos footer interno */
-                      canvas { width: 100% !important; height: 100% !important; }
-                      * { touch-action: none; }
-                    `}
-                  />
-                </View>
-
-                {/* Barra de acciones externa: siempre visible y con scroll */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 10 }]}
-                    onPress={() => sigRef.current?.readSignature()}
-                  >
-                    <Text style={s.buttonText}>Guardar firma</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 10 }]}
-                    onPress={() => sigRef.current?.clearSignature()}
-                  >
-                    <Text style={s.buttonText}>Borrar</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[s.button, { paddingVertical: 10, backgroundColor: '#999' }]}
-                    onPress={() => setShowSign(false)}
-                  >
-                    <Text style={s.buttonText}>Cancelar</Text>
-                  </Pressable>
+                      <Text style={s.buttonText}>Eliminar</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             )}

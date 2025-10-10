@@ -1,225 +1,321 @@
 // FILE: app/pueblos/[id].tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  View,
-  Text,
-  ScrollView,
   ActivityIndicator,
-  RefreshControl,
-  TextInput,
+  FlatList,
   Pressable,
+  Text,
+  TextInput,
+  View,
   Alert,
-} from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { s } from '../../src/lib/theme';
-import { supabase } from '../../src/lib/supabase';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+} from 'react-native'
+import { useLocalSearchParams, useNavigation } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
+import { supabase } from '../../src/lib/supabase'
+import { s } from '../../src/lib/theme'
 
-type Item = {
-  id: string;
-  created_at: string;
-  nombres: string;
-  apellidos: string;
-  ci: string | null;
-  email: string | null;
-  autorizacion_url: string | null; // => Aceptación
-  ficha_medica_url: string | null; // => Permiso
-  firma_url: string | null;
-};
+export default function PuebloInscriptosScreen() {
+  const params = useLocalSearchParams<{ id: string; hideCi?: string }>()
+  const puebloId = String(params.id || '')
+  const hideCi = params.hideCi === '1' // ← flag para ocultar CI
+  const navigation = useNavigation()
 
-export default function PuebloDetalle() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [rows, setRows] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [puebloNombre, setPuebloNombre] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [inscriptos, setInscriptos] = useState<any[]>([])
+  const [query, setQuery] = useState('')
 
-  const [q, setQ] = useState('');
-  const [searching, setSearching] = useState(false);
+  // ---------- Header con icono ----------
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="people-outline" size={20} color="#0a7ea4" />
+          <Text style={{ marginLeft: 8, fontWeight: '600' }}>
+            Inscriptos {puebloNombre ? `· ${puebloNombre}` : ''}
+          </Text>
+        </View>
+      ),
+    } as any)
+  }, [navigation, puebloNombre])
 
-  const baseSelect =
-    'id,created_at,nombres,apellidos,ci,email,autorizacion_url,ficha_medica_url,firma_url';
+  // ---------- Helpers ----------
+  function parseNacimientoToDate(s?: string | null): Date | null {
+    if (!s) return null
+    const t = s.trim()
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+      const d = new Date(t + 'T00:00:00')
+      return isNaN(d.getTime()) ? null : d
+    }
+    if (/^\d{2}-\d{2}-\d{4}$/.test(t)) {
+      const [dd, mm, yyyy] = t.split('-').map((x) => parseInt(x, 10))
+      const d = new Date(yyyy, mm - 1, dd)
+      return isNaN(d.getTime()) ? null : d
+    }
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(t)) {
+      const [dd, mm, yyyy] = t.split('/').map((x) => parseInt(x, 10))
+      const d = new Date(yyyy, mm - 1, dd)
+      return isNaN(d.getTime()) ? null : d
+    }
+    return null
+  }
 
-  const fetchData = useCallback(
-    async (term?: string) => {
-      let query = supabase.from('registros').select(baseSelect).eq('pueblo_id', id);
-      query = query.order('created_at', { ascending: false });
-      if (term && term.trim().length >= 2) {
-        const t = term.trim();
-        query = query.or(`nombres.ilike.%${t}%,apellidos.ilike.%${t}%,ci.ilike.%${t}%`);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as Item[];
-    },
-    [id],
-  );
+  function getAge(d: Date | null): number | null {
+    if (!d) return null
+    const today = new Date()
+    let age = today.getFullYear() - d.getFullYear()
+    const m = today.getMonth() - d.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--
+    return age
+  }
 
+  function requiredDocKey(age: number | null): 'ficha' | 'autorizacion' | null {
+    if (age == null) return null
+    return age < 18 ? 'ficha' : 'autorizacion'
+  }
+  function requiredDocLabel(age: number | null): string {
+    const k = requiredDocKey(age)
+    if (k === 'ficha') return 'Permiso del Menor'
+    if (k === 'autorizacion') return 'Aceptación de Protocolo'
+    return 'Documento requerido'
+  }
+  function hasRequiredDoc(r: any, age: number | null): boolean | null {
+    const k = requiredDocKey(age)
+    if (k === 'ficha') return !!r.ficha_medica_url
+    if (k === 'autorizacion') return !!r.autorizacion_url
+    return null
+  }
+  const normalize = (v: string) =>
+    (v || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+
+  // ---------- Carga ----------
   const load = useCallback(async () => {
     try {
-      setLoading(true);
-      setRows(await fetchData());
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchData]);
+      setLoading(true)
+      // Nombre del pueblo
+      const { data: pueblo, error: ep } = await supabase
+        .from('pueblos')
+        .select('id,nombre')
+        .eq('id', puebloId)
+        .maybeSingle()
+      if (ep) throw ep
+      setPuebloNombre(pueblo?.nombre ?? '')
 
-  const onRefresh = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      setRows(await fetchData(q));
+      // Inscriptos del pueblo
+      const { data, error } = await supabase
+        .from('registros')
+        .select(`
+          id, created_at, pueblo_id,
+          nombres, apellidos, ci, nacimiento, email, telefono,
+          rol, es_jefe,
+          autorizacion_url, ficha_medica_url
+        `)
+        .eq('pueblo_id', puebloId)
+        .order('created_at', { ascending: true })
+      if (error) throw error
+
+      setInscriptos(data ?? [])
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
     } finally {
-      setRefreshing(false);
+      setLoading(false)
     }
-  }, [fetchData, q]);
+  }, [puebloId])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
-  async function onSearch() {
+  // ---------- Filtro ----------
+  const filtered = useMemo(() => {
+    const q = normalize(query)
+    if (!q) return inscriptos
+    return inscriptos.filter((r: any) => {
+      const full = `${r.nombres || ''} ${r.apellidos || ''}`
+      // Si ocultamos CI, no lo usamos para buscar:
+      return normalize(full).includes(q) || (!hideCi && normalize(r.ci || '').includes(q))
+    })
+  }, [query, inscriptos, hideCi])
+
+  // ---------- Export CSV (respeta hideCi) ----------
+  async function exportCsv() {
     try {
-      setSearching(true);
-      setRows(await fetchData(q));
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  function csvEscape(v: any): string {
-    if (v === null || v === undefined) return '';
-    const s = String(v).replace(/\r?\n/g, ' ').replace(/"/g, '""');
-    return /[",;]/.test(s) ? `"${s}"` : s;
-  }
-
-  async function exportCsv(all: boolean) {
-    try {
-      const data = all ? await fetchData() : rows;
-      if (!data.length) {
-        Alert.alert('Exportar CSV', 'No hay datos para exportar.');
-        return;
+      if (!filtered.length) {
+        Alert.alert('CSV', 'No hay inscriptos (según filtro) para exportar.')
+        return
       }
-      // ⇢ Encabezados actualizados
-      const header = [
-        'id',
-        'fecha',
-        'nombres',
-        'apellidos',
-        'ci',
-        'email',
-        'aceptacion',
-        'permiso',
-        'firma',
-      ].join(';');
 
-      const lines = data.map((r) =>
-        [
-          csvEscape(r.id),
-          csvEscape(new Date(r.created_at).toISOString()),
-          csvEscape(r.nombres),
-          csvEscape(r.apellidos),
-          csvEscape(r.ci),
-          csvEscape(r.email),
-          r.autorizacion_url ? 'SI' : 'NO',   // Aceptación
-          r.ficha_medica_url ? 'SI' : 'NO',   // Permiso
-          r.firma_url ? 'SI' : 'NO',
-        ].join(';'),
-      );
+      const headerBase = ['id', 'nombres', 'apellidos']
+      const headerExtra = hideCi
+        ? ['edad', 'email', 'telefono', 'rol', 'es_jefe', 'doc_requerido', 'estado_doc', 'autorizacion_url', 'ficha_medica_url', 'created_at']
+        : ['ci', 'edad', 'email', 'telefono', 'rol', 'es_jefe', 'doc_requerido', 'estado_doc', 'autorizacion_url', 'ficha_medica_url', 'created_at']
 
-      const csv = [header, ...lines].join('\n');
-      const fileUri = FileSystem.cacheDirectory + `inscriptos_${id}${all ? '_todos' : '_filtro'}.csv`;
-      await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Exportar CSV' });
+      const rows: any[] = [[...headerBase, ...headerExtra]]
+
+      for (const r of filtered) {
+        const d = parseNacimientoToDate(r.nacimiento)
+        const age = getAge(d)
+        const req = requiredDocLabel(age)
+        const ok = hasRequiredDoc(r, age)
+
+        const base = [r.id, r.nombres ?? '', r.apellidos ?? '']
+        const extra = hideCi
+          ? [
+              age == null ? '' : String(age),
+              r.email ?? '',
+              r.telefono ?? '',
+              r.rol ?? '',
+              r.es_jefe ? 'SI' : 'NO',
+              req,
+              ok == null ? '' : ok ? 'Cargada' : 'Falta',
+              r.autorizacion_url ?? '',
+              r.ficha_medica_url ?? '',
+              r.created_at ?? '',
+            ]
+          : [
+              r.ci ?? '',
+              age == null ? '' : String(age),
+              r.email ?? '',
+              r.telefono ?? '',
+              r.rol ?? '',
+              r.es_jefe ? 'SI' : 'NO',
+              req,
+              ok == null ? '' : ok ? 'Cargada' : 'Falta',
+              r.autorizacion_url ?? '',
+              r.ficha_medica_url ?? '',
+              r.created_at ?? '',
+            ]
+
+        rows.push([...base, ...extra])
+      }
+
+      const csv = rows
+        .map((row) =>
+          row
+            .map((cell: any) => {
+              const v = String(cell ?? '')
+              const escaped = v.replace(/"/g, '""')
+              return `"${escaped}"`
+            })
+            .join(',')
+        )
+        .join('\n')
+
+      const fileName = `inscriptos_${(puebloNombre || 'pueblo').replace(/\s+/g, '_')}.csv`
+      const uri = FileSystem.cacheDirectory + fileName
+      await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 })
+
+      const canShare = await Sharing.isAvailableAsync()
+      if (canShare) {
+        await Sharing.shareAsync(uri, { mimeType: 'text/csv', dialogTitle: fileName })
+      } else {
+        Alert.alert('CSV generado', uri)
+      }
     } catch (e: any) {
-      Alert.alert('No se pudo exportar', e?.message ?? String(e));
+      Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
     }
   }
 
-  return (
-    <ScrollView
-      style={s.screen}
-      contentContainerStyle={{ paddingBottom: 24 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <Text style={s.title}>Inscriptos del pueblo</Text>
+  // ---------- Render ----------
+  const total = inscriptos.length
+  const totalFiltrado = filtered.length
 
-      <View style={s.card}>
-        <Text style={s.label}>Buscar por nombre / apellido / CI</Text>
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          style={s.input}
-          placeholder="Ej: Ana / Gómez / 1234567"
-          autoCapitalize="none"
-        />
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-          <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={onSearch} disabled={searching}>
-            <Text style={s.buttonText}>{searching ? 'Buscando…' : 'Buscar'}</Text>
-          </Pressable>
-          <Pressable
-            style={[s.button, { paddingVertical: 10, backgroundColor: '#6c757d' }]}
-            onPress={() => {
-              setQ('');
-              onSearch();
-            }}
-          >
-            <Text style={s.buttonText}>Limpiar</Text>
-          </Pressable>
-        </View>
+  const renderItem = useCallback(({ item }: { item: any }) => {
+    const d = parseNacimientoToDate(item.nacimiento)
+    const age = getAge(d)
+    const reqLabel = requiredDocLabel(age)
+    const ok = hasRequiredDoc(item, age)
 
-        {/* Exportar CSV */}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={() => exportCsv(false)}>
-            <Text style={s.buttonText}>Exportar CSV (filtro)</Text>
-          </Pressable>
-          <Pressable
-            style={[s.button, { paddingVertical: 10, backgroundColor: '#0a7ea4' }]}
-            onPress={() => exportCsv(true)}
-          >
-            <Text style={s.buttonText}>Exportar CSV (todo)</Text>
-          </Pressable>
+    return (
+      <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+        <Text style={[s.small, { fontWeight: '600' }]}>
+          {item.nombres} {item.apellidos}
+        </Text>
+
+        {/* CI oculto si hideCi === true */}
+        {!hideCi && <Text style={s.small}>CI: {item.ci || '-'}</Text>}
+
+        <Text style={s.small}>
+          Edad: {age == null ? '—' : age} · Rol: {item.rol || '-'}
+          {item.rol === 'Misionero' && item.es_jefe ? ' (Jefe)' : ''}
+        </Text>
+
+        {/* Solo el documento requerido por edad */}
+        <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Text style={[s.small, { opacity: 0.9, marginRight: 8 }]}>{reqLabel}:</Text>
+          {ok == null ? (
+            <View style={{ backgroundColor: '#999', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
+              <Text style={{ color: 'white', fontSize: 12 }}>Desconocido</Text>
+            </View>
+          ) : ok ? (
+            <View style={{ backgroundColor: '#21a179', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
+              <Text style={{ color: 'white', fontSize: 12 }}>Cargada</Text>
+            </View>
+          ) : (
+            <View style={{ backgroundColor: '#d94646', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
+              <Text style={{ color: 'white', fontSize: 12 }}>Falta</Text>
+            </View>
+          )}
         </View>
       </View>
+    )
+  }, [hideCi])
 
-      {loading ? (
-        <View style={{ marginTop: 16, alignItems: 'center' }}>
-          <ActivityIndicator />
-        </View>
-      ) : rows.length === 0 ? (
-        <Text style={[s.text, { color: '#666', marginTop: 8 }]}>No hay inscriptos.</Text>
-      ) : (
-        rows.map((r) => (
-          <View key={r.id} style={[s.card, { marginBottom: 10 }]}>
-            <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
-            <Text style={s.small}>CI: {r.ci || '-'}</Text>
-            <Text style={s.small}>Email: {r.email || '-'}</Text>
-            <Text style={[s.small, { color: '#666' }]}>
-              Fecha: {new Date(r.created_at).toLocaleString()}
-            </Text>
+  const keyExtractor = useCallback((item: any) => item.id, [])
 
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <DocChip ok={!!r.autorizacion_url} label="Aceptación" />
-              <DocChip ok={!!r.ficha_medica_url} label="Permiso" />
-              <DocChip ok={!!r.firma_url} label="Firma" />
-            </View>
-          </View>
-        ))
-      )}
-    </ScrollView>
-  );
-}
+  const headerList = useMemo(
+    () => (
+      <View style={{ marginBottom: 8 }}>
+        <Text style={s.title}>{puebloNombre || 'Pueblo'}</Text>
 
-function DocChip({ ok, label }: { ok: boolean; label: string }) {
+        {/* Buscador */}
+        <Text style={s.label}>{hideCi ? 'Buscar por nombre' : 'Buscar por nombre o CI'}</Text>
+        <TextInput
+          style={[s.input, { marginBottom: 6 }]}
+          value={query}
+          onChangeText={setQuery}
+          placeholder={hideCi ? 'Ej: Ana' : 'Ej: Ana / 1234567'}
+          autoCapitalize="none"
+        />
+        <Text style={s.text}>
+          {totalFiltrado} de {total} inscriptos
+        </Text>
+
+        <Pressable
+          onPress={exportCsv}
+          style={[s.button, { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 8 }]}
+        >
+          <Text style={s.buttonText}>Exportar CSV</Text>
+        </Pressable>
+      </View>
+    ),
+    [puebloNombre, query, total, totalFiltrado, hideCi]
+  )
+
+  if (loading) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator />
+      </View>
+    )
+  }
+
   return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: ok ? '#28a745' : '#ddd',
-      }}
-    >
-      <Text style={{ color: ok ? '#fff' : '#333', fontWeight: '700', fontSize: 12 }}>{label}</Text>
+    <View style={[s.screen, { paddingBottom: 20 }]}>
+      <FlatList
+        ListHeaderComponent={headerList}
+        data={filtered}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 30 }}
+        keyboardShouldPersistTaps="handled"
+      />
     </View>
-  );
+  )
 }

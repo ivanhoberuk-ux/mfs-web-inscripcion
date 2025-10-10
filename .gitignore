@@ -1,7 +1,5 @@
-node_modules
-.expo
-.expo-shared
-dist
-build
+﻿node_modules/
+dist/
+.env
 .DS_Store
-package-lock.json
+*.log
