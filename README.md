@@ -63,3 +63,66 @@ npm install
 
 # 3. Ejecutar en modo desarrollo
 npm run web
+
+☁️ Despliegue (Netlify)
+
+Conectar el repositorio GitHub en Netlify
+
+Configurar:
+
+Campo	Valor
+Build command	npm run build:web
+Publish directory	dist
+
+(Opcional) Variables de entorno:
+
+VITE_SUPABASE_URL = https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY = tu_anon_key
+
+
+Agregar en la raíz del proyecto el archivo _redirects con:
+
+/* /index.html 200
+
+
+Esto permite que expo-router maneje correctamente las rutas.
+
+🔐 Supabase
+
+La app utiliza:
+
+auth.users → autenticación por correo y contraseña
+
+user_roles → asignación de roles (admin / user)
+
+registros → datos de inscriptos
+
+pueblos → listado público de pueblos y cupos
+
+📁 Estructura de carpetas
+app/                 # Rutas principales (Expo Router)
+ ├─ (tabs)/          # Navegación por pestañas
+ ├─ login.tsx        # Pantalla de autenticación
+ ├─ admin.tsx        # Panel administrativo
+ └─ pueblos/         # Vistas de pueblos e inscriptos
+
+src/
+ ├─ lib/             # APIs, Supabase, PDF, etc.
+ ├─ context/         # Contexto global de AuthProvider
+ └─ components/      # Componentes reutilizables
+
+supabase/
+ └─ schema.sql       # Esquema base de tablas y políticas RLS
+
+👨‍💻 Autor
+
+Iván Hoberuk
+📍 Paraguay
+🧠 Coordinador de Misiones Familiares Schoenstattianas
+💻 Desarrollo web & gestión de sistemas comunitarios
+
+🕊️ Licencia
+
+Proyecto sin fines de lucro con propósito apostólico y comunitario.
+© 2025 Misiones Familiares Schoenstattianas del Paraguay.
+Todos los derechos reservados.
