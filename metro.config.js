@@ -5,11 +5,21 @@ const path = require('path');
 const config = getDefaultConfig(__dirname);
 
 // Resolver aliases para evitar problemas con módulos
-config.resolver.alias = {
-  ...(config.resolver.alias || {}),
-  tslib: path.resolve(__dirname, 'node_modules/tslib/tslib.js'),
-  '@expo/metro-config/build/async-require': path.resolve(__dirname, 'shims/async-require.js'),
-  '@supabase/node-fetch': path.resolve(__dirname, 'shims/async-require.js'),
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === '@expo/metro-config/build/async-require' || 
+      moduleName === '@supabase/node-fetch') {
+    return {
+      filePath: path.resolve(__dirname, 'shims/async-require.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (moduleName === 'tslib') {
+    return {
+      filePath: path.resolve(__dirname, 'node_modules/tslib/tslib.js'),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
 };
 
 // Resolver para manejar extensiones de archivos específicas de web
