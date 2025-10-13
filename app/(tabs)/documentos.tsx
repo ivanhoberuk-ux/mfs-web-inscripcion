@@ -93,10 +93,12 @@ export default function Documentos() {
       Alert.alert('No se pudo abrir', e?.message ?? String(e));
     }
   }
+  // Cache busting timestamp fijo para evitar hydration mismatch
+  const [cacheBuster] = useState(() => Date.now());
   function bust(url?: string | null) {
     if (!url) return url as any;
     const sep = url.includes('?') ? '&' : '?';
-    return `${url}${sep}cb=${Date.now()}`;
+    return `${url}${sep}cb=${cacheBuster}`;
   }
   function isImageUrl(url?: string | null) {
     if (!url) return false;
