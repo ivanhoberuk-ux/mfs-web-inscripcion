@@ -40,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: 'Inicio',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="home-sharp" size={size} color={color} />
           ),
         }}
       />
@@ -49,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Inscribirme',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-add-outline" size={size} color={color} />
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />
@@ -58,7 +58,7 @@ export default function TabLayout() {
         options={{
           title: 'Pueblos',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
+            <Ionicons name="navigate-circle" size={size} color={color} />
           ),
         }}
       />
@@ -67,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: 'Buscador',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons name="search-circle" size={size} color={color} />
           ),
         }}
       />
@@ -76,7 +76,7 @@ export default function TabLayout() {
         options={{
           title: 'Documentos',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text-outline" size={size} color={color} />
+            <Ionicons name="reader" size={size} color={color} />
           ),
         }}
       />
@@ -88,7 +88,7 @@ export default function TabLayout() {
           options={{
             title: 'Inscriptos',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="people-outline" size={size} color={color} />
+              <Ionicons name="people-circle" size={size} color={color} />
             ),
           }}
         />
@@ -103,7 +103,7 @@ export default function TabLayout() {
           options={{
             title: 'Admin',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="settings-outline" size={size} color={color} />
+              <Ionicons name="shield-checkmark" size={size} color={color} />
             ),
           }}
         />
