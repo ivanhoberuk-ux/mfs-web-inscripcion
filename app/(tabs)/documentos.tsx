@@ -1,6 +1,6 @@
 // FILE: app/(tabs)/documentos.tsx — Plantillas + Subida (foto) + Firma + PDF + Thumbnails + Delete — COMPATIBLE WEB/NATIVO (sin expo-print directo)
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { s } from '../../src/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad';
@@ -22,7 +23,8 @@ import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
 
 export default function Documentos() {
-  const [mode, setMode] = useState<'code' | 'ci'>('ci');
+  const params = useLocalSearchParams();
+  const [mode, setMode] = useState<'code' | 'ci'>('code');
 
   // Búsqueda por CÓDIGO (UUID)
   const [code, setCode] = useState('');
@@ -45,6 +47,37 @@ export default function Documentos() {
   const URL_PROTOCOLO = publicUrl('plantillas', 'protocolo_prevencion.pdf');
   const URL_ACEPTACION = publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf');
   const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf');
+
+  // Auto-cargar registro si viene código por parámetro
+  useEffect(() => {
+    const codeParam = Array.isArray(params.code) ? params.code[0] : params.code;
+    if (codeParam && typeof codeParam === 'string') {
+      setCode(codeParam);
+      setMode('code');
+      // Buscar automáticamente
+      (async () => {
+        try {
+          setLoading(true);
+          const { data, error } = await supabase
+            .from('registros')
+            .select(
+              'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
+            )
+            .eq('id', codeParam.trim())
+            .maybeSingle();
+          if (error) throw error;
+          if (data) {
+            setResults([]);
+            setRecord(data);
+          }
+        } catch (e: any) {
+          Alert.alert('Error', e.message || String(e));
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [params.code]);
 
   // === Helpers ===
   async function openUrl(url?: string | null) {

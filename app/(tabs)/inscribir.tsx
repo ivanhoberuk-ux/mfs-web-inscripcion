@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl } from '../../src/lib/api'
 import * as Clipboard from 'expo-clipboard'
@@ -22,6 +23,7 @@ type Errs = Record<string, string | null>
 const inputErrorStyle = { borderColor: colors.error, borderWidth: 1 }
 
 export default function Inscribir() {
+  const router = useRouter()
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -293,15 +295,20 @@ export default function Inscribir() {
 
       Alert.alert(
         '¡Inscripción confirmada!',
-        `Código de inscripción:\n${id}\n\nGuardá este código para subir documentos.`,
+        `Tu código: ${id}\n\nAhora cargá tus documentos necesarios.`,
         [
-          { text: 'Cerrar' },
+          {
+            text: 'Ir a Documentos',
+            onPress: () => {
+              router.push(`/documentos?code=${id}`)
+            },
+          },
           {
             text: 'Copiar código',
             onPress: async () => {
               try {
                 await Clipboard.setStringAsync(String(id))
-                Alert.alert('Copiado', 'El código fue copiado al portapapeles.')
+                Alert.alert('Copiado', 'Podés ir a Documentos cuando quieras.')
               } catch {}
             },
           },
