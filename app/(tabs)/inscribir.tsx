@@ -281,10 +281,18 @@ export default function Inscribir() {
       if (existente) {
         setSaving(false)
         setErrs((e) => ({ ...e, ci: 'Esta cédula ya está registrada.' }))
-        Alert.alert(
-          'Cédula duplicada',
-          `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
-        )
+        
+        // Usar window.alert para web (bloquea hasta que el usuario cierre)
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert(
+            `⚠️ Cédula duplicada\n\nLa cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
+          )
+        } else {
+          Alert.alert(
+            'Cédula duplicada',
+            `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
+          )
+        }
         return
       }
 
