@@ -188,6 +188,67 @@ export default function VerInscriptosAdmin() {
     return needs ? `"${v.replace(/"/g, '""')}"` : v
   }
 
+  async function promoteToAdmin(email: string, nombre: string) {
+    const confirmPromote = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Promover a ${nombre} como administrador? Esta persona tendrá acceso completo al sistema.`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'Promover a Administrador',
+          `¿Promover a ${nombre} como administrador? Esta persona tendrá acceso completo al sistema.`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            {
+              text: 'Promover',
+              onPress: () => resolve(true),
+            },
+          ]
+        )
+      })
+    }
+
+    const confirmed = await confirmPromote()
+    if (!confirmed) return
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        Alert.alert('Error', 'No hay sesión activa')
+        return
+      }
+
+      const response = await fetch('https://npekpdkywsneylddzzuu.supabase.co/functions/v1/promote-to-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (typeof window !== 'undefined') {
+          window.alert(result.error || 'No se pudo promover al usuario')
+        } else {
+          Alert.alert('Error', result.error || 'No se pudo promover al usuario')
+        }
+        return
+      }
+
+      if (typeof window !== 'undefined') {
+        window.alert(result.message)
+      } else {
+        Alert.alert('Éxito', result.message)
+      }
+    } catch (err) {
+      console.error('Error promoting to admin:', err)
+      Alert.alert('Error', 'Ocurrió un error al promover al usuario')
+    }
+  }
+
   async function deleteInscripto(id: string, nombre: string) {
     // Usar window.confirm en web, Alert.alert en mobile
     const confirmDelete = () => {
@@ -350,17 +411,30 @@ export default function VerInscriptosAdmin() {
                       Fecha: {new Date(r.created_at).toLocaleString()}
                     </Text>
                   </View>
-                  <Pressable
-                    onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
-                    style={{
-                      padding: 8,
-                      backgroundColor: colors.error,
-                      borderRadius: 8,
-                      marginLeft: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                    {r.email && (
+                      <Pressable
+                        onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
+                        style={{
+                          padding: 8,
+                          backgroundColor: colors.primary[600],
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Hacer Admin</Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
+                      style={{
+                        padding: 8,
+                        backgroundColor: colors.error,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </Card>
             )
