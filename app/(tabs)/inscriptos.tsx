@@ -170,6 +170,30 @@ export default function VerInscriptosAdmin() {
     return needs ? `"${v.replace(/"/g, '""')}"` : v
   }
 
+  async function deleteInscripto(id: string, nombre: string) {
+    Alert.alert(
+      'Confirmar eliminación',
+      `¿Estás seguro que querés eliminar a ${nombre}? Esta acción no se puede deshacer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase.from('registros').delete().eq('id', id)
+              if (error) throw error
+              Alert.alert('Eliminado', 'El inscripto fue eliminado correctamente.')
+              runSearch(true) // Recargar lista
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? String(e))
+            }
+          },
+        },
+      ]
+    )
+  }
+
   async function exportCSV() {
     const header = [
       'id',
@@ -272,22 +296,37 @@ export default function VerInscriptosAdmin() {
             const st = requiredDocsOk(r)
             return (
               <Card key={r.id} style={{ marginBottom: 8 }}>
-                <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
-                {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
-                <Text style={s.small}>CI: {r.ci || '-'}</Text>
-                <Text style={s.small}>Email: {r.email || '-'}</Text>
-                <Text style={s.small}>Pueblo: {pueblo} · Rol: {r.rol}</Text>
-                <Text style={[s.small, { color: colors.text.tertiary.light }]}>
-                  Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <Chip ok={st.isAdult ? st.okAcept : st.okPerm} label={st.requiredName} />
-                  <Chip ok={st.okFirma} label="Firma" />
-                  <Chip ok={st.okRequeridos} label="Completos" />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
+                    {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
+                    <Text style={s.small}>CI: {r.ci || '-'}</Text>
+                    <Text style={s.small}>Email: {r.email || '-'}</Text>
+                    <Text style={s.small}>Pueblo: {pueblo} · Rol: {r.rol}</Text>
+                    <Text style={[s.small, { color: colors.text.tertiary.light }]}>
+                      Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                      <Chip ok={st.isAdult ? st.okAcept : st.okPerm} label={st.requiredName} />
+                      <Chip ok={st.okFirma} label="Firma" />
+                      <Chip ok={st.okRequeridos} label="Completos" />
+                    </View>
+                    <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
+                      Fecha: {new Date(r.created_at).toLocaleString()}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
+                    style={{
+                      padding: 8,
+                      backgroundColor: colors.error,
+                      borderRadius: 8,
+                      marginLeft: 8,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
+                  </Pressable>
                 </View>
-                <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
-                  Fecha: {new Date(r.created_at).toLocaleString()}
-                </Text>
               </Card>
             )
           })}

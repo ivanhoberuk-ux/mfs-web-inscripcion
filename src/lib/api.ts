@@ -2,7 +2,11 @@
 // Funciones de acceso a datos (Supabase) y helpers de Storage para la app MFS
 
 import * as FileSystem from 'expo-file-system';
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase.native';
+import { supabase } from './supabase';
+
+// Constantes de Supabase (para URL públicas y Storage)
+const SUPABASE_URL = 'https://npekpdkywsneylddzzuu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wZWtwZGt5d3NuZXlsZGR6enV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDYxNDEsImV4cCI6MjA3MTk4MjE0MX0.RNuHThLkvwMzq6WMUna7P6WFUovG2CwT18LNJwtwNoI';
 
 // --------- Tipos ----------
 export type Pueblo = {
