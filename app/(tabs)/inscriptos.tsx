@@ -9,6 +9,7 @@ import { generateExcelBlob } from '../../src/lib/excel'
 import { useRouter } from 'expo-router'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
+import { Field } from '../../src/components/Field'
 
 type Row = {
   id: string
@@ -84,6 +85,7 @@ export default function VerInscriptosAdmin() {
   const [loading, setLoading] = useState(false)
   const [moreLoading, setMoreLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   const offRef = useRef(0)
 
   const pueblosMap = useMemo(() => {
@@ -91,6 +93,18 @@ export default function VerInscriptosAdmin() {
     for (const p of pueblos) m[p.id] = p.nombre
     return m
   }, [pueblos])
+
+  // Filtrar resultados localmente según el término de búsqueda
+  const filteredRows = useMemo(() => {
+    if (!searchTerm.trim()) return rows
+    const term = searchTerm.toLowerCase()
+    return rows.filter(r => 
+      r.nombres.toLowerCase().includes(term) ||
+      r.apellidos.toLowerCase().includes(term) ||
+      r.ci?.toLowerCase().includes(term) ||
+      r.email?.toLowerCase().includes(term)
+    )
+  }, [rows, searchTerm])
 
   useEffect(() => {
     if (!accessChecked) return
@@ -186,67 +200,6 @@ export default function VerInscriptosAdmin() {
     if (v == null) return ''
     const needs = /[",\n]/.test(v)
     return needs ? `"${v.replace(/"/g, '""')}"` : v
-  }
-
-  async function promoteToAdmin(email: string, nombre: string) {
-    const confirmPromote = () => {
-      if (typeof window !== 'undefined') {
-        return window.confirm(`¿Promover a ${nombre} como administrador? Esta persona tendrá acceso completo al sistema.`)
-      }
-      return new Promise<boolean>((resolve) => {
-        Alert.alert(
-          'Promover a Administrador',
-          `¿Promover a ${nombre} como administrador? Esta persona tendrá acceso completo al sistema.`,
-          [
-            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
-            {
-              text: 'Promover',
-              onPress: () => resolve(true),
-            },
-          ]
-        )
-      })
-    }
-
-    const confirmed = await confirmPromote()
-    if (!confirmed) return
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session) {
-        Alert.alert('Error', 'No hay sesión activa')
-        return
-      }
-
-      const response = await fetch('https://npekpdkywsneylddzzuu.supabase.co/functions/v1/promote-to-admin', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        if (typeof window !== 'undefined') {
-          window.alert(result.error || 'No se pudo promover al usuario')
-        } else {
-          Alert.alert('Error', result.error || 'No se pudo promover al usuario')
-        }
-        return
-      }
-
-      if (typeof window !== 'undefined') {
-        window.alert(result.message)
-      } else {
-        Alert.alert('Éxito', result.message)
-      }
-    } catch (err) {
-      console.error('Error promoting to admin:', err)
-      Alert.alert('Error', 'Ocurrió un error al promover al usuario')
-    }
   }
 
   async function deleteInscripto(id: string, nombre: string) {
@@ -369,7 +322,15 @@ export default function VerInscriptosAdmin() {
           </Picker>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Text style={s.label}>Buscar</Text>
+        <Field
+          label=""
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholder="Nombre, apellido, CI o email..."
+        />
+
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
           <Button variant="secondary" onPress={() => runSearch(true)}>
             Actualizar
           </Button>
@@ -383,11 +344,13 @@ export default function VerInscriptosAdmin() {
         <View style={{ marginTop: 12, alignItems: 'center' }}>
           <ActivityIndicator />
         </View>
-      ) : rows.length === 0 ? (
-        <Text style={[s.text, { color: '#666' }]}>Sin inscriptos.</Text>
+      ) : filteredRows.length === 0 ? (
+        <Text style={[s.text, { color: '#666' }]}>
+          {rows.length === 0 ? 'Sin inscriptos.' : 'No se encontraron resultados.'}
+        </Text>
       ) : (
         <>
-          {rows.map((r) => {
+          {filteredRows.map((r) => {
             const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
             const st = requiredDocsOk(r)
             return (
@@ -411,30 +374,17 @@ export default function VerInscriptosAdmin() {
                       Fecha: {new Date(r.created_at).toLocaleString()}
                     </Text>
                   </View>
-                  <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
-                    {r.email && (
-                      <Pressable
-                        onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
-                        style={{
-                          padding: 8,
-                          backgroundColor: colors.primary[600],
-                          borderRadius: 8,
-                        }}
-                      >
-                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Hacer Admin</Text>
-                      </Pressable>
-                    )}
-                    <Pressable
-                      onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
-                      style={{
-                        padding: 8,
-                        backgroundColor: colors.error,
-                        borderRadius: 8,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
+                    style={{
+                      padding: 8,
+                      backgroundColor: colors.error,
+                      borderRadius: 8,
+                      marginLeft: 8,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
+                  </Pressable>
                 </View>
               </Card>
             )
