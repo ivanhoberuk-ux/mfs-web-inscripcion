@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl } from '../../src/lib/api'
+import { supabase } from '../../src/lib/supabase'
 import * as Clipboard from 'expo-clipboard'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
@@ -265,11 +266,33 @@ export default function Inscribir() {
 
       setSaving(true)
 
+      // Verificar si la cédula ya existe
+      const ciNormalizado = normCi(ci)
+      const { data: existente, error: checkError } = await supabase
+        .from('registros')
+        .select('id, nombres, apellidos')
+        .eq('ci', ciNormalizado)
+        .maybeSingle()
+
+      if (checkError) {
+        throw new Error('No se pudo verificar la cédula: ' + checkError.message)
+      }
+
+      if (existente) {
+        setSaving(false)
+        setErrs((e) => ({ ...e, ci: 'Esta cédula ya está registrada.' }))
+        Alert.alert(
+          'Cédula duplicada',
+          `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
+        )
+        return
+      }
+
       const id = await registerIfCapacity({
         pueblo_id: puebloId,
         nombres: nombres.trim(),
         apellidos: apellidos.trim(),
-        ci: normCi(ci),
+        ci: ciNormalizado,
         nacimiento: nacimientoISO, // YYYY-MM-DD al RPC
         email: normEmail(email),
         telefono: normPhone(telefono),

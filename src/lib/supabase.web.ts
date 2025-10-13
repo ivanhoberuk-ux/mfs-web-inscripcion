@@ -19,5 +19,18 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     headers: {
       'X-Client-Info': 'supabase-js-web',
     },
+    fetch: (...args) => {
+      // Usar fetch nativo del navegador o polyfill
+      if (typeof window !== 'undefined' && window.fetch) {
+        return window.fetch(...args);
+      }
+      return fetch(...args);
+    },
+  },
+  // Deshabilitar realtime completamente para web
+  realtime: {
+    params: {
+      eventsPerSecond: 0,
+    },
   },
 });
