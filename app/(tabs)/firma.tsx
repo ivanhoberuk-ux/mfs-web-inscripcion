@@ -70,7 +70,7 @@ export default function Firma() {
         .from('registros')
         .select('id,nombres,apellidos,ci,nacimiento,email,telefono,direccion,pueblo_id,rol,es_jefe,autorizacion_url,ficha_medica_url,created_at')
         .eq('id', id)
-        .maybeSingle<Registro>()
+        .maybeSingle();
       if (er) throw er
       if (!reg) {
         Alert.alert('No encontrado', 'No se encontró el registro.')
@@ -83,7 +83,7 @@ export default function Firma() {
         .from('pueblos')
         .select('id,nombre')
         .eq('id', reg.pueblo_id)
-        .maybeSingle<Pueblo>()
+        .maybeSingle();
       if (ep) throw ep
       setPueblo(p ?? null)
     } catch (e: any) {

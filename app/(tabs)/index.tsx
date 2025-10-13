@@ -35,13 +35,13 @@ export default function Home() {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .maybeSingle<UserRoleRow>()
+        .maybeSingle();
       if (!mounted) return
       if (error) {
         console.warn('No se pudo leer user_roles:', error.message)
         setRole(null)
       } else {
-        setRole((data?.role as 'admin' | 'user' | undefined) ?? null)
+        setRole((data as UserRoleRow | null)?.role ?? null)
       }
       setLoadingRole(false)
     })()

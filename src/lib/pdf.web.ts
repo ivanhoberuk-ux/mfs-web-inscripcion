@@ -1,4 +1,5 @@
 // FILE: src/lib/pdf.web.ts
+/// <reference lib="dom" />
 // WEB: genera PDF con pdf-lib (bundle UMD) y devuelve un ObjectURL (blob:) listo para abrir/descargar
 
 export type Datos = {
@@ -17,6 +18,7 @@ export type Datos = {
 
 export async function generarAutorizacionPDF(d: Datos, firmaDataUrl?: string): Promise<string> {
   // 👇 Import dinámico DENTRO de la función (evita top-level await)
+  // @ts-ignore - No hay tipos para pdf-lib/dist/pdf-lib.js
   const PDFLib: any = await import('pdf-lib/dist/pdf-lib.js');
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
 

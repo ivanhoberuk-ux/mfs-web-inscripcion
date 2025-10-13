@@ -47,7 +47,7 @@ export default function VerInscriptosAdmin() {
         .from('user_roles')
         .select('role')
         .eq('user_id', uid)
-        .maybeSingle<UserRoleRow>()
+        .maybeSingle();
 
       if (roleErr || !roleRow || roleRow.role !== 'admin') {
         Alert.alert('Acceso restringido', 'Esta sección es solo para administradores.')
@@ -221,7 +221,7 @@ export default function VerInscriptosAdmin() {
     }
 
     const csv = csvRows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any)
     await shareOrDownload(blob, `inscriptos_${Date.now()}.csv`)
   }
 

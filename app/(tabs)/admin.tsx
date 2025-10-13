@@ -1,4 +1,5 @@
 // FILE: app/(tabs)/admin.tsx — Panel Admin integrado (ocupación + exportes + guard admin)
+/// <reference lib="dom" />
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
@@ -100,13 +101,13 @@ export default function Admin() {
     (async () => {
       try {
         if (!user) return;
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle<UserRoleRow>();
-        if (error) throw error;
-        if (mounted) setRole(data?.role ?? 'user');
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (mounted) setRole((data as UserRoleRow | null)?.role ?? 'user');
       } catch {
         if (mounted) setRole('user');
       } finally {
@@ -223,8 +224,7 @@ export default function Admin() {
 
       setSaving(puebloId);
       try {
-        const res = await updatePueblo(puebloId, { cupo_max: nuevoMax, activo: nuevoActivo } as any);
-        if (res && (res as any).error) throw (res as any).error;
+        await updatePueblo(puebloId, { cupo_max: nuevoMax, activo: nuevoActivo } as any);
       } catch {
         const { error } = await supabase
           .from('pueblos')
@@ -255,7 +255,8 @@ export default function Admin() {
       if (error) throw error;
       const blob = new Blob([JSON.stringify(data ?? [], null, 2)], {
         type: 'application/json;charset=utf-8',
-      });
+        lastModified: Date.now(),
+      } as any);
       await shareOrDownload(blob, `registros_${stamp()}.json`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
@@ -294,7 +295,7 @@ export default function Admin() {
         lines.push(row.join(','));
       });
 
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any);
       await shareOrDownload(blob, `registros_${stamp()}.csv`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
@@ -315,7 +316,7 @@ export default function Admin() {
         lines.push([csvEscape(p.id), csvEscape(p.nombre)].join(','));
       });
 
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any);
       await shareOrDownload(blob, `pueblos_${stamp()}.csv`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));

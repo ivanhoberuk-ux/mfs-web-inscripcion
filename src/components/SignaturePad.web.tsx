@@ -1,6 +1,9 @@
+/// <reference lib="dom" />
+
 // FILE: src/components/SignaturePad.web.tsx
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { View } from 'react-native';
+// @ts-ignore - No hay tipos para react-signature-canvas
 import SignatureCanvas from 'react-signature-canvas';
 
 export type SignaturePadHandle = {

@@ -1,4 +1,5 @@
 // FILE: src/lib/sharing.web.ts
+/// <reference lib="dom" />
 /**
  * Web: intenta usar la Web Share API (navigator.share) si está disponible.
  * Si no, fuerza la descarga del archivo (Blob o URL) creando un <a download>.
