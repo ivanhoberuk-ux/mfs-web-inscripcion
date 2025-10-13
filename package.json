@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "build:web": "expo export --platform web",
     "preview:web": "npx serve dist"
+    "build:dev": "vite build --mode development"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
