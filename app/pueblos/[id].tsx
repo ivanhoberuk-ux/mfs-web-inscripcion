@@ -13,6 +13,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
+import { generateExcelBase64 } from '../../src/lib/excel'
 import { supabase } from '../../src/lib/supabase'
 import { s } from '../../src/lib/theme'
 
@@ -192,33 +193,25 @@ export default function PuebloInscriptosScreen() {
               r.created_at ?? '',
             ]
 
-        rows.push([...base, ...extra])
+        rows.push([...base, ...extra]);
       }
 
-      const csv = rows
-        .map((row) =>
-          row
-            .map((cell: any) => {
-              const v = String(cell ?? '')
-              const escaped = v.replace(/"/g, '""')
-              return `"${escaped}"`
-            })
-            .join(',')
-        )
-        .join('\n')
+      const fileName = `inscriptos_${(puebloNombre || 'pueblo').replace(/\s+/g, '_')}.xlsx`;
+      const base64 = generateExcelBase64(rows, fileName);
+      const uri = FileSystem.cacheDirectory + fileName;
+      await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
 
-      const fileName = `inscriptos_${(puebloNombre || 'pueblo').replace(/\s+/g, '_')}.csv`
-      const uri = FileSystem.cacheDirectory + fileName
-      await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 })
-
-      const canShare = await Sharing.isAvailableAsync()
+      const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(uri, { mimeType: 'text/csv', dialogTitle: fileName })
+        await Sharing.shareAsync(uri, { 
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+          dialogTitle: fileName 
+        });
       } else {
-        Alert.alert('CSV generado', uri)
+        Alert.alert('Excel generado', uri);
       }
     } catch (e: any) {
-      Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
+      Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
     }
   }
 

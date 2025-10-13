@@ -17,6 +17,7 @@ import { s } from '../../src/lib/theme';
 import { supabase } from '../../src/lib/supabase';
 import { fetchOcupacion, updatePueblo, fetchPueblos } from '../../src/lib/api';
 import { shareOrDownload } from '../../src/lib/sharing';
+import { generateExcelBlob } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
 
 // ===== Tipos base =====
@@ -281,7 +282,7 @@ export default function Admin() {
         'emergencia_nombre','emergencia_telefono','rol','nacimiento',
         'url_aceptacion','url_permiso','url_firma'
       ];
-      const lines: string[] = [header.join(',')];
+      const rows: any[][] = [header];
 
       (data ?? []).forEach((r: any) => {
         const row = [
@@ -291,12 +292,12 @@ export default function Admin() {
           r.nombres, r.apellidos, r.ci ?? '', r.email ?? '', r.telefono ?? '',
           r.direccion ?? '', r.emergencia_nombre ?? '', r.emergencia_telefono ?? '',
           r.rol, r.nacimiento ?? '', r.autorizacion_url ?? '', r.ficha_medica_url ?? '', r.firma_url ?? ''
-        ].map(csvEscape);
-        lines.push(row.join(','));
+        ];
+        rows.push(row);
       });
 
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any);
-      await shareOrDownload(blob, `registros_${stamp()}.csv`);
+      const blob = generateExcelBlob(rows);
+      await shareOrDownload(blob, `registros_${stamp()}.xlsx`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -310,14 +311,14 @@ export default function Admin() {
       const pueblos = await fetchPueblos();
 
       const header = ['id', 'nombre'];
-      const lines: string[] = [header.join(',')];
+      const rows: any[][] = [header];
 
       (pueblos as any[]).forEach((p) => {
-        lines.push([csvEscape(p.id), csvEscape(p.nombre)].join(','));
+        rows.push([p.id, p.nombre]);
       });
 
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any);
-      await shareOrDownload(blob, `pueblos_${stamp()}.csv`);
+      const blob = generateExcelBlob(rows);
+      await shareOrDownload(blob, `pueblos_${stamp()}.xlsx`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {

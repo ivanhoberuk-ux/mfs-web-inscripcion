@@ -22,7 +22,7 @@ import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
 
 export default function Documentos() {
-  const [mode, setMode] = useState<'code' | 'ci'>('code');
+  const [mode, setMode] = useState<'code' | 'ci'>('ci');
 
   // Búsqueda por CÓDIGO (UUID)
   const [code, setCode] = useState('');

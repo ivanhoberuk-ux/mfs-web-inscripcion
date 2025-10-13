@@ -14,6 +14,7 @@ import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
+import { generateExcelBase64 } from '../../src/lib/excel'
 
 type Row = {
   id: string
@@ -163,14 +164,18 @@ export default function Buscador() {
     const escaped = s.replace(/"/g, '""')
     return `"${escaped}"`
   }
-  async function saveAndShareCSV(filename: string, content: string) {
-    const uri = FileSystem.cacheDirectory + filename
-    await FileSystem.writeAsStringAsync(uri, content, { encoding: FileSystem.EncodingType.UTF8 })
-    const canShare = await Sharing.isAvailableAsync()
+  async function saveAndShareExcel(filename: string, data: any[][]) {
+    const base64 = generateExcelBase64(data, filename);
+    const uri = FileSystem.cacheDirectory + filename;
+    await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
+    const canShare = await Sharing.isAvailableAsync();
     if (canShare) {
-      await Sharing.shareAsync(uri, { mimeType: 'text/csv', dialogTitle: filename })
+      await Sharing.shareAsync(uri, { 
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+        dialogTitle: filename 
+      });
     } else {
-      Alert.alert('CSV generado', uri)
+      Alert.alert('Excel generado', uri);
     }
   }
   function mapRowToCsvArray(r: Row) {
@@ -190,7 +195,7 @@ export default function Buscador() {
       new Date(r.created_at).toISOString(),
     ]
   }
-  function rowsToCsv(rowsIn: Row[]) {
+  function rowsToArray(rowsIn: Row[]) {
     const header = [
       'id',
       'nombres',
@@ -203,27 +208,27 @@ export default function Buscador() {
       'doc_requerido',      // Aceptación (adultos) o Permiso (menores)
       'estado_documentos',  // Completo / Incompleto
       'created_at',
-    ]
-    const lines = [header.map(csvEscape).join(',')]
+    ];
+    const rows: any[][] = [header];
     for (const r of rowsIn) {
-      lines.push(mapRowToCsvArray(r).map(csvEscape).join(','))
+      rows.push(mapRowToCsvArray(r));
     }
-    return lines.join('\n')
+    return rows;
   }
 
   async function exportCsvPage() {
     try {
       if (!rows.length) {
-        Alert.alert('CSV', 'No hay resultados en la página para exportar.')
-        return
+        Alert.alert('Excel', 'No hay resultados en la página para exportar.');
+        return;
       }
-      setExporting('page')
-      const csv = rowsToCsv(rows)
-      await saveAndShareCSV('buscador_pagina.csv', csv)
+      setExporting('page');
+      const data = rowsToArray(rows);
+      await saveAndShareExcel('buscador_pagina.xlsx', data);
     } catch (e: any) {
-      Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
+      Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
     } finally {
-      setExporting(null)
+      setExporting(null);
     }
   }
 
@@ -253,12 +258,12 @@ export default function Buscador() {
       }
 
       if (!all.length) {
-        Alert.alert('CSV', 'No hay resultados para exportar.')
-        return
+        Alert.alert('Excel', 'No hay resultados para exportar.');
+        return;
       }
 
-      const csv = rowsToCsv(all)
-      await saveAndShareCSV('buscador_todo.csv', csv)
+      const data = rowsToArray(all);
+      await saveAndShareExcel('buscador_todo.xlsx', data);
     } catch (e: any) {
       Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
     } finally {

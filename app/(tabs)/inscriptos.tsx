@@ -5,6 +5,7 @@ import { s, colors, spacing } from '../../src/lib/theme'
 import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import { shareOrDownload } from '../../src/lib/sharing'
+import { generateExcelBlob } from '../../src/lib/excel'
 import { useRouter } from 'expo-router'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
@@ -191,11 +192,11 @@ export default function VerInscriptosAdmin() {
       'url_firma',
     ]
 
-    const csvRows: string[][] = [header.map(csvEscape)]
+    const dataRows: any[][] = [header];
 
     for (const r of rows) {
-      const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
-      const st = requiredDocsOk(r)
+      const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id;
+      const st = requiredDocsOk(r);
       const line = [
         r.id,
         new Date(r.created_at).toISOString(),
@@ -215,14 +216,13 @@ export default function VerInscriptosAdmin() {
         r.autorizacion_url || '',
         r.ficha_medica_url || '',
         r.firma_url || '',
-      ].map(csvEscape)
+      ];
 
-      csvRows.push(line)
+      dataRows.push(line);
     }
 
-    const csv = csvRows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8', lastModified: Date.now() } as any)
-    await shareOrDownload(blob, `inscriptos_${Date.now()}.csv`)
+    const blob = generateExcelBlob(dataRows);
+    await shareOrDownload(blob, `inscriptos_${Date.now()}.xlsx`);
   }
 
   if (!accessChecked) {
