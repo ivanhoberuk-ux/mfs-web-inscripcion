@@ -101,15 +101,27 @@ export default function Admin() {
     let mounted = true;
     (async () => {
       try {
-        if (!user) return;
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (error) throw error;
-      if (mounted) setRole((data as UserRoleRow | null)?.role ?? 'user');
-      } catch {
+        if (!user) {
+          if (mounted) setCheckingRole(false);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error fetching role:', error);
+          setRole('user');
+        } else {
+          setRole((data as UserRoleRow)?.role ?? 'user');
+        }
+      } catch (err) {
+        console.error('Exception checking role:', err);
         if (mounted) setRole('user');
       } finally {
         if (mounted) setCheckingRole(false);

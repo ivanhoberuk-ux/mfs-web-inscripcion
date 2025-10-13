@@ -36,27 +36,45 @@ export default function VerInscriptosAdmin() {
   // ===== Guard SOLO ADMIN =====
   const [accessChecked, setAccessChecked] = useState(false)
   useEffect(() => {
-    ;(async () => {
-      const { data: udata, error: uerr } = await supabase.auth.getUser()
-      if (uerr || !udata?.user) {
-        Alert.alert('Sesión requerida', 'Iniciá sesión para ver inscriptos.')
-        router.replace('/login')
-        return
-      }
-      const uid = udata.user.id
-      const { data: roleRow, error: roleErr } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', uid)
-        .maybeSingle();
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: udata, error: uerr } = await supabase.auth.getUser()
+        if (!mounted) return;
+        
+        if (uerr || !udata?.user) {
+          Alert.alert('Sesión requerida', 'Iniciá sesión para ver inscriptos.')
+          router.replace('/login')
+          return
+        }
+        
+        const uid = udata.user.id
+        const { data: roleRow, error: roleErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', uid)
+          .single();
 
-      if (roleErr || !roleRow || roleRow.role !== 'admin') {
-        Alert.alert('Acceso restringido', 'Esta sección es solo para administradores.')
-        router.replace('/pueblos')
-        return
+        if (!mounted) return;
+
+        if (roleErr || !roleRow || roleRow.role !== 'admin') {
+          console.log('Role check failed:', { roleErr, roleRow });
+          Alert.alert('Acceso restringido', 'Esta sección es solo para administradores.')
+          router.replace('/pueblos')
+          return
+        }
+        
+        setAccessChecked(true)
+      } catch (err) {
+        console.error('Error checking access:', err);
+        if (mounted) {
+          Alert.alert('Error', 'No se pudo verificar los permisos.')
+          router.replace('/pueblos')
+        }
       }
-      setAccessChecked(true)
     })()
+    
+    return () => { mounted = false; }
   }, [router])
 
   // ===== Estado de datos =====
