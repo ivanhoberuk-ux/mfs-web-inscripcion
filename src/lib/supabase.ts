@@ -1,3 +1,3 @@
-// Archivo unificado de Supabase - versión web
-// Como el proyecto está configurado solo para web, usamos directamente la versión web
-export { supabase } from './supabase.web';
+// Archivo unificado de Supabase - versión web simplificada
+// Como el proyecto está configurado solo para web (app.json), usamos solo la versión web
+export { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase.web';

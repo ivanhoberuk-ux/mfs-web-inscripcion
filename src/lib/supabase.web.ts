@@ -12,10 +12,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,
   },
   realtime: {
-    // Deshabilitar realtime para evitar errores de import dinámico en Metro bundler
+    // Deshabilitar completamente realtime para evitar imports dinámicos
     params: {
       eventsPerSecond: 0,
     },
+  },
+  db: {
+    schema: 'public',
   },
   global: {
     headers: {
