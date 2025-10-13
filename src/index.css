@@ -1,0 +1,318 @@
+/* ============================================
+   SISTEMA DE DISEÑO MFS PARAGUAY
+   Basado en identidad Schoenstatt
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   TOKENS DE DISEÑO - MODO CLARO
+   ============================================ */
+@layer base {
+  :root {
+    /* === Colores Primarios === */
+    --primary: 210 85% 45%;          /* Azul Schoenstatt #0b6bb8 */
+    --primary-foreground: 0 0% 100%; /* Blanco */
+    --primary-hover: 210 85% 40%;    /* Azul más oscuro hover */
+    
+    /* === Colores Secundarios === */
+    --secondary: 142 70% 45%;         /* Verde esperanza #1ea85f */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 142 70% 40%;
+    
+    /* === Colores de Acento === */
+    --accent: 200 95% 92%;            /* Azul claro #d9f2ff */
+    --accent-foreground: 210 85% 25%; /* Azul oscuro texto */
+    
+    /* === Colores de Estado === */
+    --success: 142 76% 36%;           /* Verde #16a34a */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;            /* Amarillo #f59e0b */
+    --warning-foreground: 0 0% 100%;
+    --error: 0 72% 51%;               /* Rojo #dc2626 */
+    --error-foreground: 0 0% 100%;
+    --info: 199 89% 48%;              /* Azul info #0ea5e9 */
+    --info-foreground: 0 0% 100%;
+    
+    /* === Grises Neutros === */
+    --background: 210 20% 98%;        /* #f8f9fb - fondo general */
+    --foreground: 210 40% 10%;        /* #0f1823 - texto principal */
+    
+    --card: 0 0% 100%;                /* Blanco puro */
+    --card-foreground: 210 40% 10%;
+    
+    --muted: 210 20% 96%;             /* #f3f4f6 - fondos sutiles */
+    --muted-foreground: 210 10% 45%;  /* #6b7280 - texto secundario */
+    
+    --border: 210 15% 88%;            /* #dde5ea - bordes */
+    --input: 210 15% 90%;             /* #e5e7eb - inputs */
+    --ring: 210 85% 45%;              /* Color de focus ring */
+    
+    /* === Tipografía === */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    
+    /* Tamaños - Escala modular 1.250 */
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.563rem;  /* 25px */
+    --text-3xl: 1.953rem;  /* 31px */
+    --text-4xl: 2.441rem;  /* 39px */
+    
+    /* Pesos */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    
+    /* Line heights */
+    --leading-tight: 1.2;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.75;
+    
+    /* === Espaciado (múltiplos de 4px) === */
+    --spacing-1: 0.25rem;  /* 4px */
+    --spacing-2: 0.5rem;   /* 8px */
+    --spacing-3: 0.75rem;  /* 12px */
+    --spacing-4: 1rem;     /* 16px */
+    --spacing-5: 1.25rem;  /* 20px */
+    --spacing-6: 1.5rem;   /* 24px */
+    --spacing-8: 2rem;     /* 32px */
+    --spacing-10: 2.5rem;  /* 40px */
+    --spacing-12: 3rem;    /* 48px */
+    --spacing-16: 4rem;    /* 64px */
+    
+    /* === Radios de borde === */
+    --radius-sm: 0.5rem;   /* 8px */
+    --radius-md: 0.75rem;  /* 12px */
+    --radius-lg: 1rem;     /* 16px */
+    --radius-xl: 1.5rem;   /* 24px */
+    --radius-full: 9999px;
+    
+    /* === Sombras === */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* === Transiciones === */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ============================================
+     MODO OSCURO
+     ============================================ */
+  .dark {
+    --primary: 210 85% 60%;          /* Más claro en oscuro */
+    --primary-hover: 210 85% 65%;
+    
+    --secondary: 142 70% 50%;
+    --secondary-hover: 142 70% 55%;
+    
+    --background: 210 40% 8%;        /* #0d1117 */
+    --foreground: 210 20% 98%;       /* Blanco */
+    
+    --card: 210 35% 12%;             /* #161b22 */
+    --card-foreground: 210 20% 98%;
+    
+    --muted: 210 35% 15%;            /* #1f2937 */
+    --muted-foreground: 210 15% 65%; /* Gris claro */
+    
+    --border: 210 20% 25%;           /* #374151 */
+    --input: 210 20% 20%;            /* #1f2937 */
+    
+    --accent: 210 50% 20%;
+    --accent-foreground: 210 20% 95%;
+  }
+
+  /* ============================================
+     BASE STYLES
+     ============================================ */
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+    line-height: var(--leading-tight);
+  }
+
+  h1 {
+    font-size: var(--text-4xl);
+  }
+
+  h2 {
+    font-size: var(--text-3xl);
+  }
+
+  h3 {
+    font-size: var(--text-2xl);
+  }
+
+  h4 {
+    font-size: var(--text-xl);
+  }
+
+  /* Focus styles accesibles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* ============================================
+   COMPONENTES REUTILIZABLES
+   ============================================ */
+@layer components {
+  /* === Botones === */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md font-semibold transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95;
+    @apply shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply border-2 border-border bg-transparent hover:bg-muted active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-muted active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-error text-error-foreground hover:bg-error/90 active:scale-95;
+  }
+
+  /* Tamaños de botón */
+  .btn-sm {
+    @apply h-9 px-3 text-sm;
+  }
+
+  .btn-md {
+    @apply h-11 px-4 py-2;
+  }
+
+  .btn-lg {
+    @apply h-14 px-8 text-lg;
+  }
+
+  /* === Cards === */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground;
+  }
+
+  .card-elevated {
+    @apply card shadow-md;
+  }
+
+  .card-elevated-lg {
+    @apply card shadow-lg;
+  }
+
+  /* === Inputs === */
+  .input {
+    @apply flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm;
+    @apply file:border-0 file:bg-transparent file:text-sm file:font-medium;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    transition: var(--transition-fast);
+  }
+
+  .input-error {
+    @apply border-error focus-visible:ring-error;
+  }
+
+  /* === Labels === */
+  .label {
+    @apply text-sm font-semibold text-foreground mb-2 block;
+  }
+
+  /* === Badges/Chips === */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply bg-success/10 text-success border border-success/20;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+
+  .badge-error {
+    @apply bg-error/10 text-error border border-error/20;
+  }
+
+  .badge-info {
+    @apply bg-info/10 text-info border border-info/20;
+  }
+
+  .badge-muted {
+    @apply bg-muted text-muted-foreground border border-border;
+  }
+
+  /* === Skeleton loaders === */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .transition-smooth {
+    transition: var(--transition-base);
+  }
+
+  /* Scrollbar personalizado */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
