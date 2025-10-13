@@ -202,6 +202,84 @@ export default function VerInscriptosAdmin() {
     return needs ? `"${v.replace(/"/g, '""')}"` : v
   }
 
+  async function promoteToAdmin(email: string, nombre: string) {
+    const confirmPromote = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Promover a ${nombre} como administrador? Primero debe tener una cuenta registrada con el email ${email}.`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'Promover a Administrador',
+          `¿Promover a ${nombre} como administrador? Primero debe tener una cuenta registrada con el email ${email}.`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Promover', onPress: () => resolve(true) },
+          ]
+        )
+      })
+    }
+
+    const confirmed = await confirmPromote()
+    if (!confirmed) return
+
+    try {
+      // Buscar el user_id por email en auth.users
+      const { data: users } = await supabase.auth.admin.listUsers()
+      const targetUser = users?.users.find(u => u.email === email)
+      
+      if (!targetUser) {
+        const msg = 'Esta persona debe crear una cuenta primero en /login con este email.'
+        if (typeof window !== 'undefined') {
+          window.alert(msg)
+        } else {
+          Alert.alert('Error', msg)
+        }
+        return
+      }
+
+      // Verificar si ya es admin
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', targetUser.id)
+        .single()
+
+      if (existingRole && existingRole.role === 'admin') {
+        const msg = 'Este usuario ya es administrador'
+        if (typeof window !== 'undefined') {
+          window.alert(msg)
+        } else {
+          Alert.alert('Info', msg)
+        }
+        return
+      }
+
+      // Insertar rol de admin
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .upsert({ user_id: targetUser.id, role: 'admin' })
+
+      if (insertError) {
+        throw insertError
+      }
+
+      const successMsg = '¡Usuario promovido a administrador exitosamente!'
+      if (typeof window !== 'undefined') {
+        window.alert(successMsg)
+      } else {
+        Alert.alert('Éxito', successMsg)
+      }
+    } catch (err: any) {
+      console.error('Error promoting to admin:', err)
+      const errorMsg = err?.message || 'Ocurrió un error al promover al usuario'
+      if (typeof window !== 'undefined') {
+        window.alert(errorMsg)
+      } else {
+        Alert.alert('Error', errorMsg)
+      }
+    }
+  }
+
   async function deleteInscripto(id: string, nombre: string) {
     // Usar window.confirm en web, Alert.alert en mobile
     const confirmDelete = () => {
@@ -374,17 +452,30 @@ export default function VerInscriptosAdmin() {
                       Fecha: {new Date(r.created_at).toLocaleString()}
                     </Text>
                   </View>
-                  <Pressable
-                    onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
-                    style={{
-                      padding: 8,
-                      backgroundColor: colors.error,
-                      borderRadius: 8,
-                      marginLeft: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                    {r.email && (
+                      <Pressable
+                        onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
+                        style={{
+                          padding: 8,
+                          backgroundColor: colors.primary[600],
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Hacer Admin</Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
+                      style={{
+                        padding: 8,
+                        backgroundColor: colors.error,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </Card>
             )
