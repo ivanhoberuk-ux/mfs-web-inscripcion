@@ -20,8 +20,9 @@ function sanitizeNext(raw: unknown): string {
 
 export default function Login() {
   const router = useRouter()
-  const { next } = useLocalSearchParams<{ next?: string }>()
+  const { next, mode } = useLocalSearchParams<{ next?: string; mode?: string }>()
   const dest = sanitizeNext(next)
+  const isSignup = mode === 'signup'
 
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -90,10 +91,50 @@ export default function Login() {
     }
   }
 
+  async function onSignup() {
+    setErr(null)
+    setMsg(null)
+
+    if (!email || !pass) {
+      setErr('Ingresá tu email y contraseña.')
+      return
+    }
+    if (pass.length < 6) {
+      setErr('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
+    setBusy(true)
+    try {
+      const redirectUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/`
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: pass,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      })
+      if (error) {
+        setErr(error.message)
+        return
+      }
+      if (data.user) {
+        setMsg('¡Cuenta creada! Revisá tu email para confirmar tu cuenta.')
+      }
+    } catch (e: any) {
+      setErr(e?.message ?? String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <ScrollView style={s.screen} contentContainerStyle={{ maxWidth: 560, alignSelf: 'center', width: '100%' }}>
-      <Text style={s.title}>Iniciar sesión</Text>
-      <Text style={[s.text, s.mb3]}>Accedé a tu cuenta para gestionar las misiones</Text>
+      <Text style={s.title}>{isSignup ? 'Crear cuenta' : 'Iniciar sesión'}</Text>
+      <Text style={[s.text, s.mb3]}>
+        {isSignup 
+          ? 'Creá tu cuenta con el email que usaste para inscribirte' 
+          : 'Accedé a tu cuenta para gestionar las misiones'}
+      </Text>
 
       {meEmail ? (
         <Card>
@@ -130,11 +171,20 @@ export default function Login() {
 
           <Button 
             variant="primary" 
-            onPress={onLogin} 
+            onPress={isSignup ? onSignup : onLogin} 
             loading={busy}
             style={s.mt2}
           >
-            Ingresar
+            {isSignup ? 'Crear cuenta' : 'Ingresar'}
+          </Button>
+
+          {/* Toggle entre login y signup */}
+          <Button
+            variant="outline"
+            onPress={() => router.push(isSignup ? '/login' : '/login?mode=signup')}
+            style={s.mt2}
+          >
+            {isSignup ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear cuenta'}
           </Button>
 
           {msg && (

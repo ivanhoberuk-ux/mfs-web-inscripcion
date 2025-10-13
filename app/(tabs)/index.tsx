@@ -164,10 +164,36 @@ export default function Home() {
           </Button>
         </View>
       ) : (
-        // Si no hay sesión, ofrecer login rápido
-        <View style={{ width: '100%', marginTop: 4 }}>
+        // Si no hay sesión, ofrecer registro y login
+        <View style={{ width: '100%', marginTop: 8, gap: 16 }}>
+          {/* Card para crear cuenta */}
+          <View
+            style={{
+              backgroundColor: colors.surface.light,
+              borderRadius: 12,
+              padding: 16,
+              gap: 12,
+              ...shadows.sm,
+            }}
+          >
+            <Text style={[s.subtitle, { textAlign: 'center' }]}>
+              ¿Ya te inscribiste?
+            </Text>
+            <Text style={[s.small, { textAlign: 'center', color: colors.text.secondary.light }]}>
+              Crea tu cuenta para acceder a tus documentos y más información
+            </Text>
+            <Button
+              variant="primary"
+              onPress={() => router.push('/login?mode=signup')}
+              style={{ alignSelf: 'stretch' }}
+            >
+              Crear cuenta
+            </Button>
+          </View>
+
+          {/* Botón de login simple */}
           <Button
-            variant="primary"
+            variant="outline"
             onPress={() => router.push('/login')}
             style={{ alignSelf: 'stretch' }}
           >
