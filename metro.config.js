@@ -9,6 +9,7 @@ config.resolver.alias = {
   ...(config.resolver.alias || {}),
   tslib: path.resolve(__dirname, 'node_modules/tslib/tslib.js'),
   '@expo/metro-config/build/async-require': path.resolve(__dirname, 'shims/async-require.js'),
+  '@supabase/node-fetch': path.resolve(__dirname, 'shims/async-require.js'),
 };
 
 // Resolver para manejar extensiones de archivos específicas de web
