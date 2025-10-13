@@ -15,8 +15,8 @@ export default function Home() {
   const router = useRouter()
   const { user, signOut } = useAuth()
 
-  // URL pública del logo en Supabase Storage
-  const LOGO_URL = useMemo(() => publicUrl('logos', 'mfs-logo.png') + `?cb=${Date.now()}`, [])
+  // URL pública del logo en Supabase Storage - sin cache busting para evitar hydration mismatch
+  const LOGO_URL = useMemo(() => publicUrl('logos', 'mfs-logo.png'), [])
   const [loadErr, setLoadErr] = useState(false)
 
   // Rol desde tabla user_roles (RLS permite leer solo la propia fila)
