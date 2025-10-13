@@ -300,7 +300,7 @@ export default function Inscribir() {
           {
             text: 'Ir a Documentos',
             onPress: () => {
-              router.push(`/documentos?code=${id}`)
+              router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
             },
           },
           {
