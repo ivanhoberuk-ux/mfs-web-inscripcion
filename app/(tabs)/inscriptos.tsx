@@ -223,12 +223,25 @@ export default function VerInscriptosAdmin() {
     if (!confirmed) return
 
     try {
-      // Buscar el user_id por email en auth.users
-      const { data: users } = await supabase.auth.admin.listUsers()
-      const targetUser = users?.users.find(u => u.email === email)
-      
-      if (!targetUser) {
-        const msg = 'Esta persona debe crear una cuenta primero en /login con este email.'
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        Alert.alert('Error', 'No hay sesión activa')
+        return
+      }
+
+      const response = await fetch('https://npekpdkywsneylddzzuu.supabase.co/functions/v1/promote-to-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        const msg = result.error || 'No se pudo promover al usuario'
         if (typeof window !== 'undefined') {
           window.alert(msg)
         } else {
@@ -237,33 +250,7 @@ export default function VerInscriptosAdmin() {
         return
       }
 
-      // Verificar si ya es admin
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', targetUser.id)
-        .single()
-
-      if (existingRole && existingRole.role === 'admin') {
-        const msg = 'Este usuario ya es administrador'
-        if (typeof window !== 'undefined') {
-          window.alert(msg)
-        } else {
-          Alert.alert('Info', msg)
-        }
-        return
-      }
-
-      // Insertar rol de admin
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .upsert({ user_id: targetUser.id, role: 'admin' })
-
-      if (insertError) {
-        throw insertError
-      }
-
-      const successMsg = '¡Usuario promovido a administrador exitosamente!'
+      const successMsg = result.message || '¡Usuario promovido a administrador exitosamente!'
       if (typeof window !== 'undefined') {
         window.alert(successMsg)
       } else {
