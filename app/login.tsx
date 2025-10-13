@@ -31,7 +31,7 @@ export default function Login() {
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(({ data, error }) => {
+    supabase.auth.getSession().then(({ data, error }: any) => {
       if (!mounted) return
       if (error) {
         setErr(error.message)
@@ -44,7 +44,7 @@ export default function Login() {
     })
 
     // Suscripción a cambios de auth
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (!mounted) return
       if (session?.user) {
         setMeEmail(session.user.email ?? null)
