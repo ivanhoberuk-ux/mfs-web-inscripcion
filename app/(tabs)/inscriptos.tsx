@@ -1,11 +1,13 @@
 // FILE: app/(tabs)/inscriptos.tsx — SOLO ADMIN — Ver inscriptos + Export CSV (incluye CI)
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native'
-import { s } from '../../src/lib/theme'
+import { s, colors, spacing } from '../../src/lib/theme'
 import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import { shareOrDownload } from '../../src/lib/sharing'
 import { useRouter } from 'expo-router'
+import { Card } from '../../src/components/Card'
+import { Button } from '../../src/components/Button'
 
 type Row = {
   id: string
@@ -236,9 +238,9 @@ export default function VerInscriptosAdmin() {
     <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 24 }}>
       <Text style={s.title}>Inscriptos (solo admin)</Text>
 
-      <View style={s.card}>
+      <Card>
         <Text style={s.label}>Pueblo</Text>
-        <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+        <View style={{ borderWidth: 1, borderColor: colors.neutral[300], borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
           <Picker selectedValue={puebloId} onValueChange={setPuebloId}>
             <Picker.Item label="Todos" value="todos" />
             {pueblos.map((p) => (
@@ -248,14 +250,14 @@ export default function VerInscriptosAdmin() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={() => runSearch(true)}>
-            <Text style={s.buttonText}>Actualizar</Text>
-          </Pressable>
-          <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={exportCSV} disabled={!rows.length}>
-            <Text style={s.buttonText}>Exportar CSV</Text>
-          </Pressable>
+          <Button variant="secondary" onPress={() => runSearch(true)}>
+            Actualizar
+          </Button>
+          <Button variant="secondary" onPress={exportCSV} disabled={!rows.length}>
+            Exportar CSV
+          </Button>
         </View>
-      </View>
+      </Card>
 
       {loading ? (
         <View style={{ marginTop: 12, alignItems: 'center' }}>
@@ -269,13 +271,13 @@ export default function VerInscriptosAdmin() {
             const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
             const st = requiredDocsOk(r)
             return (
-              <View key={r.id} style={[s.card, { marginBottom: 8 }]}>
+              <Card key={r.id} style={{ marginBottom: 8 }}>
                 <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
                 {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
                 <Text style={s.small}>CI: {r.ci || '-'}</Text>
                 <Text style={s.small}>Email: {r.email || '-'}</Text>
                 <Text style={s.small}>Pueblo: {pueblo} · Rol: {r.rol}</Text>
-                <Text style={[s.small, { color: '#666' }]}>
+                <Text style={[s.small, { color: colors.text.tertiary.light }]}>
                   Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -283,10 +285,10 @@ export default function VerInscriptosAdmin() {
                   <Chip ok={st.okFirma} label="Firma" />
                   <Chip ok={st.okRequeridos} label="Completos" />
                 </View>
-                <Text style={[s.small, { color: '#666', marginTop: 6 }]}>
+                <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
                   Fecha: {new Date(r.created_at).toLocaleString()}
                 </Text>
-              </View>
+              </Card>
             )
           })}
           {hasMore && (
@@ -311,10 +313,10 @@ function Chip({ ok, label }: { ok: boolean; label: string }) {
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 999,
-        backgroundColor: ok ? '#28a745' : '#ddd',
+        backgroundColor: ok ? colors.success : colors.neutral[300],
       }}
     >
-      <Text style={{ color: ok ? '#fff' : '#333', fontWeight: '700', fontSize: 12 }}>{label}</Text>
+      <Text style={{ color: ok ? '#fff' : colors.text.primary.light, fontWeight: '700', fontSize: 12 }}>{label}</Text>
     </View>
   )
 }

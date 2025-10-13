@@ -8,9 +8,11 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native'
-import { s } from '../../src/lib/theme'
+import { s, colors, spacing } from '../../src/lib/theme'
 import { fetchOcupacion, type Ocupacion } from '../../src/lib/api'
 import { useRouter } from 'expo-router'
+import { Button } from '../../src/components/Button'
+import { Card } from '../../src/components/Card'
 
 export default function Pueblos() {
   const router = useRouter()
@@ -47,7 +49,7 @@ export default function Pueblos() {
 
   return (
     <ScrollView
-      style={[s.screen, { backgroundColor: '#f9fafb' }]}
+      style={[s.screen, { backgroundColor: colors.background.light }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       contentContainerStyle={{ paddingBottom: 24 }}
     >
@@ -60,14 +62,14 @@ export default function Pueblos() {
           marginBottom: 10,
         }}
       >
-        <Text style={[s.title, { color: '#0f172a' }]}>Pueblos</Text>
-        <Pressable onPress={load} style={[s.button, { paddingVertical: 8 }]}>
-          <Text style={s.buttonText}>Actualizar</Text>
-        </Pressable>
+        <Text style={s.title}>Pueblos</Text>
+        <Button variant="secondary" onPress={load}>
+          Actualizar
+        </Button>
       </View>
 
       {!!lastUpdated && (
-        <Text style={[s.small, { color: '#64748b', marginBottom: 10 }]}>
+        <Text style={[s.small, { color: colors.text.tertiary.light, marginBottom: 10 }]}>
           Última actualización: {lastUpdated}
         </Text>
       )}
@@ -76,11 +78,11 @@ export default function Pueblos() {
       {loading ? (
         <View style={{ marginTop: 40, alignItems: 'center' }}>
           <ActivityIndicator size="large" />
-          <Text style={[s.text, { marginTop: 8, color: '#666' }]}>Cargando datos…</Text>
+          <Text style={[s.text, { marginTop: 8, color: colors.text.tertiary.light }]}>Cargando datos…</Text>
         </View>
       ) : items.length === 0 ? (
         <View style={{ alignItems: 'center', marginTop: 40 }}>
-          <Text style={[s.text, { color: '#999' }]}>No hay pueblos registrados.</Text>
+          <Text style={[s.text, { color: colors.text.tertiary.light }]}>No hay pueblos registrados.</Text>
         </View>
       ) : (
         items.map((p) => {
@@ -93,25 +95,17 @@ export default function Pueblos() {
           const inactivo = !p.activo
 
           // color de progreso según disponibilidad
-          let barColor = '#16a34a' // verde
-          if (completo) barColor = '#dc2626' // rojo
-          else if (pct >= 80) barColor = '#f59e0b' // amarillo
+          let barColor = colors.success
+          if (completo) barColor = colors.error
+          else if (pct >= 80) barColor = colors.warning
 
           return (
-            <View
+            <Card
               key={p.id}
-              style={[
-                s.card,
-                {
-                  marginBottom: 14,
-                  backgroundColor: '#ffffff',
-                  shadowColor: '#000',
-                  shadowOpacity: 0.06,
-                  shadowRadius: 5,
-                  elevation: 2,
-                  opacity: inactivo ? 0.6 : 1,
-                },
-              ]}
+              style={{
+                marginBottom: 14,
+                opacity: inactivo ? 0.6 : 1,
+              }}
             >
               {/* Cabecera del pueblo */}
               <View
@@ -124,14 +118,14 @@ export default function Pueblos() {
                 <Text
                   style={[
                     s.text,
-                    { fontWeight: '700', fontSize: 18, flex: 1, color: '#111827' },
+                    { fontWeight: '700', fontSize: 18, flex: 1 },
                   ]}
                 >
                   {p.nombre}
                 </Text>
 
-                {inactivo && <Badge label="INACTIVO" color="#6b7280" />}
-                {completo && <Badge label="COMPLETO" color="#dc2626" />}
+                {inactivo && <Badge label="INACTIVO" color={colors.neutral[500]} />}
+                {completo && <Badge label="COMPLETO" color={colors.error} />}
               </View>
 
               {/* Métricas */}
@@ -154,7 +148,7 @@ export default function Pueblos() {
                   style={{
                     height: 10,
                     borderRadius: 6,
-                    backgroundColor: '#e5e7eb',
+                    backgroundColor: colors.neutral[200],
                     overflow: 'hidden',
                   }}
                 >
@@ -163,53 +157,47 @@ export default function Pueblos() {
                       width: `${pct}%`,
                       height: '100%',
                       backgroundColor: barColor,
-                      transition: 'width 0.3s ease',
                     }}
                   />
                 </View>
-                <Text style={[s.small, { color: '#64748b', marginTop: 4 }]}>
+                <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
                   {pct}% ocupado
                 </Text>
               </View>
 
               {/* Acciones */}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-                <Pressable
-                  style={[s.button, { flex: 1, paddingVertical: 10 }]}
+                <Button
+                  variant="primary"
+                  style={{ flex: 1 }}
                   onPress={() =>
                     router.push({ pathname: '/inscribir', params: { p: p.id } })
                   }
                 >
-                  <Text style={s.buttonText}>Inscribir</Text>
-                </Pressable>
+                  Inscribir
+                </Button>
 
-                <Pressable
-                  style={[
-                    s.button,
-                    {
-                      flex: 1,
-                      paddingVertical: 10,
-                      backgroundColor: '#475569',
-                    },
-                  ]}
+                <Button
+                  variant="secondary"
+                  style={{ flex: 1 }}
                   onPress={() =>
                     router.push({
                       pathname: '/pueblos/[id]',
-                      params: { id: p.id, hideCi: '1' }, // enviamos flag para ocultar CI
+                      params: { id: p.id, hideCi: '1' },
                     })
                   }
                 >
-                  <Text style={s.buttonText}>Ver inscriptos</Text>
-                </Pressable>
+                  Ver inscriptos
+                </Button>
               </View>
 
               {/* Nota si está completo */}
               {completo && (
-                <Text style={[s.small, { color: '#dc2626', marginTop: 10 }]}>
+                <Text style={[s.small, { color: colors.error, marginTop: 10 }]}>
                   Este pueblo ya no tiene lugares disponibles.
                 </Text>
               )}
-            </View>
+            </Card>
           )
         })
       )}
@@ -225,12 +213,12 @@ function Stat({ label, value }: { label: string; value: string }) {
       style={{
         paddingVertical: 6,
         paddingHorizontal: 12,
-        backgroundColor: '#f1f5f9',
+        backgroundColor: colors.neutral[100],
         borderRadius: 10,
       }}
     >
-      <Text style={[s.small, { color: '#64748b' }]}>{label}</Text>
-      <Text style={[s.text, { fontWeight: '700', color: '#0f172a' }]}>{value}</Text>
+      <Text style={[s.small, { color: colors.text.tertiary.light }]}>{label}</Text>
+      <Text style={[s.text, { fontWeight: '700' }]}>{value}</Text>
     </View>
   )
 }

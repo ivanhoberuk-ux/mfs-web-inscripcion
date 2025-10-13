@@ -2,8 +2,10 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { View, Text, Pressable, Alert, Image, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { s } from '../../src/lib/theme'
+import { s, colors, spacing } from '../../src/lib/theme'
 import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad'
+import { Button } from '../../src/components/Button'
+import { Card } from '../../src/components/Card'
 import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf'
 // Si tenés un generador específico para menores, podés habilitarlo:
 // import { generarPermisoPDF } from '../../src/lib/pdf'
@@ -158,7 +160,7 @@ export default function Firma() {
     return (
       <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator />
-        <Text style={[s.small, { marginTop: 8, color: '#666' }]}>Cargando…</Text>
+        <Text style={[s.small, { marginTop: 8, color: colors.text.tertiary.light }]}>Cargando…</Text>
       </View>
     )
   }
@@ -176,47 +178,51 @@ export default function Firma() {
       <Text style={s.title}>Firma</Text>
 
       {/* Resumen del inscrito (sin mostrar CI aquí para privacidad visual) */}
-      <View style={s.card}>
+      <Card>
         <Text style={[s.text, { fontWeight: '700' }]}>
           {registro.nombres} {registro.apellidos}
         </Text>
-        <Text style={[s.small, { color: '#666' }]}>
+        <Text style={[s.small, { color: colors.text.tertiary.light }]}>
           Pueblo: {pueblo?.nombre || registro.pueblo_id} · Rol: {registro.rol}
         </Text>
-        <Text style={[s.small, { color: '#666' }]}>
+        <Text style={[s.small, { color: colors.text.tertiary.light }]}>
           Edad: {age == null ? '—' : age} {age == null ? '' : isAdult ? '(Adulto)' : '(Menor)'}
         </Text>
-        <View style={{ marginTop: 6, padding: 8, borderRadius: 8, backgroundColor: '#f1f5f9' }}>
+        <View style={{ marginTop: 6, padding: 8, borderRadius: 8, backgroundColor: colors.neutral[100] }}>
           <Text style={[s.small, { fontWeight: '700', marginBottom: 4 }]}>Documento requerido</Text>
           <Text style={s.small}>{docLabel}</Text>
         </View>
-      </View>
+      </Card>
 
       {/* Pad de firma */}
       <SignaturePad ref={padRef} height={280} />
 
       {/* Acciones del pad */}
       <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Pressable style={s.button} onPress={tomarFirma}>
-          <Text style={s.buttonText}>Usar firma</Text>
-        </Pressable>
-        <Pressable style={[s.button, s.danger]} onPress={() => { padRef.current?.clear(); setSig(null) }}>
-          <Text style={s.buttonText}>Borrar</Text>
-        </Pressable>
+        <Button variant="primary" style={{ flex: 1 }} onPress={tomarFirma}>
+          Usar firma
+        </Button>
+        <Button variant="danger" style={{ flex: 1 }} onPress={() => { padRef.current?.clear(); setSig(null) }}>
+          Borrar
+        </Button>
       </View>
 
       {/* Vista previa de la firma capturada */}
       {sig && (
-        <View style={[s.card, { alignItems: 'center' }]}>
-          <Text style={[s.small, { marginBottom: 6, color: '#666' }]}>Vista previa</Text>
+        <Card style={{ alignItems: 'center' }}>
+          <Text style={[s.small, { marginBottom: 6, color: colors.text.tertiary.light }]}>Vista previa</Text>
           <Image source={{ uri: sig }} style={{ width: '100%', height: 140, resizeMode: 'contain' }} />
-        </View>
+        </Card>
       )}
 
       {/* Generar y subir PDF */}
-      <Pressable style={[s.button, { opacity: saving ? 0.7 : 1 }]} onPress={guardarPDF} disabled={saving}>
-        <Text style={s.buttonText}>{saving ? 'Generando…' : `Generar PDF (${isAdult ? 'Aceptación' : 'Permiso'})`}</Text>
-      </Pressable>
+      <Button 
+        variant="primary" 
+        onPress={guardarPDF} 
+        loading={saving}
+      >
+        {`Generar PDF (${isAdult ? 'Aceptación' : 'Permiso'})`}
+      </Button>
     </View>
   )
 }

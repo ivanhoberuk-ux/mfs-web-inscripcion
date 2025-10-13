@@ -10,14 +10,16 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native'
-import { s } from '../../src/lib/theme'
+import { s, colors, spacing } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl } from '../../src/lib/api'
 import * as Clipboard from 'expo-clipboard'
+import { Button } from '../../src/components/Button'
+import { Card } from '../../src/components/Card'
 
 type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean }
 type Errs = Record<string, string | null>
 
-const inputErrorStyle = { borderColor: '#d94646', borderWidth: 1 }
+const inputErrorStyle = { borderColor: colors.error, borderWidth: 1 }
 
 export default function Inscribir() {
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
@@ -77,7 +79,7 @@ export default function Inscribir() {
   function Label({ children }: { children: React.ReactNode }) {
     return (
       <Text style={s.label}>
-        {children} <Text style={{ color: '#d94646' }}>*</Text>
+        {children} <Text style={{ color: colors.error }}>*</Text>
       </Text>
     )
   }
@@ -95,7 +97,7 @@ export default function Inscribir() {
             onPress={() => onChange(false)}
             style={[
               s.button,
-              { paddingVertical: 8, backgroundColor: value === false ? '#0a7ea4' : '#ccc' },
+              { paddingVertical: 8, backgroundColor: value === false ? colors.primary[500] : colors.neutral[300] },
             ]}
           >
             <Text style={[s.buttonText, { color: 'white' }]}>{labels[0]}</Text>
@@ -104,13 +106,13 @@ export default function Inscribir() {
             onPress={() => onChange(true)}
             style={[
               s.button,
-              { paddingVertical: 8, backgroundColor: value === true ? '#0a7ea4' : '#ccc' },
+              { paddingVertical: 8, backgroundColor: value === true ? colors.primary[500] : colors.neutral[300] },
             ]}
           >
             <Text style={[s.buttonText, { color: 'white' }]}>{labels[1]}</Text>
           </Pressable>
         </View>
-        {!!err && <Text style={{ color: '#d94646', marginTop: 4, fontSize: 12 }}>{err}</Text>}
+        {!!err && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{err}</Text>}
       </View>
     )
   }
@@ -122,7 +124,7 @@ export default function Inscribir() {
           onPress={() => {
             setRol('Misionero')
           }}
-          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Misionero' ? '#0a7ea4' : '#ccc' }]}
+          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Misionero' ? colors.primary[500] : colors.neutral[300] }]}
         >
           <Text style={[s.buttonText, { color: 'white' }]}>Misionero</Text>
         </Pressable>
@@ -131,7 +133,7 @@ export default function Inscribir() {
             setRol('Tio')
             setEsJefe(false)
           }}
-          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Tio' ? '#0a7ea4' : '#ccc' }]}
+          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Tio' ? colors.primary[500] : colors.neutral[300] }]}
         >
           <Text style={[s.buttonText, { color: 'white' }]}>Tío</Text>
         </Pressable>
@@ -330,7 +332,7 @@ export default function Inscribir() {
       <Text style={s.title}>Inscripción</Text>
 
       {/* Pueblo */}
-      <View style={s.card}>
+      <Card>
         <Label>Pueblo (Elegí uno)</Label>
         {loading ? (
           <ActivityIndicator />
@@ -346,20 +348,20 @@ export default function Inscribir() {
                   }}
                   style={[
                     s.button,
-                    { paddingVertical: 8, backgroundColor: puebloId === p.id ? '#0a7ea4' : '#ccc' },
+                    { paddingVertical: 8, backgroundColor: puebloId === p.id ? colors.primary[500] : colors.neutral[300] },
                   ]}
                 >
                   <Text style={[s.buttonText, { color: 'white' }]}>{p.nombre}</Text>
                 </Pressable>
               ))}
             </View>
-            {!!errs.puebloId && <Text style={{ color: '#d94646', marginTop: 4, fontSize: 12 }}>{errs.puebloId}</Text>}
+            {!!errs.puebloId && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{errs.puebloId}</Text>}
           </>
         )}
-      </View>
+      </Card>
 
       {/* Datos personales */}
-      <View style={s.card}>
+      <Card>
         <Label>Nombres</Label>
         <TextInput
           style={[s.input, errs.nombres && inputErrorStyle]}
@@ -401,11 +403,11 @@ export default function Inscribir() {
           autoCapitalize="none"
           maxLength={10}
         />
-        {!!errs.nacimiento && <Text style={{ color: '#d94646', marginTop: 4, fontSize: 12 }}>{errs.nacimiento}</Text>}
+        {!!errs.nacimiento && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{errs.nacimiento}</Text>}
 
         {/* Info de edad para el usuario */}
         {computedAge !== null && (
-          <Text style={[s.small, { color: '#555', marginTop: 4 }]}>
+          <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
             Edad: {computedAge} {computedAge >= 18 ? '(Mayor de edad)' : '(Menor de edad)'}
           </Text>
         )}
@@ -443,10 +445,10 @@ export default function Inscribir() {
             if (t) setErrs((e) => ({ ...e, direccion: null }))
           }}
         />
-      </View>
+      </Card>
 
       {/* Contacto de emergencia */}
-      <View style={s.card}>
+      <Card>
         <Text style={s.text}>(Emergencia)</Text>
         <Label>Nombre</Label>
         <TextInput
@@ -467,16 +469,16 @@ export default function Inscribir() {
           }}
           keyboardType="phone-pad"
         />
-      </View>
+      </Card>
 
       {/* Rol */}
-      <View style={s.card}>
+      <Card>
         <Label>Tipo de misionero</Label>
         <SegRol />
-        <Text style={[s.small, { marginTop: 6, color: '#555' }]}>
+        <Text style={[s.small, { marginTop: 6, color: colors.text.tertiary.light }]}>
           Si elegís <Text style={{ fontWeight: '700' }}>Tío</Text>, no necesitás completar datos de Padres/Tutores.
         </Text>
-        <Text style={[s.small, { color: '#555' }]}>
+        <Text style={[s.small, { color: colors.text.tertiary.light }]}>
           Si sos <Text style={{ fontWeight: '700' }}>Misionero</Text> y **mayor de edad**, tampoco se solicitarán datos de Padres/Tutores.
         </Text>
         {rol === 'Misionero' && (
@@ -485,7 +487,7 @@ export default function Inscribir() {
             <SegToggle value={esJefe} onChange={setEsJefe} labels={['No', 'Sí']} />
           </View>
         )}
-      </View>
+      </Card>
 
       {/* Tratamiento / Medicación */}
       <View style={s.card}>

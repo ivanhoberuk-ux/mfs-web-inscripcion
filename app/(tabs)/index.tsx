@@ -1,12 +1,13 @@
 // FILE: app/(tabs)/index.tsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { ScrollView, View, Image, Text, Pressable, ActivityIndicator } from 'react-native'
-import { s } from '../../src/lib/theme'
+import { s, colors, spacing, shadows } from '../../src/lib/theme'
 import { publicUrl } from '../../src/lib/api'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../src/context/AuthProvider'
 import { supabase } from '../../src/lib/supabase'
+import { Button } from '../../src/components/Button'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
@@ -77,13 +78,10 @@ export default function Home() {
           height: 240,
           borderRadius: 20,
           overflow: 'hidden',
-          backgroundColor: '#fff',
+          backgroundColor: colors.surface.light,
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowRadius: 10,
-          elevation: 3,
+          ...shadows.md,
         }}
       >
         {!loadErr ? (
@@ -94,7 +92,7 @@ export default function Home() {
             onError={() => setLoadErr(true)}
           />
         ) : (
-          <Text style={[s.small, { color: '#666', padding: 12, textAlign: 'center' }]}>
+          <Text style={[s.small, { color: colors.text.tertiary.light, padding: 12, textAlign: 'center' }]}>
             No se pudo cargar el logo
           </Text>
         )}
@@ -157,40 +155,24 @@ export default function Home() {
             {role ? <Text>{`  ·  Rol: ${role}`}</Text> : null}
           </Text>
 
-          <Pressable
+          <Button
+            variant="danger"
             onPress={onLogout}
-            style={[
-              s.button,
-              {
-                backgroundColor: '#d94646',
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                alignSelf: 'stretch',
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar sesión"
+            style={{ alignSelf: 'stretch' }}
           >
-            <Text style={s.buttonText}>Cerrar sesión</Text>
-          </Pressable>
+            Cerrar sesión
+          </Button>
         </View>
       ) : (
         // Si no hay sesión, ofrecer login rápido
         <View style={{ width: '100%', marginTop: 4 }}>
-          <Pressable
+          <Button
+            variant="primary"
             onPress={() => router.push('/login')}
-            style={[
-              s.button,
-              {
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                alignSelf: 'stretch',
-                backgroundColor: '#0a7ea4',
-              },
-            ]}
+            style={{ alignSelf: 'stretch' }}
           >
-            <Text style={s.buttonText}>Iniciar sesión</Text>
-          </Pressable>
+            Iniciar sesión
+          </Button>
         </View>
       )}
     </ScrollView>
@@ -208,7 +190,7 @@ function QuickButton({ icon, label, onPress }: QuickProps) {
           minWidth: 160,
           flexGrow: 1,
           maxWidth: 360,
-          backgroundColor: '#0a7ea4',
+          backgroundColor: colors.primary[500],
           borderRadius: 12,
           paddingVertical: 14,
           paddingHorizontal: 16,
@@ -216,17 +198,14 @@ function QuickButton({ icon, label, onPress }: QuickProps) {
           justifyContent: 'center',
           gap: 10,
           opacity: pressed ? 0.9 : 1,
-          shadowColor: '#000',
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
-          elevation: 2,
+          ...shadows.sm,
         },
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Ionicons name={icon} size={22} color="#fff" />
-      <Text style={{ color: '#fff', fontWeight: '700' }}>{label}</Text>
+      <Ionicons name={icon} size={22} color={colors.surface.light} />
+      <Text style={{ color: colors.surface.light, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   )
 }
@@ -240,7 +219,7 @@ function SkeletonButton() {
         maxWidth: 360,
         height: 52,
         borderRadius: 12,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: colors.neutral[200],
       }}
     />
   )
