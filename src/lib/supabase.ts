@@ -1,14 +1,3 @@
-// Archivo unificado de Supabase - detecta plataforma automáticamente
-import { Platform } from 'react-native';
-
-let supabase: any;
-
-if (Platform.OS === 'web') {
-  // En web, importa la versión web
-  supabase = require('./supabase.web').supabase;
-} else {
-  // En iOS/Android, importa la versión nativa
-  supabase = require('./supabase.native').supabase;
-}
-
-export { supabase };
+// Archivo unificado de Supabase - versión web
+// Como el proyecto está configurado solo para web, usamos directamente la versión web
+export { supabase } from './supabase.web';
