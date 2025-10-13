@@ -15,9 +15,79 @@ function useIsAdmin(user: any): boolean {
 }
 
 export default function TabLayout() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const isLoggedIn = !!user;
   const isAdmin = useIsAdmin(user);
+
+  // Evitar hidratación incorrecta: mientras carga, no mostrar tabs condicionales
+  if (loading) {
+    return (
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: '#0a7ea4',
+          tabBarHideOnKeyboard: true,
+          tabBarLabelStyle: { fontSize: 12 },
+          tabBarStyle: {
+            paddingTop: 6,
+            paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+            backgroundColor: '#fff',
+            borderTopColor: '#eee',
+            borderTopWidth: 0.5,
+          },
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Inicio',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home-sharp" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="inscribir"
+          options={{
+            title: 'Inscribirme',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="add-circle" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="pueblos"
+          options={{
+            title: 'Pueblos',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="navigate-circle" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="buscador"
+          options={{
+            title: 'Buscador',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="search-circle" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="documentos"
+          options={{
+            title: 'Documentos',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="reader" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen name="inscriptos" options={{ href: null }} />
+        <Tabs.Screen name="admin" options={{ href: null }} />
+        <Tabs.Screen name="firma" options={{ href: null }} />
+      </Tabs>
+    );
+  }
 
   return (
     <Tabs
