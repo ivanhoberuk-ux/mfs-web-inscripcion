@@ -16,11 +16,9 @@ export type Datos = {
   adultoResponsable?: string;
 };
 
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+
 export async function generarAutorizacionPDF(d: Datos, firmaDataUrl?: string): Promise<string> {
-  // 👇 Import dinámico DENTRO de la función (evita top-level await)
-  // @ts-ignore - No hay tipos para pdf-lib/dist/pdf-lib.js
-  const PDFLib: any = await import('pdf-lib/dist/pdf-lib.js');
-  const { PDFDocument, StandardFonts, rgb } = PDFLib;
 
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]); // A4
@@ -88,7 +86,7 @@ export async function generarAutorizacionPDF(d: Datos, firmaDataUrl?: string): P
 
   // Guardar y devolver URL de blob
   const bytes = await pdfDoc.save();
-  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const blob = new Blob([bytes as any], { type: 'application/pdf' });
   return URL.createObjectURL(blob);
 }
 
