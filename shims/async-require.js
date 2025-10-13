@@ -1,5 +1,5 @@
-// Shim para async-require que Supabase intenta importar dinámicamente
-module.exports = function asyncRequire(moduleName) {
-  // Para web, simplemente hacer require síncrono
-  return Promise.resolve(require(moduleName));
+// Shim para async-require y node-fetch que Supabase intenta importar dinámicamente
+// Devuelve fetch nativo en web
+module.exports = {
+  default: globalThis.fetch || fetch
 };

@@ -12,14 +12,30 @@ config.resolver.extraNodeModules = {
   'tslib': path.resolve(__dirname, 'node_modules/tslib/tslib.js'),
 };
 
-// Agregar resolveRequest como fallback
+// Bloquear imports dinámicos problemáticos
+config.resolver.blockList = [
+  ...(config.resolver.blockList || []),
+  // Bloquear el async-require original que causa problemas
+  /node_modules\/@expo\/metro-config\/build\/async-require\.js$/,
+];
+
+// Resolver manualmente los imports problemáticos
+const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === '@expo/metro-config/build/async-require' || 
+  // Interceptar imports de async-require y node-fetch
+  if (moduleName.includes('@expo/metro-config/build/async-require') || 
+      moduleName.includes('@supabase/node-fetch') ||
+      moduleName === '@expo/metro-config/build/async-require' ||
       moduleName === '@supabase/node-fetch') {
     return {
       filePath: path.resolve(__dirname, 'shims/async-require.js'),
       type: 'sourceFile',
     };
+  }
+  
+  // Usar el resolver original para todo lo demás
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
   }
   return context.resolveRequest(context, moduleName, platform);
 };
@@ -43,10 +59,5 @@ config.transformer = {
     },
   }),
 };
-
-// Blacklist para módulos problemáticos
-config.resolver.blockList = [
-  ...((config.resolver.blockList) || []),
-];
 
 module.exports = config;
