@@ -293,27 +293,32 @@ export default function Inscribir() {
         acepta_terminos: acepta,
       })
 
+      // Copiar código al portapapeles
+      try {
+        await Clipboard.setStringAsync(String(id))
+      } catch {}
+
+      // Mostrar mensaje y redirigir
       Alert.alert(
         '¡Inscripción confirmada!',
-        `Tu código: ${id}\n\nAhora cargá tus documentos necesarios.`,
+        `Tu código: ${id}\n\nAhora te llevamos a cargar tus documentos.`,
         [
           {
-            text: 'Ir a Documentos',
+            text: 'OK',
             onPress: () => {
               router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
             },
           },
-          {
-            text: 'Copiar código',
-            onPress: async () => {
-              try {
-                await Clipboard.setStringAsync(String(id))
-                Alert.alert('Copiado', 'Podés ir a Documentos cuando quieras.')
-              } catch {}
-            },
-          },
-        ]
+        ],
+        { onDismiss: () => {
+          router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+        }}
       )
+      
+      // Redirigir automáticamente después de 1 segundo como fallback
+      setTimeout(() => {
+        router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+      }, 1000)
 
       // Reset
       setErrs({})

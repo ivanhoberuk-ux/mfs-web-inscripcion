@@ -189,27 +189,44 @@ export default function VerInscriptosAdmin() {
   }
 
   async function deleteInscripto(id: string, nombre: string) {
-    Alert.alert(
-      'Confirmar eliminación',
-      `¿Estás seguro que querés eliminar a ${nombre}? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase.from('registros').delete().eq('id', id)
-              if (error) throw error
-              Alert.alert('Eliminado', 'El inscripto fue eliminado correctamente.')
-              runSearch(true) // Recargar lista
-            } catch (e: any) {
-              Alert.alert('Error', e?.message ?? String(e))
-            }
-          },
-        },
-      ]
-    )
+    // Usar window.confirm en web, Alert.alert en mobile
+    const confirmDelete = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Estás seguro que querés eliminar a ${nombre}? Esta acción no se puede deshacer.`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'Confirmar eliminación',
+          `¿Estás seguro que querés eliminar a ${nombre}? Esta acción no se puede deshacer.`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            {
+              text: 'Eliminar',
+              style: 'destructive',
+              onPress: () => resolve(true),
+            },
+          ]
+        )
+      })
+    }
+
+    const confirmed = await confirmDelete()
+    if (!confirmed) return
+
+    try {
+      const { error } = await supabase.from('registros').delete().eq('id', id)
+      if (error) throw error
+      
+      if (typeof window !== 'undefined') {
+        window.alert('El inscripto fue eliminado correctamente.')
+      } else {
+        Alert.alert('Eliminado', 'El inscripto fue eliminado correctamente.')
+      }
+      
+      runSearch(true) // Recargar lista
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    }
   }
 
   async function exportCSV() {
