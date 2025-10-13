@@ -125,4 +125,8 @@ Iván Hoberuk
 
 Proyecto sin fines de lucro con propósito apostólico y comunitario.
 © 2025 Misiones Familiares Schoenstattianas del Paraguay.
+<<<<<<< HEAD
 Todos los derechos reservados.
+=======
+Todos los derechos reservados.
+>>>>>>> 10b71a3 (WIP: cambios locales antes de rebase)
