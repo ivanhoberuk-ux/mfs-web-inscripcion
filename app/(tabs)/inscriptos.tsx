@@ -24,10 +24,17 @@ type Row = {
   autorizacion_url: string | null // (Aceptación adultos)
   ficha_medica_url: string | null // (Permiso menores)
   firma_url: string | null
+  user_roles?: { role: string }[]
+  profile_pueblo_id?: string | null
 }
 
 type Pueblo = { id: string; nombre: string }
 type UserRoleRow = { role: 'admin' | 'user' }
+type UserWithRoles = {
+  user_id: string
+  roles: string[]
+  pueblo_id: string | null
+}
 
 const PAGE = 200
 
@@ -87,6 +94,7 @@ export default function VerInscriptosAdmin() {
   const [hasMore, setHasMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const offRef = useRef(0)
+  const [userRolesMap, setUserRolesMap] = useState<Record<string, UserWithRoles>>({})
 
   const pueblosMap = useMemo(() => {
     const m: Record<string, string> = {}
@@ -181,12 +189,53 @@ export default function VerInscriptosAdmin() {
       if (reset) setRows(page)
       else setRows((prev) => [...prev, ...page])
 
+      // Cargar roles de usuarios para cada email
+      await loadUserRoles(page)
+
       const got = page.length
       setHasMore(got === PAGE)
       if (got > 0) offRef.current += got
     } finally {
       setLoading(false)
       setMoreLoading(false)
+    }
+  }
+
+  async function loadUserRoles(registros: Row[]) {
+    try {
+      // Obtener emails únicos
+      const emails = [...new Set(registros.map(r => r.email).filter(Boolean))] as string[]
+      if (emails.length === 0) return
+
+      // Buscar usuarios por email en auth.users via profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, pueblo_id')
+        .in('email', emails)
+      
+      if (!profiles || profiles.length === 0) return
+
+      // Obtener roles de cada usuario
+      const rolesMap: Record<string, UserWithRoles> = {}
+      
+      await Promise.all(
+        profiles.map(async (profile) => {
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.id)
+          
+          rolesMap[profile.email] = {
+            user_id: profile.id,
+            roles: roles?.map(r => r.role) || [],
+            pueblo_id: profile.pueblo_id
+          }
+        })
+      )
+      
+      setUserRolesMap(prev => ({ ...prev, ...rolesMap }))
+    } catch (err) {
+      console.error('Error loading user roles:', err)
     }
   }
 
@@ -264,6 +313,116 @@ export default function VerInscriptosAdmin() {
       } else {
         Alert.alert('Error', errorMsg)
       }
+    }
+  }
+
+  async function toggleSuperAdmin(email: string, nombre: string) {
+    const userInfo = userRolesMap[email]
+    if (!userInfo) {
+      Alert.alert('Error', 'Usuario no encontrado en el sistema')
+      return
+    }
+
+    const isSuperAdmin = userInfo.roles.includes('admin')
+    const action = isSuperAdmin ? 'quitar' : 'asignar'
+    
+    const confirmAction = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Confirmar ${action} rol de Super Administrador a ${nombre}?`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          `${action === 'asignar' ? 'Asignar' : 'Quitar'} Super Admin`,
+          `¿Confirmar ${action} rol de Super Administrador a ${nombre}?`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Confirmar', onPress: () => resolve(true) },
+          ]
+        )
+      })
+    }
+
+    const confirmed = await confirmAction()
+    if (!confirmed) return
+
+    try {
+      if (isSuperAdmin) {
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userInfo.user_id)
+          .eq('role', 'admin')
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Rol de Super Administrador removido')
+      } else {
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userInfo.user_id, role: 'admin' })
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Rol de Super Administrador asignado')
+      }
+      
+      await runSearch(true)
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    }
+  }
+
+  async function togglePuebloAdmin(email: string, nombre: string, puebloId: string) {
+    const userInfo = userRolesMap[email]
+    if (!userInfo) {
+      Alert.alert('Error', 'Usuario no encontrado en el sistema')
+      return
+    }
+
+    const isPuebloAdmin = userInfo.roles.includes('pueblo_admin')
+    const action = isPuebloAdmin ? 'quitar' : 'asignar'
+    const puebloNombre = pueblosMap[puebloId] || puebloId
+    
+    const confirmAction = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Confirmar ${action} rol de Admin de Pueblo (${puebloNombre}) a ${nombre}?`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          `${action === 'asignar' ? 'Asignar' : 'Quitar'} Admin Pueblo`,
+          `¿Confirmar ${action} rol de Admin de Pueblo (${puebloNombre}) a ${nombre}?`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Confirmar', onPress: () => resolve(true) },
+          ]
+        )
+      })
+    }
+
+    const confirmed = await confirmAction()
+    if (!confirmed) return
+
+    try {
+      if (isPuebloAdmin) {
+        // Remover rol usando la función RPC
+        const { error } = await supabase.rpc('remove_pueblo_admin', {
+          p_user_id: userInfo.user_id
+        })
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Rol de Admin de Pueblo removido')
+      } else {
+        // Asignar rol usando la función RPC
+        const { error } = await supabase.rpc('assign_pueblo_admin', {
+          p_user_id: userInfo.user_id,
+          p_pueblo_id: puebloId
+        })
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Admin de Pueblo asignado correctamente')
+      }
+      
+      await runSearch(true)
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
     }
   }
 
@@ -418,6 +577,11 @@ export default function VerInscriptosAdmin() {
           {filteredRows.map((r) => {
             const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
             const st = requiredDocsOk(r)
+            const userInfo = r.email ? userRolesMap[r.email] : null
+            const isSuperAdmin = userInfo?.roles.includes('admin') || false
+            const isPuebloAdmin = userInfo?.roles.includes('pueblo_admin') || false
+            const adminPuebloNombre = userInfo?.pueblo_id ? pueblosMap[userInfo.pueblo_id] : null
+            
             return (
               <Card key={r.id} style={{ marginBottom: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -427,7 +591,31 @@ export default function VerInscriptosAdmin() {
                     <Text style={s.small}>CI: {r.ci || '-'}</Text>
                     <Text style={s.small}>Email: {r.email || '-'}</Text>
                     <Text style={s.small}>Pueblo: {pueblo} · Rol: {r.rol}</Text>
-                    <Text style={[s.small, { color: colors.text.tertiary.light }]}>
+                    
+                    {/* Mostrar roles administrativos */}
+                    {r.email && userInfo && (
+                      <View style={{ flexDirection: 'row', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                        {isSuperAdmin && (
+                          <View style={{ backgroundColor: '#dc2626', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>SUPER ADMIN</Text>
+                          </View>
+                        )}
+                        {isPuebloAdmin && (
+                          <View style={{ backgroundColor: '#f59e0b', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>
+                              ADMIN: {adminPuebloNombre || 'Sin pueblo'}
+                            </Text>
+                          </View>
+                        )}
+                        {!isSuperAdmin && !isPuebloAdmin && (
+                          <View style={{ backgroundColor: '#9ca3af', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>USUARIO</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    
+                    <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
                       Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
                     </Text>
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -440,7 +628,38 @@ export default function VerInscriptosAdmin() {
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
-                    {r.email && (
+                    {r.email && userInfo && (
+                      <>
+                        <Pressable
+                          onPress={() => toggleSuperAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: isSuperAdmin ? '#dc2626' : '#0a7ea4',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
+                            {isSuperAdmin ? 'Quitar\nSuper Admin' : 'Hacer\nSuper Admin'}
+                          </Text>
+                        </Pressable>
+                        
+                        {!isSuperAdmin && (
+                          <Pressable
+                            onPress={() => togglePuebloAdmin(r.email!, `${r.nombres} ${r.apellidos}`, r.pueblo_id)}
+                            style={{
+                              padding: 8,
+                              backgroundColor: isPuebloAdmin ? '#9ca3af' : '#f59e0b',
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
+                              {isPuebloAdmin ? 'Quitar\nAdmin Pueblo' : 'Hacer\nAdmin Pueblo'}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </>
+                    )}
+                    {r.email && !userInfo && (
                       <Pressable
                         onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
                         style={{
@@ -449,7 +668,7 @@ export default function VerInscriptosAdmin() {
                           borderRadius: 8,
                         }}
                       >
-                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Hacer Admin</Text>
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Crear\nCuenta Admin</Text>
                       </Pressable>
                     )}
                     <Pressable
@@ -460,7 +679,7 @@ export default function VerInscriptosAdmin() {
                         borderRadius: 8,
                       }}
                     >
-                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Eliminar</Text>
+                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Eliminar</Text>
                     </Pressable>
                   </View>
                 </View>
