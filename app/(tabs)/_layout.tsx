@@ -16,11 +16,12 @@ function useIsAdmin(user: any): boolean {
 
 export default function TabLayout() {
   const { user, loading } = useAuth();
+  
+  // Para SSR/hidratación: siempre renderizar estructura consistente
+  // Solo mostrar tabs condicionales después de que loading sea false
+  const showConditionalTabs = !loading;
   const isLoggedIn = !!user;
-  const isAdmin = useIsAdmin(user);
 
-  // Para evitar hydration mismatch, siempre renderizar la misma estructura
-  // y usar href: null para ocultar tabs según el estado
   return (
     <Tabs
       screenOptions={{
@@ -83,34 +84,28 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Inscriptos: visible solo si está logueado y no está cargando */}
+      {/* Inscriptos: solo visible para usuarios logueados */}
       <Tabs.Screen
         name="inscriptos"
-        options={
-          !loading && isLoggedIn
-            ? {
-                title: 'Inscriptos',
-                tabBarIcon: ({ color, size }) => (
-                  <Ionicons name="people-circle" size={size} color={color} />
-                ),
-              }
-            : { href: null }
-        }
+        options={{
+          href: showConditionalTabs && isLoggedIn ? undefined : null,
+          title: 'Inscriptos',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-circle" size={size} color={color} />
+          ),
+        }}
       />
 
-      {/* Admin: visible solo si es admin y no está cargando */}
+      {/* Admin: solo visible para admins */}
       <Tabs.Screen
         name="admin"
-        options={
-          !loading && isAdmin
-            ? {
-                title: 'Admin',
-                tabBarIcon: ({ color, size }) => (
-                  <Ionicons name="shield-checkmark" size={size} color={color} />
-                ),
-              }
-            : { href: null }
-        }
+        options={{
+          href: showConditionalTabs && isLoggedIn ? undefined : null,
+          title: 'Admin',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark" size={size} color={color} />
+          ),
+        }}
       />
 
       {/* Rutas que no deben verse como tab */}

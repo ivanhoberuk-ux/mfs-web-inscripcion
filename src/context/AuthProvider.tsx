@@ -21,10 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
 
   // Solo en cliente (evita tocar window en prerender)
   useEffect(() => {
     let mounted = true;
+    
+    // Marcar como hidratado después del primer render
+    setHydrated(true);
 
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -50,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ user, session, loading, signOut }),
-    [user, session, loading]
+    () => ({ user, session, loading: loading || !hydrated, signOut }),
+    [user, session, loading, hydrated]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
