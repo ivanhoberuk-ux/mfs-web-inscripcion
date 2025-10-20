@@ -28,6 +28,8 @@ export default function Inscribir() {
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [user, setUser] = useState<any>(null)
 
   // Campos base (obligatorios)
   const [puebloId, setPuebloId] = useState('')
@@ -64,7 +66,62 @@ export default function Inscribir() {
   const URL_PROTOCOLO = publicUrl('plantillas', 'protocolo_prevencion.pdf')
   const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf')
 
+  // Verificar autenticación
   useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!mounted) return
+        
+        if (!session?.user) {
+          Alert.alert(
+            'Autenticación requerida',
+            'Debés iniciar sesión para inscribirte a un pueblo.',
+            [
+              {
+                text: 'Crear cuenta',
+                onPress: () => router.push('/login?mode=signup')
+              },
+              {
+                text: 'Iniciar sesión',
+                onPress: () => router.push('/login')
+              }
+            ]
+          )
+          return
+        }
+        
+        setUser(session.user)
+        
+        // Verificar si ya está inscripto
+        const { data: registro } = await supabase
+          .from('registros')
+          .select('id, pueblo_id')
+          .eq('email', session.user.email)
+          .maybeSingle()
+        
+        if (registro) {
+          Alert.alert(
+            'Ya estás inscripto',
+            'Ya tenés una inscripción registrada. Si necesitás actualizar tus datos, contactá con los organizadores.',
+            [{ text: 'OK', onPress: () => router.push('/') }]
+          )
+          return
+        }
+        
+      } catch (e: any) {
+        console.error('Error verificando autenticación:', e)
+      } finally {
+        if (mounted) setCheckingAuth(false)
+      }
+    })()
+    
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
     ;(async () => {
       try {
         setLoading(true)
@@ -76,7 +133,7 @@ export default function Inscribir() {
         setLoading(false)
       }
     })()
-  }, [])
+  }, [user])
 
   // ---------- Helpers UI ----------
   function Label({ children }: { children: React.ReactNode }) {
@@ -302,7 +359,7 @@ export default function Inscribir() {
         apellidos: apellidos.trim(),
         ci: ciNormalizado,
         nacimiento: nacimientoISO, // YYYY-MM-DD al RPC
-        email: normEmail(email),
+        email: user?.email || normEmail(email), // usar email del usuario autenticado
         telefono: normPhone(telefono),
         direccion: direccion.trim(),
         emergencia_nombre: emNombre.trim(),
@@ -323,6 +380,12 @@ export default function Inscribir() {
 
         acepta_terminos: acepta,
       })
+      
+      // Actualizar el pueblo_id en el profile del usuario
+      await supabase
+        .from('profiles')
+        .update({ pueblo_id: puebloId })
+        .eq('id', user.id)
 
       // Copiar código al portapapeles
       try {
@@ -370,9 +433,50 @@ export default function Inscribir() {
     }
   }
 
+  if (checkingAuth) {
+    return (
+      <View style={[s.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" />
+        <Text style={[s.text, { marginTop: 8, color: colors.text.tertiary.light }]}>
+          Verificando autenticación...
+        </Text>
+      </View>
+    )
+  }
+
+  if (!user) {
+    return (
+      <View style={[s.screen, { justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Text style={[s.title, { textAlign: 'center', marginBottom: 16 }]}>
+          Autenticación requerida
+        </Text>
+        <Text style={[s.text, { textAlign: 'center', marginBottom: 24, color: colors.text.secondary.light }]}>
+          Debés iniciar sesión para inscribirte a un pueblo
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Button variant="primary" onPress={() => router.push('/login?mode=signup')} style={{ flex: 1 }}>
+            Crear cuenta
+          </Button>
+          <Button variant="secondary" onPress={() => router.push('/login')} style={{ flex: 1 }}>
+            Iniciar sesión
+          </Button>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={s.title}>Inscripción</Text>
+      
+      <Card style={{ backgroundColor: colors.primary[50], borderLeftWidth: 4, borderLeftColor: colors.primary[500] }}>
+        <Text style={[s.text, { fontWeight: '600' }]}>
+          Usuario autenticado: {user.email}
+        </Text>
+        <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
+          Completá el formulario para inscribirte a un pueblo
+        </Text>
+      </Card>
 
       {/* Pueblo */}
       <Card>

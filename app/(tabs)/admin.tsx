@@ -91,6 +91,12 @@ export default function Admin() {
   const [toggle, setToggle] = useState<Record<string, boolean>>({});
   const [pueblosMap, setPueblosMap] = useState<Record<string, string>>({});
   const [q, setQ] = useState('');
+  
+  // Estado para gestión de roles
+  const [showRolesPanel, setShowRolesPanel] = useState(false);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [searchEmail, setSearchEmail] = useState('');
 
   // ===== Guards / carga de rol =====
   useEffect(() => {
@@ -215,7 +221,106 @@ export default function Admin() {
     });
   };
 
-  // ===== Guardar cambios =====
+  // ===== Gestión de roles =====
+  async function loadUsuarios() {
+    try {
+      setLoadingUsers(true)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, pueblo_id')
+        .order('email')
+      
+      if (profilesError) throw profilesError
+      
+      // Obtener roles de cada usuario
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.id)
+          
+          return {
+            ...profile,
+            roles: roles?.map(r => r.role) || []
+          }
+        })
+      )
+      
+      setUsuarios(usersWithRoles)
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+  
+  async function toggleSuperAdmin(userId: string, currentRoles: string[]) {
+    try {
+      const hasSuperAdmin = currentRoles.includes('admin')
+      
+      if (hasSuperAdmin) {
+        // Remover rol de super admin
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Rol de super administrador removido')
+      } else {
+        // Agregar rol de super admin
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'admin' })
+        
+        if (error) throw error
+        Alert.alert('Éxito', 'Rol de super administrador asignado')
+      }
+      
+      await loadUsuarios()
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    }
+  }
+  
+  async function assignPuebloAdmin(userId: string, puebloId: string, currentRoles: string[]) {
+    try {
+      const hasPuebloAdmin = currentRoles.includes('pueblo_admin')
+      
+      if (hasPuebloAdmin) {
+        // Remover rol
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'pueblo_admin')
+        
+        if (error) throw error
+        
+        // Limpiar pueblo_id del profile
+        await supabase
+          .from('profiles')
+          .update({ pueblo_id: null })
+          .eq('id', userId)
+        
+        Alert.alert('Éxito', 'Rol de administrador de pueblo removido')
+      } else {
+        // Agregar rol y asignar pueblo
+        await supabase.rpc('assign_pueblo_admin', {
+          p_user_id: userId,
+          p_pueblo_id: puebloId
+        })
+        
+        Alert.alert('Éxito', 'Administrador de pueblo asignado')
+      }
+      
+      await loadUsuarios()
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e))
+    }
+  }
   async function onSave(puebloId: string) {
     try {
       const nuevoMax = edit[puebloId];
@@ -382,17 +487,160 @@ export default function Admin() {
         <Text style={[s.text, { marginBottom: 8 }]}>
           Usuario: <Text style={{ fontWeight: '700' }}>{user?.email || '—'}</Text> (admin)
         </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosJSON} disabled={exporting}>
-            <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros JSON'}</Text>
-          </Pressable>
-          <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosCSV} disabled={exporting}>
-            <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros CSV'}</Text>
-          </Pressable>
-          <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
-            <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos CSV'}</Text>
+        
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+          <Pressable 
+            style={[s.button, { flex: 1, backgroundColor: showRolesPanel ? '#0a7ea4' : '#6b7280' }]} 
+            onPress={() => {
+              setShowRolesPanel(!showRolesPanel)
+              if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showRolesPanel ? 'Ver Exportes' : 'Gestionar Roles'}
+            </Text>
           </Pressable>
         </View>
+        
+        {showRolesPanel ? (
+          // Panel de gestión de roles
+          <View style={{ gap: 12 }}>
+            <Text style={[s.subtitle, { marginBottom: 8 }]}>Gestión de Roles de Usuario</Text>
+            
+            <TextInput
+              style={s.input}
+              placeholder="Buscar por email..."
+              value={searchEmail}
+              onChangeText={setSearchEmail}
+            />
+            
+            {loadingUsers ? (
+              <ActivityIndicator />
+            ) : (
+              <ScrollView style={{ maxHeight: 400 }}>
+                {usuarios
+                  .filter(u => u.email.toLowerCase().includes(searchEmail.toLowerCase()))
+                  .map((usuario) => {
+                    const isSuperAdmin = usuario.roles.includes('admin')
+                    const isPuebloAdmin = usuario.roles.includes('pueblo_admin')
+                    const puebloNombre = usuario.pueblo_id ? pueblosMap[usuario.pueblo_id] : null
+                    
+                    return (
+                      <View 
+                        key={usuario.id} 
+                        style={{
+                          padding: 12,
+                          backgroundColor: '#f9fafb',
+                          borderRadius: 8,
+                          marginBottom: 8,
+                          gap: 8
+                        }}
+                      >
+                        <Text style={[s.text, { fontWeight: '600' }]}>{usuario.email}</Text>
+                        
+                        <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
+                          {isSuperAdmin && (
+                            <View style={{ backgroundColor: '#dc2626', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>SUPER ADMIN</Text>
+                            </View>
+                          )}
+                          {isPuebloAdmin && (
+                            <View style={{ backgroundColor: '#f59e0b', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
+                                ADMIN: {puebloNombre || 'Sin pueblo'}
+                              </Text>
+                            </View>
+                          )}
+                          {!isSuperAdmin && !isPuebloAdmin && (
+                            <View style={{ backgroundColor: '#9ca3af', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>USUARIO</Text>
+                            </View>
+                          )}
+                        </View>
+                        
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                          <Pressable
+                            style={[
+                              s.button,
+                              { 
+                                flex: 1, 
+                                paddingVertical: 6,
+                                backgroundColor: isSuperAdmin ? '#dc2626' : '#0a7ea4'
+                              }
+                            ]}
+                            onPress={() => toggleSuperAdmin(usuario.id, usuario.roles)}
+                          >
+                            <Text style={[s.buttonText, { fontSize: 12 }]}>
+                              {isSuperAdmin ? 'Quitar Super Admin' : 'Hacer Super Admin'}
+                            </Text>
+                          </Pressable>
+                          
+                          {!isSuperAdmin && (
+                            <Pressable
+                              style={[
+                                s.button,
+                                { 
+                                  flex: 1,
+                                  paddingVertical: 6,
+                                  backgroundColor: isPuebloAdmin ? '#9ca3af' : '#f59e0b'
+                                }
+                              ]}
+                              onPress={() => {
+                                if (isPuebloAdmin) {
+                                  assignPuebloAdmin(usuario.id, '', usuario.roles)
+                                } else {
+                                  // Mostrar selector de pueblo usando Platform-aware alert
+                                  if (Platform.OS === 'web') {
+                                    const puebloNombre = window.prompt(
+                                      'Ingresá el nombre del pueblo:\n\n' +
+                                      items.map(p => `- ${p.nombre}`).join('\n')
+                                    )
+                                    const pueblo = items.find(p => p.nombre === puebloNombre)
+                                    if (pueblo) {
+                                      assignPuebloAdmin(usuario.id, pueblo.id, usuario.roles)
+                                    }
+                                  } else {
+                                    const buttons = items.map(p => ({
+                                      text: p.nombre,
+                                      onPress: () => assignPuebloAdmin(usuario.id, p.id, usuario.roles)
+                                    }))
+                                    buttons.push({ text: 'Cancelar', onPress: async () => {} })
+                                    
+                                    Alert.alert(
+                                      'Seleccionar Pueblo',
+                                      'Elegí un pueblo para este administrador',
+                                      buttons
+                                    )
+                                  }
+                                }
+                              }}
+                            >
+                              <Text style={[s.buttonText, { fontSize: 12 }]}>
+                                {isPuebloAdmin ? 'Quitar Admin Pueblo' : 'Hacer Admin Pueblo'}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    )
+                  })}
+              </ScrollView>
+            )}
+          </View>
+        ) : (
+          // Panel de exportes original
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosJSON} disabled={exporting}>
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros JSON'}</Text>
+            </Pressable>
+            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosCSV} disabled={exporting}>
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros CSV'}</Text>
+            </Pressable>
+            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos CSV'}</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {/* Header: SOLO porcentaje global + buscador + chips */}
