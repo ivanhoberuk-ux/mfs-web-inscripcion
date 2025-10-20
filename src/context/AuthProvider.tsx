@@ -26,9 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Solo en cliente (evita tocar window en prerender)
   useEffect(() => {
     let mounted = true;
-    
-    // Marcar como hidratado después del primer render
-    setHydrated(true);
 
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -36,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);
       setLoading(false);
+      // Marcar como hidratado después de cargar la sesión
+      setHydrated(true);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event: any, sess: any) => {

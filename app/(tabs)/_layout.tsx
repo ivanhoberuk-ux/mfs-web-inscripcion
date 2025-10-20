@@ -16,11 +16,11 @@ function useIsAdmin(user: any): boolean {
 
 export default function TabLayout() {
   const { user, loading } = useAuth();
+  const isAdmin = useIsAdmin(user);
   
-  // Para SSR/hidratación: siempre renderizar estructura consistente
-  // Solo mostrar tabs condicionales después de que loading sea false
-  const showConditionalTabs = !loading;
-  const isLoggedIn = !!user;
+  // Durante la carga inicial, ocultar tabs condicionales para evitar hydration mismatch
+  const showInscriptos = !loading && !!user;
+  const showAdmin = !loading && isAdmin;
 
   return (
     <Tabs
@@ -88,7 +88,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inscriptos"
         options={{
-          href: showConditionalTabs && isLoggedIn ? undefined : null,
+          href: showInscriptos ? undefined : null,
           title: 'Inscriptos',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-circle" size={size} color={color} />
@@ -100,7 +100,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="admin"
         options={{
-          href: showConditionalTabs && isLoggedIn ? undefined : null,
+          href: showAdmin ? undefined : null,
           title: 'Admin',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="shield-checkmark" size={size} color={color} />
