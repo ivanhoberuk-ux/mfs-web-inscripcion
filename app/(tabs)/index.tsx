@@ -1,8 +1,7 @@
 // FILE: app/(tabs)/index.tsx
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ScrollView, View, Image, Text, Pressable, ActivityIndicator } from 'react-native'
 import { s, colors, spacing, shadows } from '../../src/lib/theme'
-import { publicUrl } from '../../src/lib/api'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../src/context/AuthProvider'
@@ -15,8 +14,8 @@ export default function Home() {
   const router = useRouter()
   const { user, signOut } = useAuth()
 
-  // URL pública del logo en Supabase Storage - sin cache busting para evitar hydration mismatch
-  const LOGO_URL = useMemo(() => publicUrl('logos', 'mfs-logo.png'), [])
+  // URL pública del logo en Supabase Storage - constante para evitar hydration mismatch
+  const LOGO_URL = 'https://npekpdkywsneylddzzuu.supabase.co/storage/v1/object/public/logos/mfs-logo.png'
   const [loadErr, setLoadErr] = useState(false)
 
   // Rol desde tabla user_roles (RLS permite leer solo la propia fila)

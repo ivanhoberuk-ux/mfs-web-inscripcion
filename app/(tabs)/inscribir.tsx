@@ -74,25 +74,28 @@ export default function Inscribir() {
         const { data: { session } } = await supabase.auth.getSession()
         if (!mounted) return
         
+        setUser(session?.user || null)
+        
         if (!session?.user) {
-          Alert.alert(
-            'Autenticación requerida',
-            'Debés iniciar sesión para inscribirte a un pueblo.',
-            [
-              {
-                text: 'Crear cuenta',
-                onPress: () => router.push('/login?mode=signup')
-              },
-              {
-                text: 'Iniciar sesión',
-                onPress: () => router.push('/login')
-              }
-            ]
-          )
+          // No mostrar alert durante la carga inicial para evitar problemas de hidratación
+          setTimeout(() => {
+            Alert.alert(
+              'Autenticación requerida',
+              'Debés iniciar sesión para inscribirte a un pueblo.',
+              [
+                {
+                  text: 'Crear cuenta',
+                  onPress: () => router.push('/login?mode=signup')
+                },
+                {
+                  text: 'Iniciar sesión',
+                  onPress: () => router.push('/login')
+                }
+              ]
+            )
+          }, 100)
           return
         }
-        
-        setUser(session.user)
         
         // Verificar si ya está inscripto
         const { data: registro } = await supabase
@@ -102,11 +105,13 @@ export default function Inscribir() {
           .maybeSingle()
         
         if (registro) {
-          Alert.alert(
-            'Ya estás inscripto',
-            'Ya tenés una inscripción registrada. Si necesitás actualizar tus datos, contactá con los organizadores.',
-            [{ text: 'OK', onPress: () => router.push('/') }]
-          )
+          setTimeout(() => {
+            Alert.alert(
+              'Ya estás inscripto',
+              'Ya tenés una inscripción registrada. Si necesitás actualizar tus datos, contactá con los organizadores.',
+              [{ text: 'OK', onPress: () => router.push('/') }]
+            )
+          }, 100)
           return
         }
         
