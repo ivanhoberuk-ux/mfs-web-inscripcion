@@ -17,6 +17,8 @@ import { supabase } from '../../src/lib/supabase'
 import * as Clipboard from 'expo-clipboard'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
+import { registrationSchema, normalizeEmail, normalizePhone, normalizeCi } from '../../src/lib/validation'
+import { z } from 'zod'
 
 type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean }
 type Errs = Record<string, string | null>
@@ -257,50 +259,73 @@ export default function Inscribir() {
   const computedAge = ageFromDDMMYYYY(nacimiento)
   const isMinor = computedAge !== null ? computedAge < 18 : null
 
-  // --------- Normalizadores rápidos ---------
-  const normEmail = (v: string) => v.trim().toLowerCase()
-  const normPhone = (v: string) => v.replace(/[^\d+]/g, '')
-  const normCi = (v: string) => v.replace(/[^\d]/g, '')
+  // --------- Normalizadores rápidos (using validation lib) ---------
+  const normEmail = normalizeEmail
+  const normPhone = normalizePhone
+  const normCi = normalizeCi
 
   // 🔴 Nueva regla: Padres/Tutores solo si rol=Misionero **y** menor de edad
   const requierePadres = rol === 'Misionero' && isMinor === true
 
-  // ---------- Validaciones ----------
+  // ---------- Validaciones (using zod schema) ----------
   function validate(): boolean {
     const e: Errs = {}
 
-    if (!puebloId) e.puebloId = 'Elegí un pueblo.'
-    if (!nombres.trim()) e.nombres = 'Completá nombres.'
-    if (!apellidos.trim()) e.apellidos = 'Completá apellidos.'
-    if (!ci.trim()) e.ci = 'Completá la cédula.'
-    else if (normCi(ci).length < 5) e.ci = 'Cédula demasiado corta.'
-    if (!nacimiento.trim()) e.nacimiento = 'Completá fecha de nacimiento.'
-    else if (!isValidDateDDMMYYYY(nacimiento.trim())) e.nacimiento = 'Usá formato DD-MM-AAAA.'
-    if (!email.trim()) e.email = 'Completá email.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normEmail(email))) e.email = 'Email inválido'
-    if (!telefono.trim()) e.telefono = 'Completá teléfono.'
-    if (!direccion.trim()) e.direccion = 'Completá dirección.'
-    if (!emNombre.trim()) e.emNombre = 'Completá nombre de emergencia.'
-    if (!emTelefono.trim()) e.emTelefono = 'Completá teléfono de emergencia.'
+    try {
+      // Build data object for validation
+      const formData = {
+        puebloId,
+        nombres,
+        apellidos,
+        ci,
+        nacimiento,
+        email,
+        telefono,
+        direccion,
+        emNombre,
+        emTelefono,
+        rol,
+        esJefe,
+        tratamiento: tratamiento === true,
+        tratamientoDetalle: tratamientoDetalle || undefined,
+        alimento: alimento === true,
+        alimentoDetalle: alimentoDetalle || undefined,
+        padreNombre: padreNombre || undefined,
+        padreTelefono: padreTelefono || undefined,
+        madreNombre: madreNombre || undefined,
+        madreTelefono: madreTelefono || undefined,
+        acepta,
+      };
 
-    if (rol !== 'Misionero' && rol !== 'Tio') e.rol = 'Elegí un rol válido.'
+      // Validate using zod schema
+      registrationSchema.parse(formData);
 
-    if (tratamiento !== true && tratamiento !== false) e.tratamiento = 'Elegí Sí o No.'
-    if (alimento !== true && alimento !== false) e.alimento = 'Elegí Sí o No.'
-    if (tratamiento === true && !tratamientoDetalle.trim())
-      e.tratamientoDetalle = 'Especificá el tratamiento/medicación.'
-    if (alimento === true && !alimentoDetalle.trim())
-      e.alimentoDetalle = 'Especificá la alimentación especial.'
+      // Additional custom validations
+      if (tratamiento !== true && tratamiento !== false) e.tratamiento = 'Elegí Sí o No.'
+      if (alimento !== true && alimento !== false) e.alimento = 'Elegí Sí o No.'
 
-    // Padres/Tutores SOLO si corresponde (misionero menor de edad)
-    if (requierePadres) {
-      if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
-      if (!padreTelefono.trim()) e.padreTelefono = 'Completá teléfono del padre.'
-      if (!madreNombre.trim()) e.madreNombre = 'Completá nombre de la madre.'
-      if (!madreTelefono.trim()) e.madreTelefono = 'Completá teléfono de la madre.'
+      // Date validation
+      if (!isValidDateDDMMYYYY(nacimiento.trim())) {
+        e.nacimiento = 'Usá formato DD-MM-AAAA válido.'
+      }
+
+      // Padres/Tutores validation if required
+      if (requierePadres) {
+        if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
+        if (!padreTelefono.trim()) e.padreTelefono = 'Completá teléfono del padre.'
+        if (!madreNombre.trim()) e.madreNombre = 'Completá nombre de la madre.'
+        if (!madreTelefono.trim()) e.madreTelefono = 'Completá teléfono de la madre.'
+      }
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Map zod errors to form errors
+        error.issues.forEach((issue) => {
+          const path = issue.path[0] as string;
+          e[path] = issue.message;
+        });
+      }
     }
-
-    if (!acepta) e.acepta = 'Debés aceptar los términos y protocolos para continuar.'
 
     setErrs(e)
     if (Object.keys(e).length > 0) {

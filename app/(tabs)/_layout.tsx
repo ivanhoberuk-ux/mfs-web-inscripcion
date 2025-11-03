@@ -3,24 +3,53 @@ import { Tabs } from 'expo-router';
 import { useAuth } from '../../src/context/AuthProvider';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Platform } from 'react-native';
-
-function useIsAdmin(user: any): boolean {
-  if (!user) return false;
-  const um = user?.user_metadata ?? {};
-  const am = user?.app_metadata ?? {};
-  if (um?.is_admin === true) return true;
-  if (Array.isArray(am?.roles) && am.roles.includes('admin')) return true;
-  if (user?.role === 'admin' || user?.is_admin === true) return true;
-  return false;
-}
+import { useEffect, useState } from 'react';
+import { supabase } from '../../src/lib/supabase';
 
 export default function TabLayout() {
   const { user, loading } = useAuth();
-  const isAdmin = useIsAdmin(user);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(true);
+
+  // Fetch admin status from server-side user_roles table
+  useEffect(() => {
+    let mounted = true;
+    
+    async function checkAdminStatus() {
+      if (!user) {
+        setIsAdmin(false);
+        setRolesLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (mounted) {
+          setIsAdmin(!!data);
+          setRolesLoading(false);
+        }
+      } catch (e) {
+        console.error('Error checking admin status:', e);
+        if (mounted) {
+          setIsAdmin(false);
+          setRolesLoading(false);
+        }
+      }
+    }
+
+    checkAdminStatus();
+    return () => { mounted = false };
+  }, [user]);
   
   // Durante la carga inicial, ocultar tabs condicionales para evitar hydration mismatch
-  const showInscriptos = !loading && !!user;
-  const showAdmin = !loading && isAdmin;
+  const showInscriptos = !loading && !rolesLoading && !!user;
+  const showAdmin = !loading && !rolesLoading && isAdmin;
 
   return (
     <Tabs
