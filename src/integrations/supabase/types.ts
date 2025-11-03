@@ -32,6 +32,140 @@ export type Database = {
         }
         Relationships: []
       }
+      asistencias: {
+        Row: {
+          created_at: string
+          id_misionero: string
+          id_reunion: string
+        }
+        Insert: {
+          created_at?: string
+          id_misionero: string
+          id_reunion: string
+        }
+        Update: {
+          created_at?: string
+          id_misionero?: string
+          id_reunion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["id_reunion"]
+            isOneToOne: false
+            referencedRelation: "reuniones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["id_reunion"]
+            isOneToOne: false
+            referencedRelation: "v_historial_reuniones"
+            referencedColumns: ["reunion_id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["id_reunion"]
+            isOneToOne: false
+            referencedRelation: "v_reporte_misionero"
+            referencedColumns: ["reunion_id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["id_reunion"]
+            isOneToOne: false
+            referencedRelation: "v_reuniones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracion_puntajes: {
+        Row: {
+          pueblo_id: string
+          puntaje: number
+          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Insert: {
+          pueblo_id: string
+          puntaje: number
+          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Update: {
+          pueblo_id?: string
+          puntaje?: number
+          tipo_reunion?: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Relationships: []
+      }
+      misioneros_extra: {
+        Row: {
+          created_at: string
+          documento: string | null
+          email: string | null
+          id: string
+          nombre: string
+          pueblo_id: string | null
+          telefono: string | null
+        }
+        Insert: {
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          id?: string
+          nombre: string
+          pueblo_id?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          pueblo_id?: string | null
+          telefono?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          pueblo_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          pueblo_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          pueblo_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pueblos: {
         Row: {
           activo: boolean
@@ -65,11 +199,13 @@ export type Database = {
           cedula_frente_url: string | null
           ci: string
           created_at: string
+          deleted_at: string | null
           direccion: string | null
           email: string
           emergencia_nombre: string | null
           emergencia_telefono: string | null
           es_jefe: boolean
+          external_id: string | null
           ficha_medica_url: string | null
           firma_url: string | null
           id: string
@@ -81,6 +217,7 @@ export type Database = {
           padre_telefono: string | null
           pueblo_id: string
           rol: string
+          source: string | null
           telefono: string
           tratamiento_detalle: string | null
           tratamiento_especial: boolean
@@ -96,11 +233,13 @@ export type Database = {
           cedula_frente_url?: string | null
           ci: string
           created_at?: string
+          deleted_at?: string | null
           direccion?: string | null
           email: string
           emergencia_nombre?: string | null
           emergencia_telefono?: string | null
           es_jefe?: boolean
+          external_id?: string | null
           ficha_medica_url?: string | null
           firma_url?: string | null
           id?: string
@@ -112,6 +251,7 @@ export type Database = {
           padre_telefono?: string | null
           pueblo_id: string
           rol: string
+          source?: string | null
           telefono: string
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
@@ -127,11 +267,13 @@ export type Database = {
           cedula_frente_url?: string | null
           ci?: string
           created_at?: string
+          deleted_at?: string | null
           direccion?: string | null
           email?: string
           emergencia_nombre?: string | null
           emergencia_telefono?: string | null
           es_jefe?: boolean
+          external_id?: string | null
           ficha_medica_url?: string | null
           firma_url?: string | null
           id?: string
@@ -143,6 +285,7 @@ export type Database = {
           padre_telefono?: string | null
           pueblo_id?: string
           rol?: string
+          source?: string | null
           telefono?: string
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
@@ -164,6 +307,33 @@ export type Database = {
           },
         ]
       }
+      reuniones: {
+        Row: {
+          cerrada: boolean | null
+          fecha: string
+          id: string
+          pueblo_id: string
+          puntaje_override: number | null
+          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Insert: {
+          cerrada?: boolean | null
+          fecha: string
+          id?: string
+          pueblo_id: string
+          puntaje_override?: number | null
+          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Update: {
+          cerrada?: boolean | null
+          fecha?: string
+          id?: string
+          pueblo_id?: string
+          puntaje_override?: number | null
+          tipo_reunion?: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -184,6 +354,293 @@ export type Database = {
       }
     }
     Views: {
+      asistencias_std: {
+        Row: {
+          created_at: string | null
+          misionero_id: string | null
+          reunion_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          misionero_id?: string | null
+          reunion_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          misionero_id?: string | null
+          reunion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["reunion_id"]
+            isOneToOne: false
+            referencedRelation: "reuniones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["reunion_id"]
+            isOneToOne: false
+            referencedRelation: "v_historial_reuniones"
+            referencedColumns: ["reunion_id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["reunion_id"]
+            isOneToOne: false
+            referencedRelation: "v_reporte_misionero"
+            referencedColumns: ["reunion_id"]
+          },
+          {
+            foreignKeyName: "asistencias_id_reunion_fkey"
+            columns: ["reunion_id"]
+            isOneToOne: false
+            referencedRelation: "v_reuniones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_app: {
+        Row: {
+          acepta_terminos: boolean | null
+          acepta_terminos_at: string | null
+          alimentacion_detalle: string | null
+          alimentacion_especial: boolean | null
+          apellidos: string | null
+          autorizacion_url: string | null
+          cedula_dorso_url: string | null
+          cedula_frente_url: string | null
+          ci: string | null
+          created_at: string | null
+          deleted_at: string | null
+          direccion: string | null
+          email: string | null
+          emergencia_nombre: string | null
+          emergencia_telefono: string | null
+          es_jefe: boolean | null
+          external_id: string | null
+          ficha_medica_url: string | null
+          firma_url: string | null
+          id: string | null
+          madre_nombre: string | null
+          madre_telefono: string | null
+          nacimiento: string | null
+          nombres: string | null
+          padre_nombre: string | null
+          padre_telefono: string | null
+          pueblo_id: string | null
+          rol: string | null
+          source: string | null
+          telefono: string | null
+          tratamiento_detalle: string | null
+          tratamiento_especial: boolean | null
+        }
+        Insert: {
+          acepta_terminos?: boolean | null
+          acepta_terminos_at?: string | null
+          alimentacion_detalle?: string | null
+          alimentacion_especial?: boolean | null
+          apellidos?: string | null
+          autorizacion_url?: string | null
+          cedula_dorso_url?: string | null
+          cedula_frente_url?: string | null
+          ci?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_telefono?: string | null
+          es_jefe?: boolean | null
+          external_id?: string | null
+          ficha_medica_url?: string | null
+          firma_url?: string | null
+          id?: string | null
+          madre_nombre?: string | null
+          madre_telefono?: string | null
+          nacimiento?: string | null
+          nombres?: string | null
+          padre_nombre?: string | null
+          padre_telefono?: string | null
+          pueblo_id?: string | null
+          rol?: string | null
+          source?: string | null
+          telefono?: string | null
+          tratamiento_detalle?: string | null
+          tratamiento_especial?: boolean | null
+        }
+        Update: {
+          acepta_terminos?: boolean | null
+          acepta_terminos_at?: string | null
+          alimentacion_detalle?: string | null
+          alimentacion_especial?: boolean | null
+          apellidos?: string | null
+          autorizacion_url?: string | null
+          cedula_dorso_url?: string | null
+          cedula_frente_url?: string | null
+          ci?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_telefono?: string | null
+          es_jefe?: boolean | null
+          external_id?: string | null
+          ficha_medica_url?: string | null
+          firma_url?: string | null
+          id?: string | null
+          madre_nombre?: string | null
+          madre_telefono?: string | null
+          nacimiento?: string | null
+          nombres?: string | null
+          padre_nombre?: string | null
+          padre_telefono?: string | null
+          pueblo_id?: string | null
+          rol?: string | null
+          source?: string | null
+          telefono?: string | null
+          tratamiento_detalle?: string | null
+          tratamiento_especial?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_legacy: {
+        Row: {
+          acepta_terminos: boolean | null
+          acepta_terminos_at: string | null
+          alimentacion_detalle: string | null
+          alimentacion_especial: boolean | null
+          apellidos: string | null
+          autorizacion_url: string | null
+          cedula_dorso_url: string | null
+          cedula_frente_url: string | null
+          ci: string | null
+          created_at: string | null
+          deleted_at: string | null
+          direccion: string | null
+          email: string | null
+          emergencia_nombre: string | null
+          emergencia_telefono: string | null
+          es_jefe: boolean | null
+          external_id: string | null
+          ficha_medica_url: string | null
+          firma_url: string | null
+          id: string | null
+          madre_nombre: string | null
+          madre_telefono: string | null
+          nacimiento: string | null
+          nombres: string | null
+          padre_nombre: string | null
+          padre_telefono: string | null
+          pueblo_id: string | null
+          rol: string | null
+          source: string | null
+          telefono: string | null
+          tratamiento_detalle: string | null
+          tratamiento_especial: boolean | null
+        }
+        Insert: {
+          acepta_terminos?: boolean | null
+          acepta_terminos_at?: string | null
+          alimentacion_detalle?: string | null
+          alimentacion_especial?: boolean | null
+          apellidos?: string | null
+          autorizacion_url?: string | null
+          cedula_dorso_url?: string | null
+          cedula_frente_url?: string | null
+          ci?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_telefono?: string | null
+          es_jefe?: boolean | null
+          external_id?: string | null
+          ficha_medica_url?: string | null
+          firma_url?: string | null
+          id?: string | null
+          madre_nombre?: string | null
+          madre_telefono?: string | null
+          nacimiento?: string | null
+          nombres?: string | null
+          padre_nombre?: string | null
+          padre_telefono?: string | null
+          pueblo_id?: string | null
+          rol?: string | null
+          source?: string | null
+          telefono?: string | null
+          tratamiento_detalle?: string | null
+          tratamiento_especial?: boolean | null
+        }
+        Update: {
+          acepta_terminos?: boolean | null
+          acepta_terminos_at?: string | null
+          alimentacion_detalle?: string | null
+          alimentacion_especial?: boolean | null
+          apellidos?: string | null
+          autorizacion_url?: string | null
+          cedula_dorso_url?: string | null
+          cedula_frente_url?: string | null
+          ci?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          direccion?: string | null
+          email?: string | null
+          emergencia_nombre?: string | null
+          emergencia_telefono?: string | null
+          es_jefe?: boolean | null
+          external_id?: string | null
+          ficha_medica_url?: string | null
+          firma_url?: string | null
+          id?: string | null
+          madre_nombre?: string | null
+          madre_telefono?: string | null
+          nacimiento?: string | null
+          nombres?: string | null
+          padre_nombre?: string | null
+          padre_telefono?: string | null
+          pueblo_id?: string | null
+          rol?: string | null
+          source?: string | null
+          telefono?: string | null
+          tratamiento_detalle?: string | null
+          tratamiento_especial?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registros_publicos: {
         Row: {
           apellidos: string | null
@@ -226,6 +683,115 @@ export type Database = {
           },
         ]
       }
+      v_historial_reuniones: {
+        Row: {
+          asistentes: number | null
+          estado: string | null
+          fecha: string | null
+          pueblo_id: string | null
+          pueblo_nombre: string | null
+          reunion_id: string | null
+          tipo: Database["public"]["Enums"]["tipo_reunion"] | null
+        }
+        Relationships: []
+      }
+      v_misioneros_busqueda: {
+        Row: {
+          id: string | null
+          nombre: string | null
+          pueblo_id: string | null
+        }
+        Relationships: []
+      }
+      v_misioneros_total: {
+        Row: {
+          created_at: string | null
+          documento: string | null
+          email: string | null
+          id: string | null
+          nombre: string | null
+          pueblo_id: string | null
+          telefono: string | null
+        }
+        Relationships: []
+      }
+      v_puntaje_asistencias: {
+        Row: {
+          id_misionero: string | null
+          pueblo_id: string | null
+          reuniones_asistidas: number | null
+          total_puntos: number | null
+          ultima_asistencia: string | null
+        }
+        Relationships: []
+      }
+      v_ranking_pueblo: {
+        Row: {
+          id_misionero: string | null
+          misionero_nombre: string | null
+          pos: number | null
+          pueblo_id: string | null
+          pueblo_nombre: string | null
+          reuniones_asistidas: number | null
+          total_puntos: number | null
+          ultima_asistencia: string | null
+        }
+        Relationships: []
+      }
+      v_registros_unificados: {
+        Row: {
+          documento: string | null
+          email: string | null
+          nombre: string | null
+          pueblo_id: string | null
+          pueblo_nombre: string | null
+          registro_id: string | null
+          telefono: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_reporte_misionero: {
+        Row: {
+          asistencia: number | null
+          fecha: string | null
+          marcada_el: string | null
+          misionero_id: string | null
+          misionero_nombre: string | null
+          pueblo_id: string | null
+          pueblo_nombre: string | null
+          reunion_id: string | null
+          tipo: Database["public"]["Enums"]["tipo_reunion"] | null
+        }
+        Relationships: []
+      }
+      v_reuniones: {
+        Row: {
+          fecha: string | null
+          id: string | null
+          pueblo_id: string | null
+          pueblo_nombre: string | null
+          puntaje_config: number | null
+          puntaje_efectivo: number | null
+          puntaje_override: number | null
+          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"] | null
+        }
+        Relationships: []
+      }
       vw_ocupacion: {
         Row: {
           activo: boolean | null
@@ -239,13 +805,228 @@ export type Database = {
       }
     }
     Functions: {
-      is_admin: {
-        Args: Record<PropertyKey, never>
+      _cp_tipo_column: { Args: never; Returns: string }
+      _puntaje_reunion: {
+        Args: { r: Database["public"]["Tables"]["reuniones"]["Row"] }
+        Returns: number
+      }
+      assign_pueblo_admin: {
+        Args: { p_pueblo_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      can_manage_pueblo: { Args: { _pueblo_id: string }; Returns: boolean }
+      count_reuniones: {
+        Args: {
+          p_desde?: string
+          p_hasta?: string
+          p_pueblo_id: string
+          p_tipo?: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Returns: number
+      }
+      crear_reunion: {
+        Args: {
+          p_fecha: string
+          p_pueblo_id: string
+          p_puntaje_override: number
+          p_tipo: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Returns: {
+          id: string
+          msg: string
+        }[]
+      }
+      desmarcar_asistencia: {
+        Args: { p_misionero_id: string; p_reunion_id: string }
         Returns: boolean
       }
-      register_if_capacity: {
-        Args:
-          | {
+      editar_reunion: {
+        Args: {
+          p_fecha: string
+          p_id: string
+          p_pueblo_id: string
+          p_puntaje_override: number
+          p_tipo: Database["public"]["Enums"]["tipo_reunion"]
+        }
+        Returns: {
+          id: string
+          msg: string
+        }[]
+      }
+      fn_check_misionero_exists: { Args: { m_id: string }; Returns: boolean }
+      fn_check_pueblo_exists: { Args: { p_id: string }; Returns: boolean }
+      get_asistentes: {
+        Args: { p_reunion_id: string }
+        Returns: {
+          id_misionero: string
+          nombre: string
+        }[]
+      }
+      get_dashboard_por_pueblo: {
+        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
+        Returns: {
+          asistencias: number
+          pueblo_id: string
+          pueblo_nombre: string
+          puntos: number
+          reuniones: number
+        }[]
+      }
+      get_dashboard_por_tipo: {
+        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
+        Returns: {
+          asistencias: number
+          puntos: number
+          reuniones: number
+          tipo: string
+        }[]
+      }
+      get_dashboard_tendencia_semanal: {
+        Args: {
+          p_desde?: string
+          p_hasta?: string
+          p_pueblo_id?: string
+          p_weeks?: number
+        }
+        Returns: {
+          asistencias: number
+          puntos: number
+          reuniones: number
+          semana: string
+        }[]
+      }
+      get_dashboard_top_asistencia: {
+        Args: {
+          p_desde?: string
+          p_hasta?: string
+          p_limit?: number
+          p_pueblo_id?: string
+        }
+        Returns: {
+          id_misionero: string
+          nombre: string
+          puntos: number
+          total_asistencias: number
+        }[]
+      }
+      get_dashboard_totales: {
+        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
+        Returns: {
+          total_asistencias: number
+          total_misioneros: number
+          total_pueblos: number
+          total_puntos: number
+          total_reuniones: number
+        }[]
+      }
+      get_reporte_misionero: {
+        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
+        Returns: {
+          documento: string
+          fecha: string
+          misionero_id: string
+          misionero_nombre: string
+          pueblo_id: string
+          pueblo_nombre: string
+          puntaje: number
+          reunion_id: string
+          tipo: string
+        }[]
+      }
+      get_reporte_misionero_totales_v1: {
+        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
+        Returns: {
+          asistencias: number
+          puntos: number
+        }[]
+      }
+      get_reporte_misionero_v2: {
+        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
+        Returns: {
+          fecha: string
+          pueblo_id: string
+          pueblo_nombre: string
+          puntaje: number
+          reunion_id: string
+          tipo: string
+        }[]
+      }
+      get_user_pueblo_id: { Args: never; Returns: string }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      importar_registro_a_misioneros: {
+        Args: { p_pueblo_id: string; p_registro_id: string }
+        Returns: {
+          misionero_id: string
+          origen: string
+        }[]
+      }
+      importar_registros_masivo: {
+        Args: { p_pueblo_id: string }
+        Returns: {
+          misionero_id: string
+        }[]
+      }
+      is_admin: { Args: never; Returns: boolean }
+      is_pueblo_admin: { Args: { _user_id?: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
+      kpi_asistencias: {
+        Args: {
+          p_desde?: string
+          p_hasta?: string
+          p_pueblo_id?: string
+          p_tipo?: string
+        }
+        Returns: {
+          asistencias: number
+          pueblo_id: string
+          pueblo_nombre: string
+          reuniones: number
+          tipo: string
+        }[]
+      }
+      marcar_asistencia: {
+        Args: { p_misionero_id: string; p_reunion_id: string }
+        Returns: boolean
+      }
+      only_digits: { Args: { txt: string }; Returns: string }
+      preview_ranking_por_puntajes: {
+        Args: {
+          p_comision: number
+          p_general: number
+          p_pueblo_id: string
+          p_varias: number
+        }
+        Returns: {
+          id_misionero: string
+          misionero_nombre: string
+          pos: number
+          pueblo_id: string
+          pueblo_nombre: string
+          reuniones_asistidas: number
+          total_puntos: number
+          ultima_asistencia: string
+        }[]
+      }
+      register_if_capacity:
+        | {
+            Args: {
+              p_apellidos: string
+              p_ci: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_nacimiento: string
+              p_nombres: string
+              p_pueblo_id: string
+              p_rol: string
+              p_telefono: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_acepta_terminos?: boolean
               p_alimentacion_detalle?: string
               p_alimentacion_especial?: boolean
@@ -268,7 +1049,10 @@ export type Database = {
               p_tratamiento_detalle?: string
               p_tratamiento_especial?: boolean
             }
-          | {
+            Returns: string
+          }
+        | {
+            Args: {
               p_alimentacion_detalle?: string
               p_alimentacion_especial?: boolean
               p_apellidos: string
@@ -290,25 +1074,59 @@ export type Database = {
               p_tratamiento_detalle?: string
               p_tratamiento_especial?: boolean
             }
-          | {
-              p_apellidos: string
-              p_ci: string
-              p_direccion: string
-              p_email: string
-              p_emergencia_nombre: string
-              p_emergencia_telefono: string
-              p_es_jefe: boolean
-              p_nacimiento: string
-              p_nombres: string
-              p_pueblo_id: string
-              p_rol: string
-              p_telefono: string
-            }
+            Returns: string
+          }
+      remove_pueblo_admin: { Args: { p_user_id: string }; Returns: undefined }
+      search_misioneros: {
+        Args: { p_limit?: number; p_q?: string }
+        Returns: {
+          documento: string
+          id: string
+          nombre: string
+          pueblo_id: string
+          pueblo_nombre: string
+        }[]
+      }
+      search_misioneros_por_pueblo: {
+        Args: { p_limit?: number; p_pueblo_id: string; p_q?: string }
+        Returns: {
+          documento: string
+          id: string
+          nombre: string
+          pueblo_id: string
+          pueblo_nombre: string
+        }[]
+      }
+      set_puntajes_por_pueblo: {
+        Args: {
+          p_comision: number
+          p_general: number
+          p_pueblo_id: string
+          p_varias: number
+        }
+        Returns: {
+          msg: string
+        }[]
+      }
+      toggle_asistencia: {
+        Args: { p_misionero_id: string; p_reunion_id: string }
+        Returns: {
+          accion: string
+        }[]
+      }
+      upsert_reunion: {
+        Args: {
+          p_fecha: string
+          p_id: string
+          p_pueblo_id: string
+          p_puntaje_override: number
+          p_tipo: string
+        }
         Returns: string
       }
     }
     Enums: {
-      [_ in never]: never
+      tipo_reunion: "general" | "comision" | "varias"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -435,6 +1253,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tipo_reunion: ["general", "comision", "varias"],
+    },
   },
 } as const

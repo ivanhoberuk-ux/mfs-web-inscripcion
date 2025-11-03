@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // CORS básico
 const corsHeaders = {
@@ -7,20 +8,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-signature",
 };
 
-type Incoming = {
-  event: "created" | "updated" | "deleted";
-  source: "legacy";
-  ts: string; // ISO8601
-  data: {
-    external_id: string;
-    nombre?: string | null;
-    documento?: string | null;
-    email?: string | null;
-    telefono?: string | null;
-    pueblo_id?: string | null; // id final o legacy (si usás map)
-    // ...otros campos si hacen falta
-  };
-};
+// Schema validation for incoming webhook data
+const IncomingDataSchema = z.object({
+  external_id: z.string().min(1).max(255),
+  nombre: z.string().max(200).optional().nullable(),
+  documento: z.string().max(50).optional().nullable(),
+  email: z.string().email().max(255).optional().nullable(),
+  telefono: z.string().max(50).optional().nullable(),
+  pueblo_id: z.string().max(255).optional().nullable(),
+});
+
+const IncomingSchema = z.object({
+  event: z.enum(["created", "updated", "deleted"]),
+  source: z.literal("legacy"),
+  ts: z.string(),
+  data: IncomingDataSchema,
+});
+
+type Incoming = z.infer<typeof IncomingSchema>;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -81,9 +86,11 @@ Deno.serve(async (req) => {
 
     let payload: Incoming;
     try {
-      payload = JSON.parse(raw);
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      const parsed = JSON.parse(raw);
+      payload = IncomingSchema.parse(parsed);
+    } catch (e) {
+      console.error("Validation error:", e);
+      return new Response(JSON.stringify({ error: "Invalid request format", details: e.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -91,12 +98,6 @@ Deno.serve(async (req) => {
 
     const { event, source, data } = payload;
     const extId = data.external_id;
-    if (!extId) {
-      return new Response(JSON.stringify({ error: "external_id requerido" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     if (event === "deleted") {
       const { error } = await supabase
