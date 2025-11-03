@@ -559,7 +559,7 @@ export default function VerInscriptosAdmin() {
             Actualizar
           </Button>
           <Button variant="secondary" onPress={exportCSV} disabled={!rows.length}>
-            Exportar CSV
+            Exportar Excel
           </Button>
         </View>
       </Card>

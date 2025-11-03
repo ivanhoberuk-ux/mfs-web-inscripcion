@@ -13,9 +13,12 @@ import { fetchOcupacion, type Ocupacion } from '../../src/lib/api'
 import { useRouter } from 'expo-router'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
+import { useUserRoles } from '../../src/hooks/useUserRoles'
 
 export default function Pueblos() {
   const router = useRouter()
+  const { isSuperAdmin, isPuebloAdmin, puebloId: userPuebloId, loading: rolesLoading } = useUserRoles();
+  
   const [items, setItems] = useState<Ocupacion[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -25,27 +28,52 @@ export default function Pueblos() {
     try {
       setLoading(true)
       const data = await fetchOcupacion()
-      setItems(data)
+      
+      // Si es pueblo_admin (no super admin), filtrar solo su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
+        setItems(data.filter(p => p.id === userPuebloId));
+      } else {
+        setItems(data);
+      }
+      
       setLastUpdated(new Date().toLocaleString())
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isPuebloAdmin, isSuperAdmin, userPuebloId])
 
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true)
       const data = await fetchOcupacion()
-      setItems(data)
+      
+      // Si es pueblo_admin (no super admin), filtrar solo su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
+        setItems(data.filter(p => p.id === userPuebloId));
+      } else {
+        setItems(data);
+      }
+      
       setLastUpdated(new Date().toLocaleString())
     } finally {
       setRefreshing(false)
     }
-  }, [])
+  }, [isPuebloAdmin, isSuperAdmin, userPuebloId])
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (!rolesLoading) {
+      load()
+    }
+  }, [load, rolesLoading])
+
+  if (rolesLoading) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator />
+        <Text style={[s.small, { marginTop: 6, color: '#666' }]}>Verificando permisos…</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -62,7 +90,9 @@ export default function Pueblos() {
           marginBottom: 10,
         }}
       >
-        <Text style={s.title}>Pueblos</Text>
+        <Text style={s.title}>
+          Pueblos {isPuebloAdmin && !isSuperAdmin && '(Mi pueblo)'}
+        </Text>
         <Button variant="secondary" onPress={load}>
           Actualizar
         </Button>

@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker'
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { generateExcelBase64 } from '../../src/lib/excel'
+import { useUserRoles } from '../../src/hooks/useUserRoles'
 
 type Row = {
   id: string
@@ -40,6 +41,8 @@ const PAGE = 30
 const EXPORT_CHUNK = 500 // tamaño de lote para export "todo"
 
 export default function Buscador() {
+  const { isSuperAdmin, isPuebloAdmin, puebloId: userPuebloId, loading: rolesLoading } = useUserRoles();
+  
   const [q, setQ] = useState('')
   const [puebloList, setPuebloList] = useState<Pueblo[]>([])
   const [puebloId, setPuebloId] = useState<string>('todos')
@@ -59,11 +62,22 @@ export default function Buscador() {
   }, {})
 
   useEffect(() => {
-    ;(async () => {
+    if (rolesLoading) return;
+    
+    (async () => {
       const { data, error } = await supabase.from('pueblos').select('id,nombre').order('nombre')
-      if (!error) setPuebloList(data || [])
+      if (!error) {
+        const pueblos = data || [];
+        // Si es pueblo_admin (no super admin), pre-seleccionar su pueblo y filtrar lista
+        if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
+          setPuebloList(pueblos.filter(p => p.id === userPuebloId));
+          setPuebloId(userPuebloId);
+        } else {
+          setPuebloList(pueblos);
+        }
+      }
     })()
-  }, [])
+  }, [rolesLoading, isPuebloAdmin, isSuperAdmin, userPuebloId])
 
   const buildQuery = useCallback(() => {
     let query = supabase
@@ -78,11 +92,18 @@ export default function Buscador() {
       // Solo por nombre/apellido (POLÍTICA: no buscar por CI)
       query = query.or(`nombres.ilike.%${term}%,apellidos.ilike.%${term}%`)
     }
-    if (puebloId !== 'todos') query = query.eq('pueblo_id', puebloId)
+    
+    // Si es pueblo_admin (no super admin), filtrar por su pueblo
+    if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
+      query = query.eq('pueblo_id', userPuebloId);
+    } else if (puebloId !== 'todos') {
+      query = query.eq('pueblo_id', puebloId);
+    }
+    
     if (rol !== 'todos') query = query.eq('rol', rol)
 
     return query
-  }, [q, puebloId, rol])
+  }, [q, puebloId, rol, isPuebloAdmin, isSuperAdmin, userPuebloId])
 
   function calcAge(iso?: string | null): number | null {
     if (!iso) return null
@@ -272,9 +293,30 @@ export default function Buscador() {
   }
 
   // ===================== UI =====================
+  if (rolesLoading) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator />
+        <Text style={[s.small, { marginTop: 6, color: '#666' }]}>Verificando permisos…</Text>
+      </View>
+    );
+  }
+
+  if (!isSuperAdmin && !isPuebloAdmin) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+        <Text style={[s.text, { color: '#666', textAlign: 'center' }]}>
+          Esta sección solo está disponible para administradores.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={[s.screen, { backgroundColor: '#f9fafb' }]} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={[s.title, { color: '#0f172a' }]}>Buscador de inscriptos</Text>
+      <Text style={[s.title, { color: '#0f172a' }]}>
+        Buscador de inscriptos {isPuebloAdmin && !isSuperAdmin && '(Mi pueblo)'}
+      </Text>
 
       {/* Controles */}
       <View style={[s.card, { gap: 8 }]}>
@@ -345,7 +387,7 @@ export default function Buscador() {
             disabled={exporting !== null || loading}
           >
             <Text style={s.buttonText}>
-              {exporting === 'page' ? 'Exportando…' : 'Exportar CSV (página)'}
+              {exporting === 'page' ? 'Exportando…' : 'Exportar Excel (página)'}
             </Text>
           </Pressable>
 
@@ -355,7 +397,7 @@ export default function Buscador() {
             disabled={exporting !== null || loading}
           >
             <Text style={s.buttonText}>
-              {exporting === 'all' ? 'Exportando…' : 'Exportar CSV (todo)'}
+              {exporting === 'all' ? 'Exportando…' : 'Exportar Excel (todo)'}
             </Text>
           </Pressable>
         </View>

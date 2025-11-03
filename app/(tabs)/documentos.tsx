@@ -21,9 +21,14 @@ import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf';
 import { uploadToStorage, updateDocumento, publicUrl } from '../../src/lib/api';
 import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
+import { useAuth } from '../../src/context/AuthProvider';
+import { useUserRoles } from '../../src/hooks/useUserRoles';
 
 export default function Documentos() {
   const params = useLocalSearchParams();
+  const { user } = useAuth();
+  const { isSuperAdmin, isPuebloAdmin, puebloId, loading: rolesLoading } = useUserRoles();
+  
   const [mode, setMode] = useState<'code' | 'ci'>('code');
 
   // Búsqueda por CÓDIGO (UUID)
@@ -48,13 +53,14 @@ export default function Documentos() {
   const URL_ACEPTACION = publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf');
   const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf');
 
-  // Auto-cargar registro si viene código por parámetro
+  // Auto-cargar registro del usuario actual si no es admin
   useEffect(() => {
+    if (rolesLoading) return;
+
     const codeParam = Array.isArray(params.code) ? params.code[0] : params.code;
-    if (codeParam && typeof codeParam === 'string') {
-      setCode(codeParam);
-      setMode('code');
-      // Buscar automáticamente
+    
+    // Si no es admin, cargar automáticamente su propio registro
+    if (!isSuperAdmin && !isPuebloAdmin && user) {
       (async () => {
         try {
           setLoading(true);
@@ -63,12 +69,51 @@ export default function Documentos() {
             .select(
               'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
             )
-            .eq('id', codeParam.trim())
+            .eq('email', user.email)
             .maybeSingle();
           if (error) throw error;
           if (data) {
             setResults([]);
             setRecord(data);
+          } else {
+            Alert.alert('Sin registro', 'No encontramos tu inscripción. Contactá al administrador.');
+          }
+        } catch (e: any) {
+          Alert.alert('Error', e.message || String(e));
+        } finally {
+          setLoading(false);
+        }
+      })();
+      return;
+    }
+
+    // Si es admin y viene código por parámetro, buscar ese registro
+    if (codeParam && typeof codeParam === 'string' && (isSuperAdmin || isPuebloAdmin)) {
+      setCode(codeParam);
+      setMode('code');
+      // Buscar automáticamente
+      (async () => {
+        try {
+          setLoading(true);
+          let query = supabase
+            .from('registros')
+            .select(
+              'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
+            )
+            .eq('id', codeParam.trim());
+
+          // Si es pueblo_admin, solo puede ver su pueblo
+          if (isPuebloAdmin && !isSuperAdmin && puebloId) {
+            query = query.eq('pueblo_id', puebloId);
+          }
+
+          const { data, error } = await query.maybeSingle();
+          if (error) throw error;
+          if (data) {
+            setResults([]);
+            setRecord(data);
+          } else if (isPuebloAdmin && !isSuperAdmin) {
+            Alert.alert('Sin acceso', 'Solo podés ver inscriptos de tu pueblo.');
           }
         } catch (e: any) {
           Alert.alert('Error', e.message || String(e));
@@ -77,7 +122,7 @@ export default function Documentos() {
         }
       })();
     }
-  }, [params.code]);
+  }, [params.code, rolesLoading, isSuperAdmin, isPuebloAdmin, puebloId, user]);
 
   // === Helpers ===
   async function openUrl(url?: string | null) {
@@ -149,15 +194,26 @@ export default function Documentos() {
     try {
       if (!code) return Alert.alert('Ingresá el código de inscripción (UUID).');
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('registros')
         .select(
           'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
         )
-        .eq('id', code.trim())
-        .maybeSingle();
+        .eq('id', code.trim());
+
+      // Si es pueblo_admin (no super admin), solo puede ver su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && puebloId) {
+        query = query.eq('pueblo_id', puebloId);
+      }
+
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
-      if (!data) return Alert.alert('No encontrado', 'Revisá el código.');
+      if (!data) {
+        if (isPuebloAdmin && !isSuperAdmin) {
+          return Alert.alert('No encontrado', 'Revisá el código o verificá que sea de tu pueblo.');
+        }
+        return Alert.alert('No encontrado', 'Revisá el código.');
+      }
       setResults([]);
       setRecord(data);
     } catch (e: any) {
@@ -182,11 +238,21 @@ export default function Documentos() {
         .eq('ci', ciSan)
         .order('created_at', { ascending: false })
         .limit(10);
+      
+      // Si es pueblo_admin (no super admin), filtrar por su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && puebloId) {
+        q = q.eq('pueblo_id', puebloId);
+      }
+      
       if (emailSan) q = q.ilike('email', `%${emailSan}%`);
       const { data, error } = await q;
       if (error) throw error;
-      if (!data || data.length === 0)
+      if (!data || data.length === 0) {
+        if (isPuebloAdmin && !isSuperAdmin) {
+          return Alert.alert('Sin resultados', 'Verificá cédula y email, y que sea de tu pueblo.');
+        }
         return Alert.alert('Sin resultados', 'Verificá cédula y email.');
+      }
       if (data.length === 1) {
         setRecord(data[0]);
         setResults([]);
@@ -435,6 +501,15 @@ export default function Documentos() {
   );
 
   // ======== UI ========
+  if (rolesLoading) {
+    return (
+      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator />
+        <Text style={[s.small, { marginTop: 6, color: '#666' }]}>Verificando permisos…</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       contentContainerStyle={{ paddingBottom: 32 }}
@@ -442,7 +517,9 @@ export default function Documentos() {
       keyboardShouldPersistTaps="handled"
       bounces={false}
     >
-      <Text style={s.title}>Documentos</Text>
+      <Text style={s.title}>
+        {isSuperAdmin ? 'Documentos (Admin)' : isPuebloAdmin ? 'Documentos (Admin de Pueblo)' : 'Mis documentos'}
+      </Text>
 
       {/* Banner edad */}
       {record && (
@@ -490,24 +567,26 @@ export default function Documentos() {
         </Pressable>
       </View>
 
-      {/* Selector de modo de búsqueda */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-        <Pressable
-          style={[s.button, { paddingVertical: 8, opacity: mode === 'code' ? 1 : 0.6 }]}
-          onPress={() => setMode('code')}
-        >
-          <Text style={s.buttonText}>Por código</Text>
-        </Pressable>
-        <Pressable
-          style={[s.button, { paddingVertical: 8, opacity: mode === 'ci' ? 1 : 0.6 }]}
-          onPress={() => setMode('ci')}
-        >
-          <Text style={s.buttonText}>Por cédula</Text>
-        </Pressable>
-      </View>
+      {/* Selector de modo de búsqueda - solo para admins */}
+      {(isSuperAdmin || isPuebloAdmin) && (
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <Pressable
+            style={[s.button, { paddingVertical: 8, opacity: mode === 'code' ? 1 : 0.6 }]}
+            onPress={() => setMode('code')}
+          >
+            <Text style={s.buttonText}>Por código</Text>
+          </Pressable>
+          <Pressable
+            style={[s.button, { paddingVertical: 8, opacity: mode === 'ci' ? 1 : 0.6 }]}
+            onPress={() => setMode('ci')}
+          >
+            <Text style={s.buttonText}>Por cédula</Text>
+          </Pressable>
+        </View>
+      )}
 
-      {/* Búsqueda por CÓDIGO */}
-      {mode === 'code' && (
+      {/* Búsqueda por CÓDIGO - solo para admins */}
+      {(isSuperAdmin || isPuebloAdmin) && mode === 'code' && (
         <View style={s.card}>
           <Text style={s.text}>
             Ingresá el <Text style={{ fontWeight: '700' }}>Código de inscripción</Text> (UUID) para
@@ -531,8 +610,8 @@ export default function Documentos() {
         </View>
       )}
 
-      {/* Búsqueda por CÉDULA */}
-      {mode === 'ci' && (
+      {/* Búsqueda por CÉDULA - solo para admins */}
+      {(isSuperAdmin || isPuebloAdmin) && mode === 'ci' && (
         <View style={s.card}>
           <Text style={s.text}>
             Buscá al inscripto por <Text style={{ fontWeight: '700' }}>Cédula</Text> y (recomendado){' '}

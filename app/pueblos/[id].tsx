@@ -148,7 +148,7 @@ export default function PuebloInscriptosScreen() {
   async function exportCsv() {
     try {
       if (!filtered.length) {
-        Alert.alert('CSV', 'No hay inscriptos (según filtro) para exportar.')
+        Alert.alert('Excel', 'No hay inscriptos (según filtro) para exportar.')
         return
       }
 
@@ -284,7 +284,7 @@ export default function PuebloInscriptosScreen() {
           onPress={exportCsv}
           style={[s.button, { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 8 }]}
         >
-          <Text style={s.buttonText}>Exportar CSV</Text>
+          <Text style={s.buttonText}>Exportar Excel</Text>
         </Pressable>
       </View>
     ),
