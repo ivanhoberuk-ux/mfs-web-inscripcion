@@ -29,36 +29,28 @@ export default function Pueblos() {
       setLoading(true)
       const data = await fetchOcupacion()
       
-      // Si es pueblo_admin (no super admin), filtrar solo su pueblo
-      if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
-        setItems(data.filter(p => p.id === userPuebloId));
-      } else {
-        setItems(data);
-      }
+      // Mostrar todos los pueblos sin importar el rol
+      setItems(data);
       
       setLastUpdated(new Date().toLocaleString())
     } finally {
       setLoading(false)
     }
-  }, [isPuebloAdmin, isSuperAdmin, userPuebloId])
+  }, [])
 
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true)
       const data = await fetchOcupacion()
       
-      // Si es pueblo_admin (no super admin), filtrar solo su pueblo
-      if (isPuebloAdmin && !isSuperAdmin && userPuebloId) {
-        setItems(data.filter(p => p.id === userPuebloId));
-      } else {
-        setItems(data);
-      }
+      // Mostrar todos los pueblos sin importar el rol
+      setItems(data);
       
       setLastUpdated(new Date().toLocaleString())
     } finally {
       setRefreshing(false)
     }
-  }, [isPuebloAdmin, isSuperAdmin, userPuebloId])
+  }, [])
 
   useEffect(() => {
     if (!rolesLoading) {
@@ -91,7 +83,7 @@ export default function Pueblos() {
         }}
       >
         <Text style={s.title}>
-          Pueblos {isPuebloAdmin && !isSuperAdmin && '(Mi pueblo)'}
+          Pueblos
         </Text>
         <Button variant="secondary" onPress={load}>
           Actualizar

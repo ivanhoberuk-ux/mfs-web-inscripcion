@@ -97,6 +97,12 @@ export default function Admin() {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [searchEmail, setSearchEmail] = useState('');
+  
+  // Estado para crear pueblos
+  const [showCreatePueblo, setShowCreatePueblo] = useState(false);
+  const [newPuebloNombre, setNewPuebloNombre] = useState('');
+  const [newPuebloCupo, setNewPuebloCupo] = useState('40');
+  const [creatingPueblo, setCreatingPueblo] = useState(false);
 
   // ===== Guards / carga de rol =====
   useEffect(() => {
@@ -321,6 +327,45 @@ export default function Admin() {
       Alert.alert('Error', e?.message ?? String(e))
     }
   }
+
+  async function createPueblo() {
+    try {
+      const nombre = newPuebloNombre.trim();
+      const cupo = parseInt(newPuebloCupo, 10);
+      
+      if (!nombre) {
+        Alert.alert('Error', 'Ingresá un nombre para el pueblo');
+        return;
+      }
+      
+      if (isNaN(cupo) || cupo < 1) {
+        Alert.alert('Error', 'El cupo debe ser un número mayor a 0');
+        return;
+      }
+      
+      setCreatingPueblo(true);
+      
+      const { error } = await supabase
+        .from('pueblos')
+        .insert({
+          nombre,
+          cupo_max: cupo,
+          activo: true
+        });
+      
+      if (error) throw error;
+      
+      Alert.alert('Éxito', `Pueblo "${nombre}" creado correctamente`);
+      setNewPuebloNombre('');
+      setNewPuebloCupo('40');
+      setShowCreatePueblo(false);
+      await load();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e));
+    } finally {
+      setCreatingPueblo(false);
+    }
+  }
   async function onSave(puebloId: string) {
     try {
       const nuevoMax = edit[puebloId];
@@ -488,16 +533,29 @@ export default function Admin() {
           Usuario: <Text style={{ fontWeight: '700' }}>{user?.email || '—'}</Text> (admin)
         </Text>
         
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <Pressable 
-            style={[s.button, { flex: 1, backgroundColor: showRolesPanel ? '#0a7ea4' : '#6b7280' }]} 
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showRolesPanel ? '#0a7ea4' : '#6b7280' }]} 
             onPress={() => {
               setShowRolesPanel(!showRolesPanel)
+              setShowCreatePueblo(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
             <Text style={s.buttonText}>
               {showRolesPanel ? 'Ver Exportes' : 'Gestionar Roles'}
+            </Text>
+          </Pressable>
+          
+          <Pressable 
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showCreatePueblo ? '#0b9850' : '#6b7280' }]} 
+            onPress={() => {
+              setShowCreatePueblo(!showCreatePueblo)
+              setShowRolesPanel(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showCreatePueblo ? 'Ver Exportes' : 'Crear Pueblo'}
             </Text>
           </Pressable>
         </View>
@@ -627,6 +685,56 @@ export default function Admin() {
               </ScrollView>
             )}
           </View>
+        ) : showCreatePueblo ? (
+          // Panel de crear pueblo
+          <View style={{ gap: 12 }}>
+            <Text style={[s.subtitle, { marginBottom: 8 }]}>Crear Nuevo Pueblo</Text>
+            
+            <View>
+              <Text style={s.label}>Nombre del pueblo *</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Ej: Mbocayaty"
+                value={newPuebloNombre}
+                onChangeText={setNewPuebloNombre}
+              />
+            </View>
+            
+            <View>
+              <Text style={s.label}>Cupo máximo *</Text>
+              <TextInput
+                style={s.input}
+                placeholder="40"
+                keyboardType="number-pad"
+                value={newPuebloCupo}
+                onChangeText={setNewPuebloCupo}
+              />
+            </View>
+            
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                style={[s.button, { flex: 1, backgroundColor: '#0b9850' }]}
+                onPress={createPueblo}
+                disabled={creatingPueblo}
+              >
+                <Text style={s.buttonText}>
+                  {creatingPueblo ? 'Creando...' : 'Crear Pueblo'}
+                </Text>
+              </Pressable>
+              
+              <Pressable
+                style={[s.button, { flex: 1, backgroundColor: '#9ca3af' }]}
+                onPress={() => {
+                  setShowCreatePueblo(false)
+                  setNewPuebloNombre('')
+                  setNewPuebloCupo('40')
+                }}
+                disabled={creatingPueblo}
+              >
+                <Text style={s.buttonText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
         ) : (
           // Panel de exportes original
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -634,10 +742,10 @@ export default function Admin() {
               <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros JSON'}</Text>
             </Pressable>
             <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosCSV} disabled={exporting}>
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros CSV'}</Text>
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros Excel'}</Text>
             </Pressable>
             <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos CSV'}</Text>
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos Excel'}</Text>
             </Pressable>
           </View>
         )}

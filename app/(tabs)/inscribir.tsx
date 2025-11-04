@@ -56,11 +56,14 @@ export default function Inscribir() {
   const [padreTelefono, setPadreTelefono] = useState('')
   const [madreNombre, setMadreNombre] = useState('')
   const [madreTelefono, setMadreTelefono] = useState('')
+  const [ciudad, setCiudad] = useState('')
 
   // Aceptación de términos (obligatorio)
   const [acepta, setAcepta] = useState(false)
 
   const [errs, setErrs] = useState<Errs>({})
+  const [registroExistente, setRegistroExistente] = useState<any>(null)
+  const [modoEdicion, setModoEdicion] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
   // URLs de plantillas (bucket público "plantillas")
@@ -102,19 +105,42 @@ export default function Inscribir() {
         // Verificar si ya está inscripto
         const { data: registro } = await supabase
           .from('registros')
-          .select('id, pueblo_id')
+          .select('*')
           .eq('email', session.user.email)
           .maybeSingle()
         
         if (registro) {
-          setTimeout(() => {
-            Alert.alert(
-              'Ya estás inscripto',
-              'Ya tenés una inscripción registrada. Si necesitás actualizar tus datos, contactá con los organizadores.',
-              [{ text: 'OK', onPress: () => router.push('/') }]
-            )
-          }, 100)
-          return
+          // Cargar datos existentes en el formulario
+          setRegistroExistente(registro)
+          setModoEdicion(true)
+          setPuebloId(registro.pueblo_id || '')
+          setNombres(registro.nombres || '')
+          setApellidos(registro.apellidos || '')
+          setCi(registro.ci || '')
+          const fechaNac = registro.nacimiento ? new Date(registro.nacimiento) : null
+          if (fechaNac) {
+            const dd = String(fechaNac.getUTCDate()).padStart(2, '0')
+            const mm = String(fechaNac.getUTCMonth() + 1).padStart(2, '0')
+            const yyyy = fechaNac.getUTCFullYear()
+            setNacimiento(`${dd}-${mm}-${yyyy}`)
+          }
+          setEmail(registro.email || '')
+          setTelefono(registro.telefono || '')
+          setDireccion(registro.direccion || '')
+          setEmNombre(registro.emergencia_nombre || '')
+          setEmTelefono(registro.emergencia_telefono || '')
+          setRol(registro.rol || 'Misionero')
+          setEsJefe(registro.es_jefe || false)
+          setTratamiento(registro.tratamiento_especial || false)
+          setTratamientoDetalle(registro.tratamiento_detalle || '')
+          setAlimento(registro.alimentacion_especial || false)
+          setAlimentoDetalle(registro.alimentacion_detalle || '')
+          setPadreNombre(registro.padre_nombre || '')
+          setPadreTelefono(registro.padre_telefono || '')
+          setMadreNombre(registro.madre_nombre || '')
+          setMadreTelefono(registro.madre_telefono || '')
+          setCiudad(registro.ciudad || '')
+          setAcepta(true) // Ya aceptó términos previamente
         }
         
       } catch (e: any) {
@@ -353,109 +379,146 @@ export default function Inscribir() {
 
       setSaving(true)
 
-      // Verificar si la cédula ya existe
       const ciNormalizado = normCi(ci)
-      const { data: existente, error: checkError } = await supabase
-        .from('registros')
-        .select('id, nombres, apellidos')
-        .eq('ci', ciNormalizado)
-        .maybeSingle()
+      
+      if (modoEdicion && registroExistente) {
+        // Modo edición: actualizar registro existente
+        const { error: updateError } = await supabase
+          .from('registros')
+          .update({
+            pueblo_id: puebloId,
+            nombres: nombres.trim(),
+            apellidos: apellidos.trim(),
+            ci: ciNormalizado,
+            nacimiento: nacimientoISO,
+            telefono: normPhone(telefono),
+            direccion: direccion.trim(),
+            emergencia_nombre: emNombre.trim(),
+            emergencia_telefono: normPhone(emTelefono),
+            rol,
+            es_jefe: rol === 'Misionero' ? !!esJefe : false,
+            tratamiento_especial: !!tratamiento,
+            tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
+            alimentacion_especial: !!alimento,
+            alimentacion_detalle: alimento ? alimentoDetalle.trim() : null,
+            padre_nombre: requierePadres ? padreNombre.trim() : null,
+            padre_telefono: requierePadres ? normPhone(padreTelefono) : null,
+            madre_nombre: requierePadres ? madreNombre.trim() : null,
+            madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
+            ciudad: ciudad.trim() || null,
+          })
+          .eq('id', registroExistente.id)
 
-      if (checkError) {
-        throw new Error('No se pudo verificar la cédula: ' + checkError.message)
-      }
+        if (updateError) throw updateError
 
-      if (existente) {
-        setSaving(false)
-        setErrs((e) => ({ ...e, ci: 'Esta cédula ya está registrada.' }))
-        
-        // Usar window.alert para web (bloquea hasta que el usuario cierre)
-        if (typeof window !== 'undefined' && window.alert) {
-          window.alert(
-            `⚠️ Cédula duplicada\n\nLa cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
-          )
-        } else {
-          Alert.alert(
-            'Cédula duplicada',
-            `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
-          )
+        Alert.alert('Actualizado', 'Tus datos fueron actualizados correctamente.', [
+          { text: 'OK', onPress: () => router.push('/') }
+        ])
+      } else {
+        // Modo creación: verificar duplicados y crear nuevo registro
+        const { data: existente, error: checkError } = await supabase
+          .from('registros')
+          .select('id, nombres, apellidos')
+          .eq('ci', ciNormalizado)
+          .maybeSingle()
+
+        if (checkError) {
+          throw new Error('No se pudo verificar la cédula: ' + checkError.message)
         }
-        return
+
+        if (existente) {
+          setSaving(false)
+          setErrs((e) => ({ ...e, ci: 'Esta cédula ya está registrada.' }))
+          
+          if (typeof window !== 'undefined' && window.alert) {
+            window.alert(
+              `⚠️ Cédula duplicada\n\nLa cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
+            )
+          } else {
+            Alert.alert(
+              'Cédula duplicada',
+              `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
+            )
+          }
+          return
+        }
+
+        const id = await registerIfCapacity({
+          pueblo_id: puebloId,
+          nombres: nombres.trim(),
+          apellidos: apellidos.trim(),
+          ci: ciNormalizado,
+          nacimiento: nacimientoISO,
+          email: user?.email || normEmail(email),
+          telefono: normPhone(telefono),
+          direccion: direccion.trim(),
+          emergencia_nombre: emNombre.trim(),
+          emergencia_telefono: normPhone(emTelefono),
+          rol,
+          es_jefe: rol === 'Misionero' ? !!esJefe : false,
+
+          tratamiento_especial: !!tratamiento,
+          tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
+          alimentacion_especial: !!alimento,
+          alimentacion_detalle: alimento ? alimentoDetalle.trim() : null,
+
+          // SOLOS si requierePadres=true (misionero menor)
+          padre_nombre: requierePadres ? padreNombre.trim() : null,
+          padre_telefono: requierePadres ? normPhone(padreTelefono) : null,
+          madre_nombre: requierePadres ? madreNombre.trim() : null,
+          madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
+
+          acepta_terminos: acepta,
+        })
+        
+        // Actualizar el pueblo_id en el profile del usuario
+        await supabase
+          .from('profiles')
+          .update({ pueblo_id: puebloId })
+          .eq('id', user.id)
+
+        // Copiar código al portapapeles
+        try {
+          await Clipboard.setStringAsync(String(id))
+        } catch {}
+
+        // Mostrar mensaje y redirigir
+        Alert.alert(
+          '¡Inscripción confirmada!',
+          `Tu código: ${id}\n\nAhora te llevamos a cargar tus documentos.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+              },
+            },
+          ],
+          { onDismiss: () => {
+            router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+          }}
+        )
+        
+        // Redirigir automáticamente después de 1 segundo como fallback
+        setTimeout(() => {
+          router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+        }, 1000)
       }
 
-      const id = await registerIfCapacity({
-        pueblo_id: puebloId,
-        nombres: nombres.trim(),
-        apellidos: apellidos.trim(),
-        ci: ciNormalizado,
-        nacimiento: nacimientoISO, // YYYY-MM-DD al RPC
-        email: user?.email || normEmail(email), // usar email del usuario autenticado
-        telefono: normPhone(telefono),
-        direccion: direccion.trim(),
-        emergencia_nombre: emNombre.trim(),
-        emergencia_telefono: normPhone(emTelefono),
-        rol,
-        es_jefe: rol === 'Misionero' ? !!esJefe : false,
-
-        tratamiento_especial: !!tratamiento,
-        tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
-        alimentacion_especial: !!alimento,
-        alimentacion_detalle: alimento ? alimentoDetalle.trim() : null,
-
-        // SOLOS si requierePadres=true (misionero menor)
-        padre_nombre: requierePadres ? padreNombre.trim() : null,
-        padre_telefono: requierePadres ? normPhone(padreTelefono) : null,
-        madre_nombre: requierePadres ? madreNombre.trim() : null,
-        madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
-
-        acepta_terminos: acepta,
-      })
-      
-      // Actualizar el pueblo_id en el profile del usuario
-      await supabase
-        .from('profiles')
-        .update({ pueblo_id: puebloId })
-        .eq('id', user.id)
-
-      // Copiar código al portapapeles
-      try {
-        await Clipboard.setStringAsync(String(id))
-      } catch {}
-
-      // Mostrar mensaje y redirigir
-      Alert.alert(
-        '¡Inscripción confirmada!',
-        `Tu código: ${id}\n\nAhora te llevamos a cargar tus documentos.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
-            },
-          },
-        ],
-        { onDismiss: () => {
-          router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
-        }}
-      )
-      
-      // Redirigir automáticamente después de 1 segundo como fallback
-      setTimeout(() => {
-        router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
-      }, 1000)
-
-      // Reset
-      setErrs({})
-      setPuebloId('')
-      setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
-      setEmail(''); setTelefono(''); setDireccion('')
-      setEmNombre(''); setEmTelefono('')
-      setRol('Misionero'); setEsJefe(false)
-      setTratamiento(false); setTratamientoDetalle('')
-      setAlimento(false); setAlimentoDetalle('')
-      setPadreNombre(''); setPadreTelefono('')
-      setMadreNombre(''); setMadreTelefono('')
-      setAcepta(false)
+      // Reset form solo si no estamos en modo edición
+      if (!modoEdicion) {
+        setErrs({})
+        setPuebloId('')
+        setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
+        setEmail(''); setTelefono(''); setDireccion(''); setCiudad('')
+        setEmNombre(''); setEmTelefono('')
+        setRol('Misionero'); setEsJefe(false)
+        setTratamiento(false); setTratamientoDetalle('')
+        setAlimento(false); setAlimentoDetalle('')
+        setPadreNombre(''); setPadreTelefono('')
+        setMadreNombre(''); setMadreTelefono('')
+        setAcepta(false)
+      }
     } catch (e: any) {
       Alert.alert('No se pudo inscribir', e?.message ?? String(e))
     } finally {
@@ -497,14 +560,25 @@ export default function Inscribir() {
 
   return (
     <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>Inscripción</Text>
+      <Text style={s.title}>{modoEdicion ? 'Actualizar inscripción' : 'Inscripción'}</Text>
+      
+      {modoEdicion && (
+        <Card style={{ backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: '#f59e0b' }}>
+          <Text style={[s.text, { fontWeight: '700', color: '#92400e' }]}>
+            Modo Edición
+          </Text>
+          <Text style={[s.text, { color: '#92400e', marginTop: 4 }]}>
+            Ya estás inscripto. Podés actualizar tus datos y presionar "Guardar cambios" al final.
+          </Text>
+        </Card>
+      )}
       
       <Card style={{ backgroundColor: colors.primary[50], borderLeftWidth: 4, borderLeftColor: colors.primary[500] }}>
         <Text style={[s.text, { fontWeight: '600' }]}>
           Usuario autenticado: {user.email}
         </Text>
         <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
-          Completá el formulario para inscribirte a un pueblo
+          {modoEdicion ? 'Actualizá tus datos según sea necesario' : 'Completá el formulario para inscribirte a un pueblo'}
         </Text>
       </Card>
 
@@ -621,6 +695,17 @@ export default function Inscribir() {
             setDireccion(t)
             if (t) setErrs((e) => ({ ...e, direccion: null }))
           }}
+        />
+        
+        <Label>Ciudad</Label>
+        <TextInput
+          style={[s.input, errs.ciudad && inputErrorStyle]}
+          value={ciudad}
+          onChangeText={(t) => {
+            setCiudad(t)
+            if (t) setErrs((e) => ({ ...e, ciudad: null }))
+          }}
+          placeholder="Ej: Asunción, Luque, etc."
         />
       </Card>
 
@@ -821,7 +906,12 @@ export default function Inscribir() {
         onPress={onSubmit}
         disabled={saving}
       >
-        <Text style={s.buttonText}>{saving ? 'Inscribiendo…' : 'Confirmar inscripción'}</Text>
+        <Text style={s.buttonText}>
+          {saving 
+            ? (modoEdicion ? 'Guardando cambios…' : 'Inscribiendo…') 
+            : (modoEdicion ? 'Guardar cambios' : 'Confirmar inscripción')
+          }
+        </Text>
       </Pressable>
     </ScrollView>
   )

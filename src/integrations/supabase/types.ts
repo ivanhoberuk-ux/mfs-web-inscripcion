@@ -198,6 +198,7 @@ export type Database = {
           cedula_dorso_url: string | null
           cedula_frente_url: string | null
           ci: string
+          ciudad: string | null
           created_at: string
           deleted_at: string | null
           direccion: string | null
@@ -232,6 +233,7 @@ export type Database = {
           cedula_dorso_url?: string | null
           cedula_frente_url?: string | null
           ci: string
+          ciudad?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
@@ -266,6 +268,7 @@ export type Database = {
           cedula_dorso_url?: string | null
           cedula_frente_url?: string | null
           ci?: string
+          ciudad?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
