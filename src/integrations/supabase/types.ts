@@ -193,6 +193,7 @@ export type Database = {
           acepta_terminos_at: string | null
           alimentacion_detalle: string | null
           alimentacion_especial: boolean
+          año: number
           apellidos: string
           autorizacion_url: string | null
           cedula_dorso_url: string | null
@@ -228,6 +229,7 @@ export type Database = {
           acepta_terminos_at?: string | null
           alimentacion_detalle?: string | null
           alimentacion_especial?: boolean
+          año?: number
           apellidos: string
           autorizacion_url?: string | null
           cedula_dorso_url?: string | null
@@ -263,6 +265,7 @@ export type Database = {
           acepta_terminos_at?: string | null
           alimentacion_detalle?: string | null
           alimentacion_especial?: boolean
+          año?: number
           apellidos?: string
           autorizacion_url?: string | null
           cedula_dorso_url?: string | null
@@ -1060,6 +1063,33 @@ export type Database = {
               p_alimentacion_especial?: boolean
               p_apellidos: string
               p_ci: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
               p_direccion: string
               p_email: string
               p_emergencia_nombre: string

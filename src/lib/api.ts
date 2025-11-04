@@ -36,6 +36,7 @@ export type Registro = {
   email: string | null;
   telefono: string | null;
   direccion: string | null;
+  ciudad: string | null;
   emergencia_nombre: string | null;
   emergencia_telefono: string | null;
   rol: 'Tio' | 'Misionero';
@@ -60,6 +61,9 @@ export type Registro = {
   // NUEVO: fotos de la cédula
   cedula_frente_url: string | null;
   cedula_dorso_url: string | null;
+
+  // Gestión año tras año
+  año: number;
 };
 
 // --------- Pueblos / Ocupación ----------
@@ -103,6 +107,7 @@ export async function registerIfCapacity(input: {
   email: string;
   telefono: string;
   direccion: string;
+  ciudad?: string | null;
   emergencia_nombre: string;
   emergencia_telefono: string;
   rol: 'Tio' | 'Misionero';
@@ -130,6 +135,7 @@ export async function registerIfCapacity(input: {
     p_email: input.email,
     p_telefono: input.telefono,
     p_direccion: input.direccion,
+    p_ciudad: input.ciudad ?? null,
     p_emergencia_nombre: input.emergencia_nombre,
     p_emergencia_telefono: input.emergencia_telefono,
     p_rol: input.rol,

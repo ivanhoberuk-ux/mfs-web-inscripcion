@@ -41,6 +41,10 @@ export const registrationSchema = z.object({
     .trim()
     .min(1, 'Completá dirección')
     .max(500, 'La dirección no puede exceder 500 caracteres'),
+  ciudad: z.string()
+    .trim()
+    .max(100, 'La ciudad no puede exceder 100 caracteres')
+    .optional(),
   emNombre: z.string()
     .trim()
     .min(1, 'Completá nombre de emergencia')
