@@ -820,6 +820,7 @@ export type Database = {
         Args: { p_pueblo_id: string; p_user_id: string }
         Returns: undefined
       }
+      can_access_documento: { Args: { path: string }; Returns: boolean }
       can_manage_pueblo: { Args: { _pueblo_id: string }; Returns: boolean }
       count_reuniones: {
         Args: {
@@ -925,6 +926,7 @@ export type Database = {
           total_reuniones: number
         }[]
       }
+      get_registro_id_from_path: { Args: { path: string }; Returns: string }
       get_reporte_misionero: {
         Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
         Returns: {
