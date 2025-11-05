@@ -560,9 +560,17 @@ export default function Inscribir() {
     )
   }
 
+  const añoActual = new Date().getFullYear();
+
   return (
     <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={s.title}>{modoEdicion ? 'Actualizar inscripción' : 'Inscripción'}</Text>
+      
+      <Card style={{ backgroundColor: '#10B981', borderLeftWidth: 4, borderLeftColor: '#059669', marginVertical: 8 }}>
+        <Text style={[s.text, { fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }]}>
+          📅 Inscripción para el año {añoActual}
+        </Text>
+      </Card>
       
       {modoEdicion && (
         <Card style={{ backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: '#f59e0b' }}>
