@@ -197,10 +197,31 @@ export async function fetchRegistrosAdmin(): Promise<Registro[]> {
 
 // --------- Storage helpers ----------
 
-/** URL pública a un objeto (bucket con 'public' habilitado). */
-export function publicUrl(bucket: string, path: string) {
+/** 
+ * Genera una URL firmada (signed URL) para acceso seguro a documentos privados.
+ * Para el bucket 'plantillas' (público), usa URL pública directa.
+ * Para otros buckets (como 'documentos'), genera signed URL con expiración de 1 hora.
+ */
+export async function publicUrl(bucket: string, path: string): Promise<string> {
   const clean = path.replace(/^\/+/, '');
-  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
+  
+  // Bucket 'plantillas' es público - usar URL directa
+  if (bucket === 'plantillas') {
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
+  }
+  
+  // Para otros buckets (documentos), generar signed URL
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(clean, 3600); // 1 hora de validez
+  
+  if (error || !data?.signedUrl) {
+    console.error('Error generando signed URL:', error);
+    // Fallback a URL pública (aunque el bucket sea privado, para debug)
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
+  }
+  
+  return data.signedUrl;
 }
 
 /**

@@ -66,10 +66,19 @@ export default function Inscribir() {
   const [modoEdicion, setModoEdicion] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
-  // URLs de plantillas (bucket público "plantillas")
-  const URL_PERMISO = publicUrl('plantillas', 'permiso_menor.pdf')
-  const URL_PROTOCOLO = publicUrl('plantillas', 'protocolo_prevencion.pdf')
-  const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf')
+  // URLs de plantillas (carga asíncrona de URLs firmadas)
+  const [URL_PERMISO, setUrlPermiso] = useState<string>('');
+  const [URL_PROTOCOLO, setUrlProtocolo] = useState<string>('');
+  const [URL_ESTATUTOS, setUrlEstatutos] = useState<string>('');
+
+  // Cargar URLs de plantillas al montar
+  useEffect(() => {
+    (async () => {
+      setUrlPermiso(await publicUrl('plantillas', 'permiso_menor.pdf'));
+      setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
+      setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+    })();
+  }, []);
 
   // Verificar autenticación
   useEffect(() => {

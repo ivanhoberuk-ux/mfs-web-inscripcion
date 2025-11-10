@@ -47,11 +47,21 @@ export default function Documentos() {
   const padRef = useRef<SignaturePadHandle | null>(null);
   const [firmaPreview, setFirmaPreview] = useState<string | null>(null);
 
-  // ========= PLANTILLAS =========
-  const URL_PERMISO = publicUrl('plantillas', 'permiso_menor.pdf');
-  const URL_PROTOCOLO = publicUrl('plantillas', 'protocolo_prevencion.pdf');
-  const URL_ACEPTACION = publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf');
-  const URL_ESTATUTOS = publicUrl('plantillas', 'estatutos_mfs.pdf');
+  // ========= PLANTILLAS (URLs firmadas) =========
+  const [URL_PERMISO, setUrlPermiso] = useState<string>('');
+  const [URL_PROTOCOLO, setUrlProtocolo] = useState<string>('');
+  const [URL_ACEPTACION, setUrlAceptacion] = useState<string>('');
+  const [URL_ESTATUTOS, setUrlEstatutos] = useState<string>('');
+
+  // Cargar URLs de plantillas al montar
+  useEffect(() => {
+    (async () => {
+      setUrlPermiso(await publicUrl('plantillas', 'permiso_menor.pdf'));
+      setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
+      setUrlAceptacion(await publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf'));
+      setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+    })();
+  }, []);
 
   // Auto-cargar registro del usuario actual si no es admin
   useEffect(() => {
