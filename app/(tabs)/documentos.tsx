@@ -53,6 +53,15 @@ export default function Documentos() {
   const [URL_ACEPTACION, setUrlAceptacion] = useState<string>('');
   const [URL_ESTATUTOS, setUrlEstatutos] = useState<string>('');
 
+  // URLs firmadas de los documentos del registro actual
+  const [signedUrls, setSignedUrls] = useState<{
+    autorizacion?: string;
+    ficha?: string;
+    firma?: string;
+    cedula_frente?: string;
+    cedula_dorso?: string;
+  }>({});
+
   // Cargar URLs de plantillas al montar
   useEffect(() => {
     (async () => {
@@ -62,6 +71,45 @@ export default function Documentos() {
       setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
     })();
   }, []);
+
+  // Generar signed URLs cuando cambia el registro
+  useEffect(() => {
+    if (!record) {
+      setSignedUrls({});
+      return;
+    }
+
+    (async () => {
+      const urls: typeof signedUrls = {};
+      
+      if (record.autorizacion_url) {
+        const path = storagePathFromPublicUrl(record.autorizacion_url);
+        if (path) urls.autorizacion = await publicUrl('documentos', path);
+      }
+      
+      if (record.ficha_medica_url) {
+        const path = storagePathFromPublicUrl(record.ficha_medica_url);
+        if (path) urls.ficha = await publicUrl('documentos', path);
+      }
+      
+      if (record.firma_url) {
+        const path = storagePathFromPublicUrl(record.firma_url);
+        if (path) urls.firma = await publicUrl('documentos', path);
+      }
+      
+      if (record.cedula_frente_url) {
+        const path = storagePathFromPublicUrl(record.cedula_frente_url);
+        if (path) urls.cedula_frente = await publicUrl('documentos', path);
+      }
+      
+      if (record.cedula_dorso_url) {
+        const path = storagePathFromPublicUrl(record.cedula_dorso_url);
+        if (path) urls.cedula_dorso = await publicUrl('documentos', path);
+      }
+      
+      setSignedUrls(urls);
+    })();
+  }, [record]);
 
   // Auto-cargar registro del usuario actual si no es admin
   useEffect(() => {
@@ -168,10 +216,27 @@ export default function Documentos() {
     );
   }
   function storagePathFromPublicUrl(url: string): string | null {
-    const marker = '/storage/v1/object/public/documentos/';
-    const idx = url.indexOf(marker);
-    if (idx === -1) return null;
-    return url.slice(idx + marker.length).split('?')[0];
+    // Soporta tanto URLs públicas como signed URLs
+    const publicMarker = '/storage/v1/object/public/documentos/';
+    const signedMarker = '/storage/v1/object/sign/documentos/';
+    
+    let idx = url.indexOf(publicMarker);
+    if (idx !== -1) {
+      return url.slice(idx + publicMarker.length).split('?')[0];
+    }
+    
+    idx = url.indexOf(signedMarker);
+    if (idx !== -1) {
+      return url.slice(idx + signedMarker.length).split('?')[0].split('/').slice(1).join('/');
+    }
+    
+    // Intenta extraer el path después de /documentos/
+    const docsIdx = url.indexOf('/documentos/');
+    if (docsIdx !== -1) {
+      return url.slice(docsIdx + 12).split('?')[0];
+    }
+    
+    return null;
   }
 
   // === Edad ===
@@ -704,9 +769,9 @@ export default function Documentos() {
               {!!record.ficha_medica_url && (
                 <View style={{ marginTop: 6 }}>
                   <Text style={s.small}>Cargada</Text>
-                  {isImageUrl(record.ficha_medica_url) && (
+                  {isImageUrl(record.ficha_medica_url) && signedUrls.ficha && (
                     <Image
-                      source={{ uri: bust(record.ficha_medica_url) }}
+                      source={{ uri: bust(signedUrls.ficha) }}
                       style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
                       resizeMode="cover"
                     />
@@ -714,7 +779,7 @@ export default function Documentos() {
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                     <Pressable
                       style={[s.button, { paddingVertical: 8 }]}
-                      onPress={() => openUrl(bust(record.ficha_medica_url))}
+                      onPress={() => openUrl(signedUrls.ficha || record.ficha_medica_url)}
                     >
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
@@ -748,9 +813,9 @@ export default function Documentos() {
               {!!record.autorizacion_url && (
                 <View style={{ marginTop: 6 }}>
                   <Text style={s.small}>Cargada</Text>
-                  {isImageUrl(record.autorizacion_url) && (
+                  {isImageUrl(record.autorizacion_url) && signedUrls.autorizacion && (
                     <Image
-                      source={{ uri: bust(record.autorizacion_url) }}
+                      source={{ uri: bust(signedUrls.autorizacion) }}
                       style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
                       resizeMode="cover"
                     />
@@ -758,7 +823,7 @@ export default function Documentos() {
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                     <Pressable
                       style={[s.button, { paddingVertical: 8 }]}
-                      onPress={() => openUrl(bust(record.autorizacion_url))}
+                      onPress={() => openUrl(signedUrls.autorizacion || record.autorizacion_url)}
                     >
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
@@ -781,17 +846,19 @@ export default function Documentos() {
             {record.cedula_frente_url &&
             record.cedula_dorso_url &&
             isImageUrl(record.cedula_frente_url) &&
-            isImageUrl(record.cedula_dorso_url) ? (
+            isImageUrl(record.cedula_dorso_url) &&
+            signedUrls.cedula_frente &&
+            signedUrls.cedula_dorso ? (
               <View style={{ marginTop: 6 }}>
                 <Text style={s.small}>Cargadas</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                   <Image
-                    source={{ uri: bust(record.cedula_frente_url) }}
+                    source={{ uri: bust(signedUrls.cedula_frente) }}
                     style={{ width: '49%', height: 150, borderRadius: 6 }}
                     resizeMode="cover"
                   />
                   <Image
-                    source={{ uri: bust(record.cedula_dorso_url) }}
+                    source={{ uri: bust(signedUrls.cedula_dorso) }}
                     style={{ width: '49%', height: 150, borderRadius: 6 }}
                     resizeMode="cover"
                   />
@@ -799,13 +866,13 @@ export default function Documentos() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
                   <Pressable
                     style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(bust(record.cedula_frente_url))}
+                    onPress={() => openUrl(signedUrls.cedula_frente || record.cedula_frente_url)}
                   >
                     <Text style={s.buttonText}>Ver frente</Text>
                   </Pressable>
                   <Pressable
                     style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(bust(record.cedula_dorso_url))}
+                    onPress={() => openUrl(signedUrls.cedula_dorso || record.cedula_dorso_url)}
                   >
                     <Text style={s.buttonText}>Ver dorso</Text>
                   </Pressable>
@@ -837,9 +904,9 @@ export default function Documentos() {
                 {!!record.cedula_frente_url && (
                   <View style={{ marginTop: 6 }}>
                     <Text style={s.small}>Cargada</Text>
-                    {isImageUrl(record.cedula_frente_url) && (
+                    {isImageUrl(record.cedula_frente_url) && signedUrls.cedula_frente && (
                       <Image
-                        source={{ uri: bust(record.cedula_frente_url) }}
+                        source={{ uri: bust(signedUrls.cedula_frente) }}
                         style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
                         resizeMode="cover"
                       />
@@ -847,7 +914,7 @@ export default function Documentos() {
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                       <Pressable
                         style={[s.button, { paddingVertical: 8 }]}
-                        onPress={() => openUrl(bust(record.cedula_frente_url))}
+                        onPress={() => openUrl(signedUrls.cedula_frente || record.cedula_frente_url)}
                       >
                         <Text style={s.buttonText}>Ver archivo</Text>
                       </Pressable>
@@ -873,9 +940,9 @@ export default function Documentos() {
                 {!!record.cedula_dorso_url && (
                   <View style={{ marginTop: 6 }}>
                     <Text style={s.small}>Cargada</Text>
-                    {isImageUrl(record.cedula_dorso_url) && (
+                    {isImageUrl(record.cedula_dorso_url) && signedUrls.cedula_dorso && (
                       <Image
-                        source={{ uri: bust(record.cedula_dorso_url) }}
+                        source={{ uri: bust(signedUrls.cedula_dorso) }}
                         style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
                         resizeMode="cover"
                       />
@@ -883,7 +950,7 @@ export default function Documentos() {
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                       <Pressable
                         style={[s.button, { paddingVertical: 8 }]}
-                        onPress={() => openUrl(bust(record.cedula_dorso_url))}
+                        onPress={() => openUrl(signedUrls.cedula_dorso || record.cedula_dorso_url)}
                       >
                         <Text style={s.buttonText}>Ver archivo</Text>
                       </Pressable>
@@ -919,13 +986,13 @@ export default function Documentos() {
               <View style={{ marginTop: 10 }}>
                 <Text style={s.small}>Vista previa de la firma:</Text>
                 <Image
-                  source={{ uri: bust(firmaPreview || record.firma_url) }}
+                  source={{ uri: bust(firmaPreview || signedUrls.firma || record.firma_url) }}
                   style={{ width: '100%', height: 150, borderRadius: 6 }}
                   resizeMode="contain"
                 />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
                   {record?.firma_url && (
-                    <Pressable style={[s.button, { paddingVertical: 8 }]} onPress={() => openUrl(bust(record.firma_url))}>
+                    <Pressable style={[s.button, { paddingVertical: 8 }]} onPress={() => openUrl(signedUrls.firma || record.firma_url)}>
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
                   )}
