@@ -16,6 +16,7 @@ import * as Sharing from 'expo-sharing'
 import { generateExcelBase64 } from '../../src/lib/excel'
 import { supabase } from '../../src/lib/supabase'
 import { s } from '../../src/lib/theme'
+import { Picker } from '@react-native-picker/picker'
 
 export default function PuebloInscriptosScreen() {
   const params = useLocalSearchParams<{ id: string; hideCi?: string }>()
@@ -27,6 +28,7 @@ export default function PuebloInscriptosScreen() {
   const [loading, setLoading] = useState(true)
   const [inscriptos, setInscriptos] = useState<any[]>([])
   const [query, setQuery] = useState('')
+  const [docFilter, setDocFilter] = useState<'todos' | 'completos' | 'faltan'>('todos')
 
   // ---------- Header con icono ----------
   useEffect(() => {
@@ -136,13 +138,35 @@ export default function PuebloInscriptosScreen() {
   // ---------- Filtro ----------
   const filtered = useMemo(() => {
     const q = normalize(query)
-    if (!q) return inscriptos
-    return inscriptos.filter((r: any) => {
-      const full = `${r.nombres || ''} ${r.apellidos || ''}`
-      // Si ocultamos CI, no lo usamos para buscar:
-      return normalize(full).includes(q) || (!hideCi && normalize(r.ci || '').includes(q))
-    })
-  }, [query, inscriptos, hideCi])
+    let result = inscriptos
+    
+    // Filtrar por búsqueda
+    if (q) {
+      result = result.filter((r: any) => {
+        const full = `${r.nombres || ''} ${r.apellidos || ''}`
+        // Si ocultamos CI, no lo usamos para buscar:
+        return normalize(full).includes(q) || (!hideCi && normalize(r.ci || '').includes(q))
+      })
+    }
+    
+    // Filtrar por estado de documentos
+    if (docFilter !== 'todos') {
+      result = result.filter((r: any) => {
+        const d = parseNacimientoToDate(r.nacimiento)
+        const age = getAge(d)
+        const ok = hasRequiredDoc(r, age)
+        
+        if (docFilter === 'completos') {
+          return ok === true
+        } else if (docFilter === 'faltan') {
+          return ok === false || ok === null
+        }
+        return true
+      })
+    }
+    
+    return result
+  }, [query, inscriptos, hideCi, docFilter])
 
   // ---------- Export CSV (respeta hideCi) ----------
   async function exportCsv() {
@@ -276,6 +300,21 @@ export default function PuebloInscriptosScreen() {
           placeholder={hideCi ? 'Ej: Ana' : 'Ej: Ana / 1234567'}
           autoCapitalize="none"
         />
+        
+        {/* Filtro de documentos */}
+        <Text style={s.label}>Filtrar por documentos</Text>
+        <View style={[s.input, { padding: 0, marginBottom: 12 }]}>
+          <Picker
+            selectedValue={docFilter}
+            onValueChange={(v) => setDocFilter(v as any)}
+            style={{ height: 40 }}
+          >
+            <Picker.Item label="Todos" value="todos" />
+            <Picker.Item label="Documentos completos" value="completos" />
+            <Picker.Item label="Faltan documentos" value="faltan" />
+          </Picker>
+        </View>
+        
         <Text style={s.text}>
           {totalFiltrado} de {total} inscriptos
         </Text>
@@ -288,7 +327,7 @@ export default function PuebloInscriptosScreen() {
         </Pressable>
       </View>
     ),
-    [puebloNombre, query, total, totalFiltrado, hideCi]
+    [puebloNombre, query, total, totalFiltrado, hideCi, docFilter]
   )
 
   if (loading) {

@@ -488,6 +488,92 @@ export default function Admin() {
     }
   }
 
+  function calcAge(iso?: string | null): number | null {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    const t = new Date();
+    let age = t.getFullYear() - d.getFullYear();
+    const m = t.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) age--;
+    return age;
+  }
+
+  function hasRequiredDoc(r: Registro): boolean | null {
+    const age = calcAge(r.nacimiento);
+    const isAdult = age === null ? true : age >= 18;
+    if (isAdult) {
+      return !!r.autorizacion_url;
+    } else {
+      return !!r.ficha_medica_url;
+    }
+  }
+
+  async function exportFaltanDocumentos() {
+    try {
+      setExporting(true);
+      const { data, error } = await supabase
+        .from('registros')
+        .select(
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,emergencia_nombre,emergencia_telefono,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
+        )
+        .order('pueblo_id', { ascending: true })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+
+      // Filtrar solo los que faltan documentos
+      const faltantes = (data ?? []).filter((r: Registro) => {
+        const hasDoc = hasRequiredDoc(r);
+        return hasDoc === false || hasDoc === null || !r.firma_url;
+      });
+
+      if (faltantes.length === 0) {
+        Alert.alert('Sin resultados', 'No hay inscriptos con documentos faltantes');
+        return;
+      }
+
+      const header = [
+        'pueblo', 'nombres', 'apellidos', 'ci', 'email', 'telefono',
+        'rol', 'edad', 'doc_requerido', 'tiene_firma',
+        'tiene_doc_requerido', 'fecha_inscripcion'
+      ];
+      const rows: any[][] = [header];
+
+      faltantes.forEach((r: Registro) => {
+        const age = calcAge(r.nacimiento);
+        const isAdult = age === null ? true : age >= 18;
+        const docRequerido = isAdult ? 'Aceptación' : 'Permiso';
+        const tieneDoc = hasRequiredDoc(r);
+        
+        const row = [
+          pueblosMap[r.pueblo_id] || r.pueblo_id,
+          r.nombres,
+          r.apellidos,
+          r.ci ?? '',
+          r.email ?? '',
+          r.telefono ?? '',
+          r.rol,
+          age ?? 'N/A',
+          docRequerido,
+          r.firma_url ? 'SI' : 'NO',
+          tieneDoc ? 'SI' : 'NO',
+          new Date(r.created_at).toISOString()
+        ];
+        rows.push(row);
+      });
+
+      const blob = generateExcelBlob(rows);
+      await shareOrDownload(blob, `faltan_documentos_${stamp()}.xlsx`);
+      
+      Alert.alert('Exportado', `Se exportaron ${faltantes.length} inscriptos con documentos faltantes`);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // ===== Loading/redirección =====
   if (authLoading || checkingRole) {
     return (
@@ -746,6 +832,13 @@ export default function Admin() {
             </Pressable>
             <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
               <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos Excel'}</Text>
+            </Pressable>
+            <Pressable 
+              style={[s.button, { flexGrow: 1, backgroundColor: '#dc2626' }]} 
+              onPress={exportFaltanDocumentos} 
+              disabled={exporting}
+            >
+              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Faltan Documentos'}</Text>
             </Pressable>
           </View>
         )}
