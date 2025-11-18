@@ -125,7 +125,7 @@ export async function registerIfCapacity(input: {
 
   // aceptación de términos
   acepta_terminos: boolean;
-}): Promise<string> {
+}): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
     p_nombres: input.nombres,
@@ -155,7 +155,7 @@ export async function registerIfCapacity(input: {
 
   const { data, error } = await supabase.rpc('register_if_capacity', payload);
   if (error) throw error;
-  return data as string; // id (uuid)
+  return data as { id: string; estado: string; mensaje: string };
 }
 
 // --------- Documentos de inscriptos ----------

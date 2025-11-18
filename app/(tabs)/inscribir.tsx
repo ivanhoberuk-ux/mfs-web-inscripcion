@@ -453,7 +453,7 @@ export default function Inscribir() {
           return
         }
 
-        const id = await registerIfCapacity({
+        const result = await registerIfCapacity({
           pueblo_id: puebloId,
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
@@ -490,29 +490,37 @@ export default function Inscribir() {
 
         // Copiar código al portapapeles
         try {
-          await Clipboard.setStringAsync(String(id))
+          await Clipboard.setStringAsync(String(result.id))
         } catch {}
 
-        // Mostrar mensaje y redirigir
+        // Mostrar mensaje según el estado
+        const titulo = result.estado === 'confirmado' 
+          ? '¡Inscripción confirmada!' 
+          : '📋 Lista de espera'
+        
+        const mensaje = result.estado === 'confirmado'
+          ? `Tu código: ${result.id}\n\nAhora te llevamos a cargar tus documentos.`
+          : `Tu código: ${result.id}\n\n${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
+
         Alert.alert(
-          '¡Inscripción confirmada!',
-          `Tu código: ${id}\n\nAhora te llevamos a cargar tus documentos.`,
+          titulo,
+          mensaje,
           [
             {
               text: 'OK',
               onPress: () => {
-                router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+                router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
               },
             },
           ],
           { onDismiss: () => {
-            router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+            router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
           }}
         )
         
         // Redirigir automáticamente después de 1 segundo como fallback
         setTimeout(() => {
-          router.push({ pathname: '/(tabs)/documentos', params: { code: id } })
+          router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
         }, 1000)
       }
 
