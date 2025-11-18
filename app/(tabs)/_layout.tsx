@@ -113,6 +113,16 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="baja"
+        options={{
+          title: 'Dar de baja',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="close-circle" size={size} color={color} />
+          ),
+        }}
+      />
+
       {/* Inscriptos: solo visible para usuarios logueados */}
       <Tabs.Screen
         name="inscriptos"
