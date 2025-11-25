@@ -149,6 +149,7 @@ export default function TabLayout() {
 
       {/* Rutas que no deben verse como tab */}
       <Tabs.Screen name="firma" options={{ href: null }} />
+      <Tabs.Screen name="test-email" options={{ href: showAdmin ? undefined : null, title: 'Test Email' }} />
     </Tabs>
   );
 }
