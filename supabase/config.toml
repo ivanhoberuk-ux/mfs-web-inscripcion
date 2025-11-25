@@ -1,1 +1,7 @@
 project_id = "npekpdkywsneylddzzuu"
+
+[functions.gestionar-baja]
+verify_jwt = false
+
+[functions.test-email]
+verify_jwt = false
