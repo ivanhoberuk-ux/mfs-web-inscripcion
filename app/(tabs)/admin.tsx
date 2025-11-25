@@ -103,6 +103,9 @@ export default function Admin() {
   const [newPuebloNombre, setNewPuebloNombre] = useState('');
   const [newPuebloCupo, setNewPuebloCupo] = useState('40');
   const [creatingPueblo, setCreatingPueblo] = useState(false);
+  
+  // Estado para test email
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
   // ===== Guards / carga de rol =====
   useEffect(() => {
@@ -366,6 +369,26 @@ export default function Admin() {
       setCreatingPueblo(false);
     }
   }
+  
+  // ===== Test Email =====
+  async function sendTestEmail() {
+    try {
+      setSendingTestEmail(true);
+      const { data, error } = await supabase.functions.invoke('test-email', {
+        body: { email: user?.email || 'ivanhoberuk@gmail.com' }
+      });
+
+      if (error) throw error;
+
+      Alert.alert('Éxito', `Email de prueba enviado a ${user?.email || 'ivanhoberuk@gmail.com'}. Revisá tu bandeja de entrada.`);
+    } catch (e: any) {
+      console.error('Error sending test email:', e);
+      Alert.alert('Error', e?.message ?? 'No se pudo enviar el email de prueba');
+    } finally {
+      setSendingTestEmail(false);
+    }
+  }
+  
   async function onSave(puebloId: string) {
     try {
       const nuevoMax = edit[puebloId];
@@ -823,23 +846,43 @@ export default function Admin() {
           </View>
         ) : (
           // Panel de exportes original
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosJSON} disabled={exporting}>
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros JSON'}</Text>
-            </Pressable>
-            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosCSV} disabled={exporting}>
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros Excel'}</Text>
-            </Pressable>
-            <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos Excel'}</Text>
-            </Pressable>
-            <Pressable 
-              style={[s.button, { flexGrow: 1, backgroundColor: '#dc2626' }]} 
-              onPress={exportFaltanDocumentos} 
-              disabled={exporting}
-            >
-              <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Faltan Documentos'}</Text>
-            </Pressable>
+          <View style={{ gap: 12 }}>
+            {/* Botón de prueba de email */}
+            <View style={{ padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, borderWidth: 1, borderColor: '#fbbf24' }}>
+              <Text style={[s.subtitle, { marginBottom: 8, color: '#92400e' }]}>🧪 Prueba de Email</Text>
+              <Text style={[s.text, { marginBottom: 12, color: '#78350f' }]}>
+                Enviá un email de prueba a tu correo para verificar que Resend está configurado correctamente.
+              </Text>
+              <Pressable
+                style={[s.button, { backgroundColor: '#f59e0b' }]}
+                onPress={sendTestEmail}
+                disabled={sendingTestEmail}
+              >
+                <Text style={s.buttonText}>
+                  {sendingTestEmail ? 'Enviando...' : '📧 Enviar Email de Prueba'}
+                </Text>
+              </Pressable>
+            </View>
+            
+            {/* Exportes */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosJSON} disabled={exporting}>
+                <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros JSON'}</Text>
+              </Pressable>
+              <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportRegistrosCSV} disabled={exporting}>
+                <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Registros Excel'}</Text>
+              </Pressable>
+              <Pressable style={[s.button, { flexGrow: 1 }]} onPress={exportPueblosCSV} disabled={exporting}>
+                <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Pueblos Excel'}</Text>
+              </Pressable>
+              <Pressable 
+                style={[s.button, { flexGrow: 1, backgroundColor: '#dc2626' }]} 
+                onPress={exportFaltanDocumentos} 
+                disabled={exporting}
+              >
+                <Text style={s.buttonText}>{exporting ? 'Procesando…' : 'Exportar Faltan Documentos'}</Text>
+              </Pressable>
+            </View>
           </View>
         )}
       </View>
