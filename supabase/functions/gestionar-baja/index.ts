@@ -69,16 +69,55 @@ Deno.serve(async (req) => {
         console.log('Usuario promovido:', promoverResult)
         resultado.promovido = promoverResult
         
-        // TODO: Aquí se podría enviar email al usuario promovido
-        // Requiere integración con Resend u otro servicio de email
-        console.log('Email de promoción pendiente para:', promoverResult.email)
+        // Obtener info del pueblo para el email
+        const { data: pueblo } = await supabase
+          .from('pueblos')
+          .select('nombre')
+          .eq('id', cancelResult.pueblo_id)
+          .single()
+        
+        // Enviar email de promoción (requiere RESEND_API_KEY)
+        const resendKey = Deno.env.get('RESEND_API_KEY')
+        if (resendKey) {
+          try {
+            const emailResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'MFS Inscripciones <onboarding@resend.dev>',
+                to: [promoverResult.email],
+                subject: '¡Has sido promovido de la lista de espera!',
+                html: `
+                  <h2>¡Buenas noticias!</h2>
+                  <p>Hola ${promoverResult.nombres},</p>
+                  <p>Te informamos que se ha liberado un lugar en <strong>${pueblo?.nombre || 'tu pueblo'}</strong> y has sido promovido automáticamente de la lista de espera.</p>
+                  <p>Tu inscripción está ahora <strong>confirmada</strong>.</p>
+                  <p>¡Nos vemos pronto!</p>
+                `,
+              }),
+            })
+            
+            if (emailResponse.ok) {
+              console.log('Email de promoción enviado a:', promoverResult.email)
+            } else {
+              console.error('Error al enviar email:', await emailResponse.text())
+            }
+          } catch (emailError) {
+            console.error('Error enviando email de promoción:', emailError)
+          }
+        } else {
+          console.log('RESEND_API_KEY no configurado. Email de promoción pendiente para:', promoverResult.email)
+        }
       } else {
         console.log('No había nadie en lista de espera')
         resultado.promovido = null
       }
     }
 
-    // 3. Obtener info del pueblo para notificar al admin
+    // 3. Obtener info del pueblo para la respuesta
     const { data: pueblo, error: puebloError } = await supabase
       .from('pueblos')
       .select('nombre')
