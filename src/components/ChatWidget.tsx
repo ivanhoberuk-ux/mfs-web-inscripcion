@@ -16,7 +16,7 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! Soy el asistente de Misiones Familiares. ¿En qué puedo ayudarte?',
+      text: '¡Hola! Soy Misionerito, tu asistente de las MFS. ¿En qué puedo ayudarte?',
       isUser: false,
       timestamp: new Date(),
     }
@@ -102,7 +102,7 @@ export function ChatWidget() {
           <View style={styles.chatContainer}>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>💬 Asistente MFS</Text>
+              <Text style={styles.headerTitle}>🙏 Misionerito</Text>
               <Pressable onPress={() => setIsOpen(false)} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </Pressable>
