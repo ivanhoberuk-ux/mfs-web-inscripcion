@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image } from 'react-native';
 import { colors, spacing, radius, shadows } from '../lib/designSystem';
 
 const N8N_WEBHOOK_URL = 'https://elviajero80.app.n8n.cloud/webhook/6e841b5c-79dd-46fe-baa0-d55c57ec50c0/chat';
+const MISIONERITO_AVATAR = 'https://npekpdkywsneylddzzuu.supabase.co/storage/v1/object/public/logos/ChatGPT%20Image%202%20dic%202025%2C%2018_11_50.png';
 
 interface Message {
   id: string;
@@ -88,7 +89,7 @@ export function ChatWidget() {
         style={styles.floatingButton}
         onPress={() => setIsOpen(true)}
       >
-        <Text style={styles.floatingButtonText}>💬</Text>
+        <Image source={{ uri: MISIONERITO_AVATAR }} style={styles.floatingButtonImage} />
       </Pressable>
 
       {/* Chat Modal */}
@@ -102,7 +103,10 @@ export function ChatWidget() {
           <View style={styles.chatContainer}>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>🙏 Misionerito</Text>
+              <View style={styles.headerLeft}>
+                <Image source={{ uri: MISIONERITO_AVATAR }} style={styles.headerAvatar} />
+                <Text style={styles.headerTitle}>Misionerito</Text>
+              </View>
               <Pressable onPress={() => setIsOpen(false)} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </Pressable>
@@ -177,8 +181,10 @@ const styles = StyleSheet.create({
     ...shadows.lg,
     zIndex: 1000,
   },
-  floatingButtonText: {
-    fontSize: 28,
+  floatingButtonImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   modalOverlay: {
     flex: 1,
@@ -200,6 +206,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[200],
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   headerTitle: {
     fontSize: 18,
