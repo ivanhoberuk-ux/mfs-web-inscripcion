@@ -3,7 +3,7 @@ import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, Activi
 import { colors, spacing, radius, shadows } from '../lib/designSystem';
 
 const N8N_WEBHOOK_URL = 'https://elviajero80.app.n8n.cloud/webhook/6e841b5c-79dd-46fe-baa0-d55c57ec50c0/chat';
-const MISIONERITO_AVATAR = 'https://npekpdkywsneylddzzuu.supabase.co/storage/v1/object/public/logos/ChatGPT%20Image%202%20dic%202025%2C%2018_11_50.png';
+const MISIONERITO_AVATAR = 'https://npekpdkywsneylddzzuu.supabase.co/storage/v1/object/public/logos/ChatGPT%20Image%202%20dic%202025%2C%2018_23_38.png';
 
 interface Message {
   id: string;
