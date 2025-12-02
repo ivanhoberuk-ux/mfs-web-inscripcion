@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Edge Function: test-email
 // Envía un email de prueba usando Resend
 

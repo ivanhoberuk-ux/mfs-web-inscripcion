@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Edge Function: gestionar-baja
 // Maneja la baja de un usuario y promueve automáticamente al siguiente en lista de espera
 
