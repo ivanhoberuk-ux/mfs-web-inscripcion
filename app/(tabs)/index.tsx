@@ -178,7 +178,7 @@ export default function Home() {
           color: colors.text.secondary.light,
           marginTop: 8,
         }}>
-          Tu aventura comienza aquí 🚀
+          Encendé tu corazón. La misión arranca acá 🔥💛
         </Text>
       </Animated.View>
 
