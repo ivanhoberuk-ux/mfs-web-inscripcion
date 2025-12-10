@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image } from 'react-native';
+import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image, Animated } from 'react-native';
 import { colors, spacing, radius, shadows } from '../lib/designSystem';
 
 const N8N_WEBHOOK_URL = 'https://elviajero80.app.n8n.cloud/webhook/6e841b5c-79dd-46fe-baa0-d55c57ec50c0/chat';
@@ -14,6 +14,7 @@ interface Message {
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showBubble, setShowBubble] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -25,6 +26,33 @@ export function ChatWidget() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const bubbleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animate bubble in after a short delay
+    const timer = setTimeout(() => {
+      Animated.spring(bubbleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }, 1000);
+
+    // Auto-hide bubble after 8 seconds
+    const hideTimer = setTimeout(() => {
+      Animated.timing(bubbleAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setShowBubble(false));
+    }, 8000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(hideTimer);
+    };
+  }, []);
 
   useEffect(() => {
     if (scrollViewRef.current) {
@@ -103,10 +131,35 @@ export function ChatWidget() {
 
   return (
     <>
+      {/* Speech Bubble */}
+      {showBubble && !isOpen && (
+        <Animated.View 
+          style={[
+            styles.speechBubble,
+            {
+              opacity: bubbleAnim,
+              transform: [
+                { scale: bubbleAnim },
+                { translateY: bubbleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0]
+                })}
+              ]
+            }
+          ]}
+        >
+          <Text style={styles.speechBubbleText}>¡Hola!! Estoy aquí para ayudarte 💬</Text>
+          <View style={styles.speechBubbleArrow} />
+        </Animated.View>
+      )}
+
       {/* Floating Button */}
       <Pressable
         style={styles.floatingButton}
-        onPress={() => setIsOpen(true)}
+        onPress={() => {
+          setShowBubble(false);
+          setIsOpen(true);
+        }}
       >
         <Image source={{ uri: MISIONERITO_AVATAR }} style={styles.floatingButtonImage} />
       </Pressable>
@@ -187,6 +240,37 @@ export function ChatWidget() {
 }
 
 const styles = StyleSheet.create({
+  speechBubble: {
+    position: 'absolute',
+    bottom: 150,
+    right: 20,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    maxWidth: 200,
+    zIndex: 1001,
+    ...shadows.lg,
+  },
+  speechBubbleText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.text.primary.light,
+    textAlign: 'center',
+  },
+  speechBubbleArrow: {
+    position: 'absolute',
+    bottom: -8,
+    right: 50,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#ffffff',
+  },
   floatingButton: {
     position: 'absolute',
     bottom: 24,
