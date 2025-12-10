@@ -170,7 +170,7 @@ export default function Home() {
           paddingHorizontal: 16,
           lineHeight: 30,
         }}>
-          Bienvenido a las MFS 🎪
+          Bienvenido a las MFS 💒
         </Text>
         <Text style={{
           fontSize: 15,
