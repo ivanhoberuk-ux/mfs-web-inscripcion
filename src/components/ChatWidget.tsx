@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     height: 140,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.lg,
+    backgroundColor: 'transparent',
     zIndex: 1000,
   },
   floatingButtonImage: {
