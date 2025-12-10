@@ -1,10 +1,23 @@
 // FILE: app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { useAuth } from '../../src/context/AuthProvider';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Platform } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../src/lib/supabase';
+import { colors } from '../../src/lib/designSystem';
+
+// Componente de icono con emoji
+function EmojiIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+  return (
+    <View style={{ 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      transform: [{ scale: focused ? 1.15 : 1 }],
+    }}>
+      <Text style={{ fontSize: focused ? 24 : 20 }}>{emoji}</Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { user, loading } = useAuth();
@@ -55,15 +68,26 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#0a7ea4',
+        tabBarActiveTintColor: colors.primary[600],
+        tabBarInactiveTintColor: colors.text.tertiary.light,
         tabBarHideOnKeyboard: true,
-        tabBarLabelStyle: { fontSize: 12 },
+        tabBarLabelStyle: { 
+          fontSize: 11, 
+          fontWeight: '600',
+          marginTop: -2,
+        },
         tabBarStyle: {
-          paddingTop: 6,
-          paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-          backgroundColor: '#fff',
-          borderTopColor: '#eee',
-          borderTopWidth: 0.5,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          height: Platform.OS === 'ios' ? 85 : 65,
+          backgroundColor: colors.surface.light,
+          borderTopColor: colors.primary[100],
+          borderTopWidth: 2,
+          shadowColor: colors.primary[500],
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 10,
         },
       }}
     >
@@ -71,8 +95,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-sharp" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="🏠" focused={focused} />
           ),
         }}
       />
@@ -80,8 +104,8 @@ export default function TabLayout() {
         name="inscribir"
         options={{
           title: 'Inscribirme',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="✍️" focused={focused} />
           ),
         }}
       />
@@ -89,8 +113,8 @@ export default function TabLayout() {
         name="pueblos"
         options={{
           title: 'Pueblos',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="navigate-circle" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="🏕️" focused={focused} />
           ),
         }}
       />
@@ -98,17 +122,17 @@ export default function TabLayout() {
         name="buscador"
         options={{
           title: 'Buscador',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-circle" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="🔍" focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="documentos"
         options={{
-          title: 'Documentos',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="reader" size={size} color={color} />
+          title: 'Docs',
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="📄" focused={focused} />
           ),
         }}
       />
@@ -116,9 +140,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="baja"
         options={{
-          title: 'Dar de baja',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="close-circle" size={size} color={color} />
+          title: 'Baja',
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="👋" focused={focused} />
           ),
         }}
       />
@@ -129,8 +153,8 @@ export default function TabLayout() {
         options={{
           href: showInscriptos ? undefined : null,
           title: 'Inscriptos',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-circle" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="👥" focused={focused} />
           ),
         }}
       />
@@ -141,15 +165,15 @@ export default function TabLayout() {
         options={{
           href: showAdmin ? undefined : null,
           title: 'Admin',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-checkmark" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="⚙️" focused={focused} />
           ),
         }}
       />
 
       {/* Rutas que no deben verse como tab */}
       <Tabs.Screen name="firma" options={{ href: null }} />
-      <Tabs.Screen name="test-email" options={{ href: showAdmin ? undefined : null, title: 'Test Email' }} />
+      <Tabs.Screen name="test-email" options={{ href: showAdmin ? undefined : null, title: 'Test' }} />
     </Tabs>
   );
 }
