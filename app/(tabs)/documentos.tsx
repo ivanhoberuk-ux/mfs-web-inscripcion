@@ -592,53 +592,62 @@ export default function Documentos() {
       keyboardShouldPersistTaps="handled"
       bounces={false}
     >
-      <Text style={s.title}>
-        {isSuperAdmin ? 'Documentos (Admin)' : isPuebloAdmin ? 'Documentos (Admin de Pueblo)' : 'Mis documentos'}
-      </Text>
+      {/* Header con emoji */}
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <Text style={{ fontSize: 48 }}>📄</Text>
+        <Text style={[s.title, { textAlign: 'center', marginTop: 8 }]}>
+          {isSuperAdmin ? 'Documentos 📋' : isPuebloAdmin ? 'Documentos 📋' : 'Mis documentos'}
+        </Text>
+        <Text style={{ fontSize: 14, color: '#666', textAlign: 'center' }}>
+          {isSuperAdmin || isPuebloAdmin 
+            ? '👑 Modo administrador' 
+            : 'Cargá tus documentos requeridos'}
+        </Text>
+      </View>
 
       {/* Banner edad */}
       {record && (
-        <View style={[s.card, { marginBottom: 12, backgroundColor: '#f3f4f6' }]}>
-          <Text style={s.text}>
+        <View style={[s.card, { marginBottom: 12, backgroundColor: '#eef2ff', borderWidth: 2, borderColor: '#c7d2fe' }]}>
+          <Text style={[s.text, { textAlign: 'center' }]}>
             {edad == null
-              ? 'No hay fecha de nacimiento: podés cargar cualquiera de los documentos.'
+              ? '📅 No hay fecha de nacimiento: podés cargar cualquiera de los documentos.'
               : edad < 18
-              ? `Edad: ${edad} años — Requerido: Permiso del Menor.`
-              : `Edad: ${edad} años — Requerido: Aceptación del Protocolo.`}
+              ? `👶 Edad: ${edad} años — Requerido: Permiso del Menor.`
+              : `🧑 Edad: ${edad} años — Requerido: Aceptación del Protocolo.`}
           </Text>
         </View>
       )}
 
       {/* === PLANTILLAS === */}
-      <View style={[s.card, { marginBottom: 12 }]}>
-        <Text style={s.text}>Plantillas para leer y firmar</Text>
+      <View style={[s.card, { marginBottom: 12, borderWidth: 2, borderColor: '#c7d2fe' }]}>
+        <Text style={[s.text, { fontWeight: '600', marginBottom: 8 }]}>📚 Plantillas para leer y firmar</Text>
 
         <Pressable
-          style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
+          style={[s.button, { marginTop: 8, paddingVertical: 12, backgroundColor: '#6366f1' }]}
           onPress={() => openUrl(bust(URL_ESTATUTOS))}
         >
-          <Text style={s.buttonText}>Estatutos de las MFS (PDF)</Text>
+          <Text style={s.buttonText}>📜 Estatutos de las MFS</Text>
         </Pressable>
 
         <Pressable
-          style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
+          style={[s.button, { marginTop: 8, paddingVertical: 12, backgroundColor: '#06b6d4' }]}
           onPress={() => openUrl(bust(URL_PERMISO))}
         >
-          <Text style={s.buttonText}>Permiso del Menor (PDF)</Text>
+          <Text style={s.buttonText}>👶 Permiso del Menor</Text>
         </Pressable>
 
         <Pressable
-          style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
+          style={[s.button, { marginTop: 8, paddingVertical: 12, backgroundColor: '#10b981' }]}
           onPress={() => openUrl(bust(URL_PROTOCOLO))}
         >
-          <Text style={s.buttonText}>Protocolo de Prevención (PDF)</Text>
+          <Text style={s.buttonText}>🛡️ Protocolo de Prevención</Text>
         </Pressable>
 
         <Pressable
-          style={[s.button, { marginTop: 8, paddingVertical: 10 }]}
+          style={[s.button, { marginTop: 8, paddingVertical: 12, backgroundColor: '#f59e0b' }]}
           onPress={() => openUrl(bust(URL_ACEPTACION))}
         >
-          <Text style={s.buttonText}>Aceptación Protocolo Prevención (PDF)</Text>
+          <Text style={s.buttonText}>✅ Aceptación Protocolo</Text>
         </Pressable>
       </View>
 

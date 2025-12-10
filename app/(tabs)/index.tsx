@@ -1,7 +1,8 @@
 // FILE: app/(tabs)/index.tsx
 import React, { useEffect, useState, useRef } from 'react'
 import { ScrollView, View, Image, Text, Pressable, Animated } from 'react-native'
-import { s, colors, spacing, shadows, radius } from '../../src/lib/theme'
+import { s, colors, spacing, shadows } from '../../src/lib/theme'
+import { radius } from '../../src/lib/designSystem'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../src/context/AuthProvider'
