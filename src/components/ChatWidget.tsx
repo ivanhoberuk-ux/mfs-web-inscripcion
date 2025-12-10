@@ -59,10 +59,29 @@ export function ChatWidget() {
       });
 
       const data = await response.json();
+      console.log('n8n response:', JSON.stringify(data, null, 2));
+      
+      // n8n puede devolver la respuesta en varios formatos
+      let responseText = 'Lo siento, no pude procesar tu mensaje.';
+      if (typeof data === 'string') {
+        responseText = data;
+      } else if (Array.isArray(data) && data.length > 0) {
+        // n8n a veces devuelve un array
+        const firstItem = data[0];
+        responseText = firstItem.output || firstItem.text || firstItem.response || firstItem.message || JSON.stringify(firstItem);
+      } else if (data.output) {
+        responseText = data.output;
+      } else if (data.text) {
+        responseText = data.text;
+      } else if (data.response) {
+        responseText = data.response;
+      } else if (data.message) {
+        responseText = data.message;
+      }
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.output || data.text || data.response || 'Lo siento, no pude procesar tu mensaje.',
+        text: responseText,
         isUser: false,
         timestamp: new Date(),
       };
