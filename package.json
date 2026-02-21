@@ -10,9 +10,9 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "build:web": "expo export --platform web",
+    "build": "expo export --platform web",
     "build:dev": "expo export --platform web --dev",
     "preview:web": "npx serve dist"
-    "build": "expo export --platform web",
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
