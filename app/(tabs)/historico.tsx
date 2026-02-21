@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
 } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { radius } from '../../src/lib/designSystem'
 import { supabase } from '../../src/lib/supabase'
@@ -56,6 +57,7 @@ export default function Historico() {
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [filterPueblo, setFilterPueblo] = useState<string>('todos')
 
   const isAdmin = isSuperAdmin || isPuebloAdmin
 
@@ -138,15 +140,19 @@ export default function Historico() {
 
   // Filter registros
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return registros
+    let result = registros
+    if (filterPueblo !== 'todos') {
+      result = result.filter(r => r.pueblo_id === filterPueblo)
+    }
+    if (!searchQuery.trim()) return result
     const q = searchQuery.toLowerCase()
-    return registros.filter(r =>
+    return result.filter(r =>
       r.nombres.toLowerCase().includes(q) ||
       r.apellidos.toLowerCase().includes(q) ||
       r.ci.toLowerCase().includes(q) ||
       (r.email && r.email.toLowerCase().includes(q))
     )
-  }, [registros, searchQuery])
+  }, [registros, searchQuery, filterPueblo])
 
   // Stats for selected year
   const stats = useMemo(() => {
@@ -293,6 +299,16 @@ export default function Historico() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
+
+              <Text style={s.label}>Pueblo</Text>
+              <View style={{ borderWidth: 1, borderColor: colors.neutral?.[300] || '#ddd', borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+                <Picker selectedValue={filterPueblo} onValueChange={setFilterPueblo}>
+                  <Picker.Item label="Todos los pueblos" value="todos" />
+                  {Object.entries(pueblosMap).map(([pid, nombre]) => (
+                    <Picker.Item key={pid} label={nombre} value={pid} />
+                  ))}
+                </Picker>
+              </View>
 
               {/* Per-pueblo summary */}
               {stats.size > 0 && (

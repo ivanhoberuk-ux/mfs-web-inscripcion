@@ -12,9 +12,9 @@ function EmojiIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
     <View style={{ 
       alignItems: 'center', 
       justifyContent: 'center',
-      transform: [{ scale: focused ? 1.15 : 1 }],
+      transform: [{ scale: focused ? 1.1 : 1 }],
     }}>
-      <Text style={{ fontSize: focused ? 24 : 20 }}>{emoji}</Text>
+      <Text style={{ fontSize: focused ? 18 : 16 }}>{emoji}</Text>
     </View>
   );
 }
@@ -72,14 +72,14 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.text.tertiary.light,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { 
-          fontSize: 11, 
+          fontSize: 9, 
           fontWeight: '600',
           marginTop: -2,
         },
         tabBarStyle: {
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingTop: 4,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 6,
+          height: Platform.OS === 'ios' ? 75 : 56,
           backgroundColor: colors.surface.light,
           borderTopColor: colors.primary[100],
           borderTopWidth: 2,
