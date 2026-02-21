@@ -171,6 +171,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Histórico: solo visible para admins */}
+      <Tabs.Screen
+        name="historico"
+        options={{
+          href: showAdmin ? undefined : null,
+          title: 'Histórico',
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="📊" focused={focused} />
+          ),
+        }}
+      />
+
       {/* Rutas que no deben verse como tab */}
       <Tabs.Screen name="firma" options={{ href: null }} />
       <Tabs.Screen name="test-email" options={{ href: showAdmin ? undefined : null, title: 'Test' }} />
