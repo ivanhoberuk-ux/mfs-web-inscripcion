@@ -1,0 +1,1 @@
+UPDATE public.registros SET año = 2026 WHERE año = 2025;
