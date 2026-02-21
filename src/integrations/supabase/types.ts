@@ -97,6 +97,104 @@ export type Database = {
         }
         Relationships: []
       }
+      document_metadata: {
+        Row: {
+          created_at: string | null
+          id: string
+          schema: string | null
+          title: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          schema?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          schema?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      document_rows: {
+        Row: {
+          dataset_id: string | null
+          id: number
+          row_data: Json | null
+        }
+        Insert: {
+          dataset_id?: string | null
+          id?: number
+          row_data?: Json | null
+        }
+        Update: {
+          dataset_id?: string | null
+          id?: number
+          row_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_rows_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "document_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          content: string | null
+          embedding: string | null
+          id: number
+          metadata: Json | null
+        }
+        Insert: {
+          content?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      indexed_files: {
+        Row: {
+          file_id: string
+          file_name: string | null
+          file_type: string | null
+          indexed_at: string | null
+          last_modified: string | null
+          status: string | null
+        }
+        Insert: {
+          file_id: string
+          file_name?: string | null
+          file_type?: string | null
+          indexed_at?: string | null
+          last_modified?: string | null
+          status?: string | null
+        }
+        Update: {
+          file_id?: string
+          file_name?: string | null
+          file_type?: string | null
+          indexed_at?: string | null
+          last_modified?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       misioneros_extra: {
         Row: {
           created_at: string
@@ -1056,6 +1154,15 @@ export type Database = {
       marcar_asistencia: {
         Args: { p_misionero_id: string; p_reunion_id: string }
         Returns: boolean
+      }
+      match_documents: {
+        Args: { filter?: Json; match_count?: number; query_embedding: string }
+        Returns: {
+          content: string
+          id: number
+          metadata: Json
+          similarity: number
+        }[]
       }
       only_digits: { Args: { txt: string }; Returns: string }
       preview_ranking_por_puntajes: {
