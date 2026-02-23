@@ -58,8 +58,8 @@ export default function Inscribir() {
   const [madreTelefono, setMadreTelefono] = useState('')
   const [ciudad, setCiudad] = useState('')
 
-  // Aceptación de términos (obligatorio)
   const [acepta, setAcepta] = useState(false)
+  const [talleRemera, setTalleRemera] = useState('')
 
   const [errs, setErrs] = useState<Errs>({})
   const [registroExistente, setRegistroExistente] = useState<any>(null)
@@ -149,6 +149,7 @@ export default function Inscribir() {
           setMadreNombre(registro.madre_nombre || '')
           setMadreTelefono(registro.madre_telefono || '')
           setCiudad(registro.ciudad || '')
+          setTalleRemera(registro.talle_remera || '')
           setAcepta(true) // Ya aceptó términos previamente
         }
         
@@ -330,6 +331,7 @@ export default function Inscribir() {
         padreTelefono: padreTelefono || undefined,
         madreNombre: madreNombre || undefined,
         madreTelefono: madreTelefono || undefined,
+        talleRemera,
         acepta,
       };
 
@@ -416,6 +418,7 @@ export default function Inscribir() {
             madre_nombre: requierePadres ? madreNombre.trim() : null,
             madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
             ciudad: ciudad.trim() || null,
+            talle_remera: talleRemera || null,
           })
           .eq('id', registroExistente.id)
 
@@ -480,6 +483,7 @@ export default function Inscribir() {
           madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
 
           acepta_terminos: acepta,
+          talle_remera: talleRemera || null,
         })
         
         // Actualizar el pueblo_id en el profile del usuario
@@ -536,7 +540,7 @@ export default function Inscribir() {
         setAlimento(false); setAlimentoDetalle('')
         setPadreNombre(''); setPadreTelefono('')
         setMadreNombre(''); setMadreTelefono('')
-        setAcepta(false)
+        setAcepta(false); setTalleRemera('')
       }
     } catch (e: any) {
       Alert.alert('No se pudo inscribir', e?.message ?? String(e))
@@ -882,6 +886,41 @@ export default function Inscribir() {
           />
         </View>
       )}
+
+      {/* Talle de remera */}
+      <Card>
+        <Label>Talle de remera</Label>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {[
+            { value: 'XS', label: 'XS (PP)' },
+            { value: 'S', label: 'S (P / Chico)' },
+            { value: 'M', label: 'M (Mediano)' },
+            { value: 'L', label: 'L (G / Grande)' },
+            { value: 'XL', label: 'XL (GG / Extra grande)' },
+            { value: 'XXL', label: 'XXL (XGG / 2XL)' },
+            { value: 'XXXL', label: 'XXXL (3XL)' },
+          ].map((t) => (
+            <Pressable
+              key={t.value}
+              onPress={() => {
+                setTalleRemera(t.value)
+                setErrs((e) => ({ ...e, talleRemera: null }))
+              }}
+              style={[
+                s.button,
+                {
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: talleRemera === t.value ? colors.primary[500] : colors.neutral[300],
+                },
+              ]}
+            >
+              <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>{t.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {!!errs.talleRemera && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{errs.talleRemera}</Text>}
+      </Card>
 
       {/* Aceptación de términos y plantillas */}
       <View style={s.card}>
