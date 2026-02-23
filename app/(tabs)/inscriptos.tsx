@@ -517,7 +517,7 @@ export default function VerInscriptosAdmin() {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 24 }}>
+    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 120 }}>
       <Text style={s.title}>
         Inscriptos {currentUserIsSuperAdmin ? '(Super Admin)' : isPuebloAdmin || isCoAdmin ? '(Mi pueblo)' : ''}
       </Text>

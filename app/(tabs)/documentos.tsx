@@ -587,7 +587,7 @@ export default function Documentos() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ paddingBottom: 32 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
       style={s.screen}
       keyboardShouldPersistTaps="handled"
       bounces={false}

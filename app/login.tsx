@@ -1,6 +1,6 @@
 // FILE: app/login.tsx
 import React, { useState, useEffect } from 'react'
-import { View, Text, ActivityIndicator, ScrollView } from 'react-native'
+import { View, Text, ActivityIndicator, ScrollView, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 import { s } from '../src/lib/theme'
@@ -23,6 +23,7 @@ export default function Login() {
   const { next, mode } = useLocalSearchParams<{ next?: string; mode?: string }>()
   const dest = sanitizeNext(next)
   const isSignup = mode === 'signup'
+  const isForgot = mode === 'forgot'
 
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -127,14 +128,48 @@ export default function Login() {
     }
   }
 
+  async function onForgot() {
+    setErr(null)
+    setMsg(null)
+
+    if (!email) {
+      setErr('Ingresá tu email.')
+      return
+    }
+    setBusy(true)
+    try {
+      const redirectUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectUrl,
+      })
+      if (error) {
+        setErr(error.message)
+        return
+      }
+      setMsg('¡Revisá tu email! Te enviamos un link para restablecer tu contraseña.')
+    } catch (e: any) {
+      setErr(e?.message ?? String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const getTitle = () => {
+    if (isForgot) return '🔑 Recuperar contraseña'
+    if (isSignup) return 'Crear cuenta'
+    return 'Iniciar sesión'
+  }
+
+  const getSubtitle = () => {
+    if (isForgot) return 'Ingresá tu email y te enviaremos un link para restablecer tu contraseña'
+    if (isSignup) return 'Creá tu cuenta con el email que usaste para inscribirte'
+    return 'Accedé a tu cuenta para gestionar las misiones'
+  }
+
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ maxWidth: 560, alignSelf: 'center', width: '100%' }}>
-      <Text style={s.title}>{isSignup ? 'Crear cuenta' : 'Iniciar sesión'}</Text>
-      <Text style={[s.text, s.mb3]}>
-        {isSignup 
-          ? 'Creá tu cuenta con el email que usaste para inscribirte' 
-          : 'Accedé a tu cuenta para gestionar las misiones'}
-      </Text>
+    <ScrollView style={s.screen} contentContainerStyle={{ maxWidth: 560, alignSelf: 'center', width: '100%', paddingBottom: 120 }}>
+      <Text style={s.title}>{getTitle()}</Text>
+      <Text style={[s.text, s.mb3]}>{getSubtitle()}</Text>
 
       {meEmail ? (
         <Card>
@@ -159,32 +194,45 @@ export default function Login() {
             placeholder="tu@correo.com"
           />
 
-          <Field
-            label="Contraseña"
-            value={pass}
-            onChangeText={setPass}
-            secureTextEntry
-            placeholder="••••••••"
-            onSubmitEditing={onLogin}
-            returnKeyType="go"
-          />
+          {!isForgot && (
+            <Field
+              label="Contraseña"
+              value={pass}
+              onChangeText={setPass}
+              secureTextEntry
+              placeholder="••••••••"
+              onSubmitEditing={onLogin}
+              returnKeyType="go"
+            />
+          )}
 
           <Button 
             variant="primary" 
-            onPress={isSignup ? onSignup : onLogin} 
+            onPress={isForgot ? onForgot : (isSignup ? onSignup : onLogin)} 
             loading={busy}
             style={s.mt2}
           >
-            {isSignup ? 'Crear cuenta' : 'Ingresar'}
+            {isForgot ? 'Enviar link de recuperación' : (isSignup ? 'Crear cuenta' : 'Ingresar')}
           </Button>
+
+          {/* Olvidé mi contraseña (solo en login) */}
+          {!isSignup && !isForgot && (
+            <Button
+              variant="outline"
+              onPress={() => router.push('/login?mode=forgot')}
+              style={s.mt2}
+            >
+              ¿Olvidaste tu contraseña? 🔑
+            </Button>
+          )}
 
           {/* Toggle entre login y signup */}
           <Button
             variant="outline"
-            onPress={() => router.push(isSignup ? '/login' : '/login?mode=signup')}
+            onPress={() => router.push(isSignup || isForgot ? '/login' : '/login?mode=signup')}
             style={s.mt2}
           >
-            {isSignup ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear cuenta'}
+            {isSignup || isForgot ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear cuenta'}
           </Button>
 
           {msg && (
