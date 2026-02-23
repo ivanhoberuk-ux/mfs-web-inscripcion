@@ -39,7 +39,7 @@ export type Registro = {
   ciudad: string | null;
   emergencia_nombre: string | null;
   emergencia_telefono: string | null;
-  rol: 'Tio' | 'Misionero';
+  rol: 'Tio' | 'Misionero' | 'Hijo';
   es_jefe: boolean;
 
   tratamiento_especial: boolean;
@@ -112,7 +112,7 @@ export async function registerIfCapacity(input: {
   ciudad?: string | null;
   emergencia_nombre: string;
   emergencia_telefono: string;
-  rol: 'Tio' | 'Misionero';
+  rol: 'Tio' | 'Misionero' | 'Hijo';
   es_jefe: boolean;
 
   // campos médicos / alimentación / tutores

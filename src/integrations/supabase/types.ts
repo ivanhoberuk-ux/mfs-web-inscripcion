@@ -1292,6 +1292,34 @@ export type Database = {
               p_ciudad?: string
               p_direccion: string
               p_email: string
+              p_emergencia_nombre?: string
+              p_emergencia_telefono?: string
+              p_es_jefe?: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol?: string
+              p_talle_remera?: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
+              p_direccion: string
+              p_email: string
               p_emergencia_nombre: string
               p_emergencia_telefono: string
               p_es_jefe: boolean
