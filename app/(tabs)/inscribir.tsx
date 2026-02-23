@@ -893,10 +893,10 @@ export default function Inscribir() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {[
             { value: 'XS', label: 'XS (PP)' },
-            { value: 'S', label: 'S (P / Chico)' },
-            { value: 'M', label: 'M (Mediano)' },
-            { value: 'L', label: 'L (G / Grande)' },
-            { value: 'XL', label: 'XL (GG / Extra grande)' },
+            { value: 'S', label: 'S (P)' },
+            { value: 'M', label: 'M (M)' },
+            { value: 'L', label: 'L (G)' },
+            { value: 'XL', label: 'XL (GG)' },
             { value: 'XXL', label: 'XXL (XGG / 2XL)' },
             { value: 'XXXL', label: 'XXXL (3XL)' },
           ].map((t) => (
