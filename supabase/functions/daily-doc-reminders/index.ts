@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 Deno.serve(async (req) => {
@@ -13,6 +13,38 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authentication: verify cron secret OR valid admin JWT ---
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const reqCronSecret = req.headers.get("x-cron-secret");
+    const authHeader = req.headers.get("Authorization");
+
+    let authenticated = false;
+
+    // Option 1: Cron secret header (for pg_cron calls)
+    if (cronSecret && reqCronSecret && cronSecret === reqCronSecret) {
+      authenticated = true;
+    }
+
+    // Option 2: Valid admin JWT (for manual invocation)
+    if (!authenticated && authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const authClient = createClient(supabaseUrl, supabaseKey);
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await authClient.auth.getUser(token);
+      if (user) {
+        const { data: isAdmin } = await authClient.rpc("is_super_admin", { _user_id: user.id });
+        if (isAdmin) authenticated = true;
+      }
+    }
+
+    if (!authenticated) {
+      return new Response(
+        JSON.stringify({ error: "No autorizado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
@@ -165,7 +197,6 @@ Deno.serve(async (req) => {
       const adminRoleSet = new Set((adminRoles || []).map((r) => r.user_id));
 
       for (const puebloId of puebloIds) {
-        const summaryKey = `${puebloId}:summary_${today}`;
         // Check if summary already sent for this pueblo today
         const alreadySent = sentSet.has(`${puebloId}:summary`);
         if (alreadySent) continue;
