@@ -24,6 +24,26 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // --- Authentication: verify JWT from Authorization header ---
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Se requiere autenticación' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Token inválido o sesión expirada' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const callerEmail = user.email
+
     const { registro_id, motivo }: BajaRequest = await req.json()
 
     if (!registro_id) {
@@ -33,7 +53,51 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Procesando baja para registro:', registro_id)
+    // --- Authorization: verify caller owns the registration or is admin ---
+    const { data: registro, error: regError } = await supabase
+      .from('registros')
+      .select('email, pueblo_id')
+      .eq('id', registro_id)
+      .is('deleted_at', null)
+      .single()
+
+    if (regError || !registro) {
+      return new Response(
+        JSON.stringify({ error: 'Registro no encontrado' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check if caller is admin
+    const { data: isAdmin } = await supabase.rpc('is_super_admin', { _user_id: user.id })
+    const { data: isPuebloAdmin } = await supabase.rpc('is_pueblo_admin', { _user_id: user.id })
+
+    const isOwner = callerEmail?.toLowerCase() === registro.email?.toLowerCase()
+
+    if (!isOwner && !isAdmin && !isPuebloAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'No tenés permiso para cancelar esta inscripción' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // If pueblo_admin, verify they manage this pueblo
+    if (isPuebloAdmin && !isAdmin && !isOwner) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('pueblo_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || profile.pueblo_id !== registro.pueblo_id) {
+        return new Response(
+          JSON.stringify({ error: 'No tenés permiso para cancelar inscripciones de este pueblo' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    console.log('Procesando baja para registro:', registro_id, 'por usuario:', callerEmail)
 
     // 1. Cancelar la inscripción
     const { data: cancelResult, error: cancelError } = await supabase
@@ -146,8 +210,7 @@ Deno.serve(async (req) => {
     console.error('Error en gestionar-baja:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Error al procesar la baja',
-        details: error.toString()
+        error: 'Error al procesar la baja'
       }),
       { 
         status: 500, 

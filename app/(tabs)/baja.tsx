@@ -1,5 +1,5 @@
 // FILE: app/(tabs)/baja.tsx
-// Página para que los usuarios puedan buscar su inscripción y darse de baja
+// Página para que los usuarios autenticados puedan buscar su inscripción y darse de baja
 
 import React, { useState, useRef, useEffect } from 'react'
 import { View, Text, ScrollView, Alert, ActivityIndicator, Animated } from 'react-native'
@@ -9,6 +9,7 @@ import { Button } from '../../src/components/Button'
 import { supabase } from '../../src/lib/supabase'
 import { colors, radius } from '../../src/lib/designSystem'
 import { s } from '../../src/lib/theme'
+import { useAuth } from '../../src/context/AuthProvider'
 
 type Registro = {
   id: string
@@ -24,7 +25,7 @@ type Registro = {
 }
 
 export default function BajaScreen() {
-  const [busqueda, setBusqueda] = useState('')
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [registro, setRegistro] = useState<Registro | null>(null)
   const [procesando, setProcesando] = useState(false)
@@ -48,21 +49,31 @@ export default function BajaScreen() {
     ]).start()
   }, [])
 
-  const normalizeCi = (val: string) => val.replace(/\D/g, '')
+  // If not authenticated, show login prompt
+  if (!user) {
+    return (
+      <ScrollView 
+        style={[s.screen, { backgroundColor: colors.background.light }]}
+        contentContainerStyle={{ padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 }}
+      >
+        <Text style={{ fontSize: 48 }}>🔒</Text>
+        <Text style={[s.title, { textAlign: 'center', marginTop: 12 }]}>
+          Iniciar sesión requerido
+        </Text>
+        <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginTop: 8 }]}>
+          Para dar de baja tu inscripción, primero necesitás iniciar sesión con tu cuenta.
+        </Text>
+      </ScrollView>
+    )
+  }
 
-  const buscarInscripcion = async () => {
-    if (!busqueda.trim()) {
-      Alert.alert('Error', 'Por favor ingresá tu cédula o email')
-      return
-    }
-
+  const buscarMiInscripcion = async () => {
     setLoading(true)
     setRegistro(null)
 
     try {
-      const esCi = /^\d+$/.test(busqueda.trim())
-      
-      let query = supabase
+      // Only search by the authenticated user's email
+      const { data, error } = await supabase
         .from('registros')
         .select(`
           id,
@@ -77,21 +88,15 @@ export default function BajaScreen() {
           pueblo_id,
           pueblos!inner(nombre)
         `)
+        .eq('email', user.email!)
         .is('deleted_at', null)
         .limit(1)
-
-      if (esCi) {
-        query = query.eq('ci', normalizeCi(busqueda.trim()))
-      } else {
-        query = query.ilike('email', busqueda.trim())
-      }
-
-      const { data, error } = await query.single()
+        .single()
 
       if (error || !data) {
         Alert.alert(
           'No encontrado 🔍',
-          'No se encontró ninguna inscripción con esos datos. Verificá que estén correctos.'
+          'No se encontró ninguna inscripción asociada a tu cuenta de email.'
         )
         return
       }
@@ -153,7 +158,7 @@ export default function BajaScreen() {
         '✅ Baja procesada',
         `Tu inscripción ha sido dada de baja exitosamente.${
           data.promovido 
-            ? `\n\n🎉 Se notificó a ${data.promovido.nombres} ${data.promovido.apellidos} que ahora está confirmado.`
+            ? `\n\n🎉 Se notificó a la siguiente persona en lista de espera.`
             : ''
         }`,
         [
@@ -161,7 +166,6 @@ export default function BajaScreen() {
             text: 'OK',
             onPress: () => {
               setRegistro(null)
-              setBusqueda('')
             }
           }
         ]
@@ -206,23 +210,13 @@ export default function BajaScreen() {
           borderColor: colors.primary[100],
         }}>
           <Text style={{ fontSize: 14, color: colors.text.secondary.light, marginBottom: 16 }}>
-            🔍 Ingresá tu cédula o email
+            🔍 Buscando inscripción para: <Text style={{ fontWeight: '600' }}>{user.email}</Text>
           </Text>
-
-          <Field
-            label="Cédula o Email"
-            placeholder="Ej: 12345678 o email@ejemplo.com"
-            value={busqueda}
-            onChangeText={setBusqueda}
-            keyboardType="default"
-            autoCapitalize="none"
-            editable={!loading && !registro}
-          />
 
           {!registro && (
             <Button
-              onPress={buscarInscripcion}
-              disabled={loading || !busqueda.trim()}
+              onPress={buscarMiInscripcion}
+              disabled={loading}
               variant="primary"
             >
               {loading ? '🔄 Buscando...' : '🔍 Buscar mi inscripción'}
@@ -259,8 +253,6 @@ export default function BajaScreen() {
 
             <View style={{ gap: 12 }}>
               <InfoRow label="Nombre" value={`${registro.nombres} ${registro.apellidos}`} emoji="👤" />
-              <InfoRow label="Cédula" value={registro.ci} emoji="🪪" />
-              <InfoRow label="Email" value={registro.email} emoji="📧" />
               <InfoRow label="Pueblo" value={registro.pueblo_nombre} emoji="🏠" />
               <InfoRow label="Rol" value={registro.rol} emoji="🎭" />
               
@@ -307,7 +299,6 @@ export default function BajaScreen() {
                 <Button
                   onPress={() => {
                     setRegistro(null)
-                    setBusqueda('')
                   }}
                   disabled={procesando}
                   variant="outline"
@@ -341,9 +332,6 @@ export default function BajaScreen() {
           borderWidth: 1,
           borderColor: colors.primary[100],
         }}>
-          <Text style={{ fontSize: 14, color: colors.text.secondary.light, textAlign: 'center', marginBottom: 12 }}>
-            💡 <Text style={{ fontWeight: '600' }}>Tip:</Text> Podés buscar usando tu número de cédula o el email que usaste al inscribirte
-          </Text>
           <Text style={{ fontSize: 14, color: colors.text.secondary.light, textAlign: 'center' }}>
             🔄 Si te das de baja y el cupo estaba lleno, la próxima persona en lista de espera será promovida automáticamente
           </Text>
