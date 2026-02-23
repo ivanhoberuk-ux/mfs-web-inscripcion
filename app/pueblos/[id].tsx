@@ -116,8 +116,15 @@ export default function PuebloInscriptosScreen() {
         .select(`
           id, created_at, pueblo_id,
           nombres, apellidos, ci, nacimiento, email, telefono,
+          direccion, ciudad,
+          emergencia_nombre, emergencia_telefono,
           rol, es_jefe,
-          autorizacion_url, ficha_medica_url
+          tratamiento_especial, tratamiento_detalle,
+          alimentacion_especial, alimentacion_detalle,
+          padre_nombre, padre_telefono, madre_nombre, madre_telefono,
+          talle_remera,
+          autorizacion_url, ficha_medica_url, firma_url,
+          cedula_frente_url, cedula_dorso_url
         `)
         .eq('pueblo_id', puebloId)
         .order('created_at', { ascending: true })
@@ -178,8 +185,20 @@ export default function PuebloInscriptosScreen() {
 
       const headerBase = ['id', 'nombres', 'apellidos']
       const headerExtra = hideCi
-        ? ['edad', 'email', 'telefono', 'rol', 'es_jefe', 'doc_requerido', 'estado_doc', 'autorizacion_url', 'ficha_medica_url', 'created_at']
-        : ['ci', 'edad', 'email', 'telefono', 'rol', 'es_jefe', 'doc_requerido', 'estado_doc', 'autorizacion_url', 'ficha_medica_url', 'created_at']
+        ? ['edad', 'email', 'telefono', 'direccion', 'ciudad', 'emergencia_nombre', 'emergencia_telefono',
+           'rol', 'es_jefe', 'talle_remera',
+           'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
+           'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
+           'doc_requerido', 'estado_doc',
+           'autorizacion_url', 'ficha_medica_url', 'firma_url', 'cedula_frente_url', 'cedula_dorso_url',
+           'created_at']
+        : ['ci', 'edad', 'email', 'telefono', 'direccion', 'ciudad', 'emergencia_nombre', 'emergencia_telefono',
+           'rol', 'es_jefe', 'talle_remera',
+           'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
+           'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
+           'doc_requerido', 'estado_doc',
+           'autorizacion_url', 'ficha_medica_url', 'firma_url', 'cedula_frente_url', 'cedula_dorso_url',
+           'created_at']
 
       const rows: any[] = [[...headerBase, ...headerExtra]]
 
@@ -190,33 +209,36 @@ export default function PuebloInscriptosScreen() {
         const ok = hasRequiredDoc(r, age)
 
         const base = [r.id, r.nombres ?? '', r.apellidos ?? '']
-        const extra = hideCi
-          ? [
-              age == null ? '' : String(age),
-              r.email ?? '',
-              r.telefono ?? '',
-              r.rol ?? '',
-              r.es_jefe ? 'SI' : 'NO',
-              req,
-              ok == null ? '' : ok ? 'Cargada' : 'Falta',
-              r.autorizacion_url ?? '',
-              r.ficha_medica_url ?? '',
-              r.created_at ?? '',
-            ]
-          : [
-              r.ci ?? '',
-              age == null ? '' : String(age),
-              r.email ?? '',
-              r.telefono ?? '',
-              r.rol ?? '',
-              r.es_jefe ? 'SI' : 'NO',
-              req,
-              ok == null ? '' : ok ? 'Cargada' : 'Falta',
-              r.autorizacion_url ?? '',
-              r.ficha_medica_url ?? '',
-              r.created_at ?? '',
-            ]
+        const commonFields = [
+          age == null ? '' : String(age),
+          r.email ?? '',
+          r.telefono ?? '',
+          r.direccion ?? '',
+          r.ciudad ?? '',
+          r.emergencia_nombre ?? '',
+          r.emergencia_telefono ?? '',
+          r.rol ?? '',
+          r.es_jefe ? 'SI' : 'NO',
+          r.talle_remera ?? '',
+          r.tratamiento_especial ? 'SI' : 'NO',
+          r.tratamiento_detalle ?? '',
+          r.alimentacion_especial ? 'SI' : 'NO',
+          r.alimentacion_detalle ?? '',
+          r.padre_nombre ?? '',
+          r.padre_telefono ?? '',
+          r.madre_nombre ?? '',
+          r.madre_telefono ?? '',
+          req,
+          ok == null ? '' : ok ? 'Cargada' : 'Falta',
+          r.autorizacion_url ?? '',
+          r.ficha_medica_url ?? '',
+          r.firma_url ?? '',
+          r.cedula_frente_url ?? '',
+          r.cedula_dorso_url ?? '',
+          r.created_at ?? '',
+        ]
 
+        const extra = hideCi ? commonFields : [r.ci ?? '', ...commonFields]
         rows.push([...base, ...extra]);
       }
 

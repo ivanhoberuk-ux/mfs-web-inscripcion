@@ -130,20 +130,17 @@ export default function Pueblos() {
 
 function PuebloActions({ puebloId, router }: { puebloId: string; router: any }) {
   const { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId: userPuebloId } = useUserRoles();
-  const canInscribir = isSuperAdmin || ((isPuebloAdmin || isCoAdmin) && userPuebloId === puebloId);
   const canVerInscriptos = isSuperAdmin || ((isPuebloAdmin || isCoAdmin) && userPuebloId === puebloId);
 
   return (
     <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-      {canInscribir && (
-        <Button
-          variant="primary"
-          style={{ flex: 1 }}
-          onPress={() => router.push({ pathname: '/inscribir', params: { p: puebloId } })}
-        >
-          ✍️ Inscribir
-        </Button>
-      )}
+      <Button
+        variant="primary"
+        style={{ flex: 1 }}
+        onPress={() => router.push({ pathname: '/inscribir', params: { p: puebloId } })}
+      >
+        ✍️ Inscribir
+      </Button>
       {canVerInscriptos && (
         <Button
           variant="secondary"
