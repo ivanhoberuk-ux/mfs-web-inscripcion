@@ -75,18 +75,21 @@ export default function PuebloInscriptosScreen() {
     return age
   }
 
-  function requiredDocKey(age: number | null): 'ficha' | 'autorizacion' | null {
+  function requiredDocKey(age: number | null, rol?: string): 'ficha' | 'autorizacion' | null {
+    // Hijo goes with parents - no permission document needed, only aceptacion if adult
+    if (rol === 'Hijo') return age != null && age >= 18 ? 'autorizacion' : null
     if (age == null) return null
     return age < 18 ? 'ficha' : 'autorizacion'
   }
-  function requiredDocLabel(age: number | null): string {
-    const k = requiredDocKey(age)
+  function requiredDocLabel(age: number | null, rol?: string): string {
+    const k = requiredDocKey(age, rol)
     if (k === 'ficha') return 'Permiso del Menor'
     if (k === 'autorizacion') return 'Aceptación de Protocolo'
+    if (rol === 'Hijo' && age != null && age < 18) return 'No requiere (Hijo)'
     return 'Documento requerido'
   }
   function hasRequiredDoc(r: any, age: number | null): boolean | null {
-    const k = requiredDocKey(age)
+    const k = requiredDocKey(age, r.rol)
     if (k === 'ficha') return !!r.ficha_medica_url
     if (k === 'autorizacion') return !!r.autorizacion_url
     return null
@@ -205,7 +208,7 @@ export default function PuebloInscriptosScreen() {
       for (const r of filtered) {
         const d = parseNacimientoToDate(r.nacimiento)
         const age = getAge(d)
-        const req = requiredDocLabel(age)
+        const req = requiredDocLabel(age, r.rol)
         const ok = hasRequiredDoc(r, age)
 
         const base = [r.id, r.nombres ?? '', r.apellidos ?? '']
@@ -268,7 +271,7 @@ export default function PuebloInscriptosScreen() {
   const renderItem = useCallback(({ item }: { item: any }) => {
     const d = parseNacimientoToDate(item.nacimiento)
     const age = getAge(d)
-    const reqLabel = requiredDocLabel(age)
+    const reqLabel = requiredDocLabel(age, item.rol)
     const ok = hasRequiredDoc(item, age)
 
     return (

@@ -33,7 +33,7 @@ type Registro = {
   emergencia_nombre?: string | null;
   emergencia_telefono?: string | null;
   pueblo_id: string;
-  rol: 'Tio' | 'Misionero';
+  rol: 'Tio' | 'Misionero' | 'Hijo';
   nacimiento: string | null;
   autorizacion_url: string | null;
   ficha_medica_url: string | null;
@@ -524,6 +524,11 @@ export default function Admin() {
 
   function hasRequiredDoc(r: Registro): boolean | null {
     const age = calcAge(r.nacimiento);
+    // Hijo goes with parents - no permission doc needed for minors
+    if (r.rol === 'Hijo') {
+      const isAdult = age === null ? true : age >= 18;
+      return isAdult ? !!r.autorizacion_url : true; // minor Hijo = no doc needed
+    }
     const isAdult = age === null ? true : age >= 18;
     if (isAdult) {
       return !!r.autorizacion_url;

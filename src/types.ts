@@ -1,4 +1,4 @@
-export type Rol = 'Tio' | 'Misionero';
+export type Rol = 'Tio' | 'Misionero' | 'Hijo';
 export type DocumentoRefs = { autorizacion_url?: string; ficha_medica_url?: string; firma_url?: string; };
 export type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean; };
 export type Registro = {

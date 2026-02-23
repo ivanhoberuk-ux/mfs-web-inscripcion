@@ -34,7 +34,7 @@ type Row = {
 
 type Pueblo = { id: string; nombre: string }
 
-type RolFilter = 'todos' | 'Misionero' | 'Tio'
+type RolFilter = 'todos' | 'Misionero' | 'Tio' | 'Hijo'
 type DocStatusFilter = 'todos' | 'completos' | 'incompletos'
 
 const PAGE = 30
@@ -349,6 +349,7 @@ export default function Buscador() {
                 <Picker.Item label="Todos" value="todos" />
                 <Picker.Item label="Misionero" value="Misionero" />
                 <Picker.Item label="Tío" value="Tio" />
+                <Picker.Item label="Hijo" value="Hijo" />
               </Picker>
             </View>
           </View>

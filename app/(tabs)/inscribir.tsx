@@ -44,7 +44,7 @@ export default function Inscribir() {
   const [direccion, setDireccion] = useState('')
   const [emNombre, setEmNombre] = useState('')
   const [emTelefono, setEmTelefono] = useState('')
-  const [rol, setRol] = useState<'Tio' | 'Misionero'>('Misionero')
+  const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo'>('Misionero')
   const [esJefe, setEsJefe] = useState(false)
 
   // Nuevos (obligatorios)
@@ -221,25 +221,25 @@ export default function Inscribir() {
   }
 
   function SegRol() {
+    const options: { key: 'Misionero' | 'Tio' | 'Hijo'; label: string }[] = [
+      { key: 'Misionero', label: 'Misionero' },
+      { key: 'Tio', label: 'Tío' },
+      { key: 'Hijo', label: 'Hijo' },
+    ]
     return (
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Pressable
-          onPress={() => {
-            setRol('Misionero')
-          }}
-          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Misionero' ? colors.primary[500] : colors.neutral[300] }]}
-        >
-          <Text style={[s.buttonText, { color: 'white' }]}>Misionero</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            setRol('Tio')
-            setEsJefe(false)
-          }}
-          style={[s.button, { paddingVertical: 8, backgroundColor: rol === 'Tio' ? colors.primary[500] : colors.neutral[300] }]}
-        >
-          <Text style={[s.buttonText, { color: 'white' }]}>Tío</Text>
-        </Pressable>
+        {options.map((o) => (
+          <Pressable
+            key={o.key}
+            onPress={() => {
+              setRol(o.key)
+              if (o.key !== 'Misionero') setEsJefe(false)
+            }}
+            style={[s.button, { paddingVertical: 8, flex: 1, backgroundColor: rol === o.key ? colors.primary[500] : colors.neutral[300] }]}
+          >
+            <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
+          </Pressable>
+        ))}
       </View>
     )
   }
@@ -300,7 +300,7 @@ export default function Inscribir() {
   const normPhone = normalizePhone
   const normCi = normalizeCi
 
-  // 🔴 Nueva regla: Padres/Tutores solo si rol=Misionero **y** menor de edad
+  // 🔴 Padres/Tutores: solo si rol=Misionero y menor de edad. Hijo no requiere (va con sus padres).
   const requierePadres = rol === 'Misionero' && isMinor === true
 
   // ---------- Validaciones (using zod schema) ----------
@@ -766,13 +766,13 @@ export default function Inscribir() {
 
       {/* Rol */}
       <Card>
-        <Label>Tipo de misionero</Label>
+        <Label>Tipo de participante</Label>
         <SegRol />
         <Text style={[s.small, { marginTop: 6, color: colors.text.tertiary.light }]}>
-          Si elegís <Text style={{ fontWeight: '700' }}>Tío</Text>, no necesitás completar datos de Padres/Tutores.
+          <Text style={{ fontWeight: '700' }}>Hijo</Text>: va con sus padres, no requiere permiso del menor.
         </Text>
         <Text style={[s.small, { color: colors.text.tertiary.light }]}>
-          Si sos <Text style={{ fontWeight: '700' }}>Misionero</Text> y **mayor de edad**, tampoco se solicitarán datos de Padres/Tutores.
+          <Text style={{ fontWeight: '700' }}>Tío</Text> y <Text style={{ fontWeight: '700' }}>Misionero mayor de edad</Text>: no se piden datos de Padres/Tutores.
         </Text>
         {rol === 'Misionero' && (
           <View style={{ marginTop: 8 }}>
