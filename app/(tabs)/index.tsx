@@ -101,7 +101,7 @@ export default function Home() {
         paddingHorizontal: 16,
         alignItems: 'center',
         gap: 24,
-        paddingBottom: 96,
+        paddingBottom: 120,
       }}
     >
       {/* Saludo animado */}

@@ -78,7 +78,7 @@ export default function Pueblos() {
     <ScrollView
       style={[s.screen, { backgroundColor: colors.background.light }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
     >
       {/* Header con emoji */}
       <Animated.View style={{ opacity: fadeAnim }}>

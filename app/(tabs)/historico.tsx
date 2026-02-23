@@ -234,7 +234,7 @@ export default function Historico() {
     <ScrollView
       style={[s.screen, { backgroundColor: colors.background.light }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
     >
       <Text style={[s.title, { fontSize: 28, marginBottom: 12 }]}>📊 Histórico</Text>
 

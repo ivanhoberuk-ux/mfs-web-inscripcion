@@ -185,7 +185,7 @@ export default function BajaScreen() {
   return (
     <ScrollView 
       style={[s.screen, { backgroundColor: colors.background.light }]}
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
       <Animated.View
         style={{

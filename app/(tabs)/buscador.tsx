@@ -313,7 +313,7 @@ export default function Buscador() {
   }
 
   return (
-    <ScrollView style={[s.screen, { backgroundColor: '#f9fafb' }]} contentContainerStyle={{ paddingBottom: 24 }}>
+    <ScrollView style={[s.screen, { backgroundColor: '#f9fafb' }]} contentContainerStyle={{ paddingBottom: 120 }}>
       <Text style={[s.title, { color: '#0f172a' }]}>
         Buscador de inscriptos {isPuebloAdmin && !isSuperAdmin && '(Mi pueblo)'}
       </Text>
