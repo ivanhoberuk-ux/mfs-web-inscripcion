@@ -22,6 +22,7 @@ function EmojiIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 export default function TabLayout() {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPuebloAdmin, setIsPuebloAdmin] = useState(false);
   const [rolesLoading, setRolesLoading] = useState(true);
 
   // Fetch admin status from server-side user_roles table
@@ -39,12 +40,12 @@ export default function TabLayout() {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
+          .eq('user_id', user.id);
 
         if (mounted) {
-          setIsAdmin(!!data);
+          const roles = data?.map(r => r.role) || [];
+          setIsAdmin(roles.includes('admin'));
+          setIsPuebloAdmin(roles.includes('pueblo_admin') || roles.includes('co_admin_pueblo'));
           setRolesLoading(false);
         }
       } catch (e) {
@@ -61,7 +62,7 @@ export default function TabLayout() {
   }, [user]);
   
   // Durante la carga inicial, ocultar tabs condicionales para evitar hydration mismatch
-  const showInscriptos = !loading && !rolesLoading && !!user;
+  const showInscriptos = !loading && !rolesLoading && !!user && (isAdmin || isPuebloAdmin);
   const showAdmin = !loading && !rolesLoading && isAdmin;
 
   return (

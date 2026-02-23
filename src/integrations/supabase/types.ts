@@ -168,6 +168,93 @@ export type Database = {
         }
         Relationships: []
       }
+      email_reminder_logs: {
+        Row: {
+          created_at: string
+          email_destino: string
+          fecha_envio: string
+          id: string
+          pueblo_id: string
+          registro_id: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          email_destino: string
+          fecha_envio?: string
+          id?: string
+          pueblo_id: string
+          registro_id: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          email_destino?: string
+          fecha_envio?: string
+          id?: string
+          pueblo_id?: string
+          registro_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion_completa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros_app"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros_legacy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "registros_publicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_reminder_logs_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "v_registros_unificados"
+            referencedColumns: ["registro_id"]
+          },
+        ]
+      }
       indexed_files: {
         Row: {
           file_id: string
@@ -326,6 +413,7 @@ export type Database = {
           pueblo_id: string
           rol: string
           source: string | null
+          talle_remera: string | null
           telefono: string
           tratamiento_detalle: string | null
           tratamiento_especial: boolean
@@ -363,6 +451,7 @@ export type Database = {
           pueblo_id: string
           rol: string
           source?: string | null
+          talle_remera?: string | null
           telefono: string
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
@@ -400,6 +489,7 @@ export type Database = {
           pueblo_id?: string
           rol?: string
           source?: string | null
+          talle_remera?: string | null
           telefono?: string
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
@@ -971,6 +1061,10 @@ export type Database = {
         Args: { r: Database["public"]["Tables"]["reuniones"]["Row"] }
         Returns: number
       }
+      assign_co_admin_pueblo: {
+        Args: { p_pueblo_id: string; p_user_id: string }
+        Returns: undefined
+      }
       assign_pueblo_admin: {
         Args: { p_pueblo_id: string; p_user_id: string }
         Returns: undefined
@@ -1187,32 +1281,65 @@ export type Database = {
         Args: { p_pueblo_id: string }
         Returns: Json
       }
-      register_if_capacity: {
-        Args: {
-          p_acepta_terminos?: boolean
-          p_alimentacion_detalle?: string
-          p_alimentacion_especial?: boolean
-          p_apellidos: string
-          p_ci: string
-          p_ciudad?: string
-          p_direccion: string
-          p_email: string
-          p_emergencia_nombre: string
-          p_emergencia_telefono: string
-          p_es_jefe: boolean
-          p_madre_nombre?: string
-          p_madre_telefono?: string
-          p_nacimiento: string
-          p_nombres: string
-          p_padre_nombre?: string
-          p_padre_telefono?: string
-          p_pueblo_id: string
-          p_rol: string
-          p_telefono: string
-          p_tratamiento_detalle?: string
-          p_tratamiento_especial?: boolean
-        }
-        Returns: Json
+      register_if_capacity:
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol: string
+              p_talle_remera?: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: Json
+          }
+      remove_co_admin_pueblo: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       remove_pueblo_admin: { Args: { p_user_id: string }; Returns: undefined }
       search_misioneros: {

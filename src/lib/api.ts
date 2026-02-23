@@ -62,6 +62,8 @@ export type Registro = {
   cedula_frente_url: string | null;
   cedula_dorso_url: string | null;
 
+  talle_remera: string | null;
+
   // Gestión año tras año
   año: number;
 };
@@ -125,6 +127,8 @@ export async function registerIfCapacity(input: {
 
   // aceptación de términos
   acepta_terminos: boolean;
+  // talle de remera
+  talle_remera?: string | null;
 }): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
@@ -151,6 +155,7 @@ export async function registerIfCapacity(input: {
     p_madre_telefono: input.madre_telefono ?? null,
 
     p_acepta_terminos: !!input.acepta_terminos,
+    p_talle_remera: input.talle_remera ?? null,
   };
 
   const { data, error } = await supabase.rpc('register_if_capacity', payload);
@@ -187,7 +192,8 @@ export async function fetchRegistrosAdmin(): Promise<Registro[]> {
        padre_nombre, padre_telefono, madre_nombre, madre_telefono,
        acepta_terminos, acepta_terminos_at,
        autorizacion_url, ficha_medica_url, firma_url,
-       cedula_frente_url, cedula_dorso_url`
+       cedula_frente_url, cedula_dorso_url,
+       talle_remera`
     )
     .order('created_at', { ascending: true });
 

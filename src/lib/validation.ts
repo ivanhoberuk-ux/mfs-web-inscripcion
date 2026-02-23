@@ -75,6 +75,7 @@ export const registrationSchema = z.object({
   madreTelefono: z.string()
     .max(30, 'El teléfono no puede exceder 30 caracteres')
     .optional(),
+  talleRemera: z.string().min(1, 'Elegí un talle de remera'),
   acepta: z.boolean().refine((val) => val === true, 'Debés aceptar los términos y protocolos'),
 }).refine((data) => {
   // If tratamiento is true, tratamientoDetalle is required

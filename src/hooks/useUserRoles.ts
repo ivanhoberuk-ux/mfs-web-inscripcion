@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthProvider';
 export type UserRole = {
   isSuperAdmin: boolean;
   isPuebloAdmin: boolean;
+  isCoAdmin: boolean;
   puebloId: string | null;
   loading: boolean;
 };
@@ -14,6 +15,7 @@ export function useUserRoles(): UserRole {
   const { user } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isPuebloAdmin, setIsPuebloAdmin] = useState(false);
+  const [isCoAdmin, setIsCoAdmin] = useState(false);
   const [puebloId, setPuebloId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,31 +26,27 @@ export function useUserRoles(): UserRole {
       if (!user) {
         setIsSuperAdmin(false);
         setIsPuebloAdmin(false);
+        setIsCoAdmin(false);
         setPuebloId(null);
         setLoading(false);
         return;
       }
 
       try {
-        // Check for admin role (super admin)
-        const { data: adminData } = await supabase
+        // Fetch all roles for user
+        const { data: rolesData } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
+          .eq('user_id', user.id);
 
-        // Check for pueblo_admin role and get pueblo_id from profile
-        const { data: puebloAdminData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'pueblo_admin')
-          .maybeSingle();
+        const roles = rolesData?.map(r => r.role) || [];
+        const hasAdmin = roles.includes('admin');
+        const hasPuebloAdmin = roles.includes('pueblo_admin');
+        const hasCoAdmin = roles.includes('co_admin_pueblo');
 
-        // Get pueblo_id from profiles table
+        // Get pueblo_id from profiles table if pueblo_admin or co_admin
         let userPuebloId: string | null = null;
-        if (puebloAdminData) {
+        if (hasPuebloAdmin || hasCoAdmin) {
           const { data: profileData } = await supabase
             .from('profiles')
             .select('pueblo_id')
@@ -58,8 +56,9 @@ export function useUserRoles(): UserRole {
         }
 
         if (mounted) {
-          setIsSuperAdmin(!!adminData);
-          setIsPuebloAdmin(!!puebloAdminData);
+          setIsSuperAdmin(hasAdmin);
+          setIsPuebloAdmin(hasPuebloAdmin);
+          setIsCoAdmin(hasCoAdmin);
           setPuebloId(userPuebloId);
           setLoading(false);
         }
@@ -68,6 +67,7 @@ export function useUserRoles(): UserRole {
         if (mounted) {
           setIsSuperAdmin(false);
           setIsPuebloAdmin(false);
+          setIsCoAdmin(false);
           setPuebloId(null);
           setLoading(false);
         }
@@ -80,5 +80,5 @@ export function useUserRoles(): UserRole {
     };
   }, [user]);
 
-  return { isSuperAdmin, isPuebloAdmin, puebloId, loading };
+  return { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId, loading };
 }
