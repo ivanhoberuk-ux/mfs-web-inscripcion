@@ -128,6 +128,35 @@ export default function Pueblos() {
 
 /* ==================== COMPONENTES AUXILIARES ==================== */
 
+function PuebloActions({ puebloId, router }: { puebloId: string; router: any }) {
+  const { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId: userPuebloId } = useUserRoles();
+  const canInscribir = isSuperAdmin || ((isPuebloAdmin || isCoAdmin) && userPuebloId === puebloId);
+  const canVerInscriptos = isSuperAdmin || ((isPuebloAdmin || isCoAdmin) && userPuebloId === puebloId);
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
+      {canInscribir && (
+        <Button
+          variant="primary"
+          style={{ flex: 1 }}
+          onPress={() => router.push({ pathname: '/inscribir', params: { p: puebloId } })}
+        >
+          ✍️ Inscribir
+        </Button>
+      )}
+      {canVerInscriptos && (
+        <Button
+          variant="secondary"
+          style={{ flex: 1 }}
+          onPress={() => router.push({ pathname: '/pueblos/[id]', params: { id: puebloId, hideCi: '1' } })}
+        >
+          👀 Ver inscriptos
+        </Button>
+      )}
+    </View>
+  );
+}
+
 function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: any; delay: number }) {
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const opacityAnim = useRef(new Animated.Value(0)).current
@@ -246,30 +275,7 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
         </View>
 
         {/* Acciones */}
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-          <Button
-            variant="primary"
-            style={{ flex: 1 }}
-            onPress={() =>
-              router.push({ pathname: '/inscribir', params: { p: p.id } })
-            }
-          >
-            ✍️ Inscribir
-          </Button>
-
-          <Button
-            variant="secondary"
-            style={{ flex: 1 }}
-            onPress={() =>
-              router.push({
-                pathname: '/pueblos/[id]',
-                params: { id: p.id, hideCi: '1' },
-              })
-            }
-          >
-            👀 Ver inscriptos
-          </Button>
-        </View>
+        <PuebloActions puebloId={p.id} router={router} />
 
         {/* Nota si está completo */}
         {completo && (
