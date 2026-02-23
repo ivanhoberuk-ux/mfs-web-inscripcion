@@ -1,4 +1,4 @@
-// FILE: app/(tabs)/inscriptos.tsx — SOLO ADMIN — Ver inscriptos + Export CSV (incluye CI)
+// FILE: app/(tabs)/inscriptos.tsx — ADMIN + PUEBLO_ADMIN — Ver inscriptos + Export
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native'
 import { s, colors, spacing } from '../../src/lib/theme'
@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
 import { Field } from '../../src/components/Field'
+import { useUserRoles } from '../../src/hooks/useUserRoles'
 
 type Row = {
   id: string
@@ -41,53 +42,26 @@ const PAGE = 200
 export default function VerInscriptosAdmin() {
   const router = useRouter()
 
-  // ===== Guard SOLO ADMIN =====
+  // ===== Guard: super_admin, pueblo_admin, co_admin =====
+  const { isSuperAdmin: currentUserIsSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId: userPuebloId, loading: rolesLoading } = useUserRoles();
+  const hasAccess = currentUserIsSuperAdmin || isPuebloAdmin || isCoAdmin;
   const [accessChecked, setAccessChecked] = useState(false)
+  
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data: udata, error: uerr } = await supabase.auth.getUser()
-        if (!mounted) return;
-        
-        if (uerr || !udata?.user) {
-          Alert.alert('Sesión requerida', 'Iniciá sesión para ver inscriptos.')
-          router.replace('/login')
-          return
-        }
-        
-        const uid = udata.user.id
-        const { data: roleRow, error: roleErr } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', uid)
-          .single();
-
-        if (!mounted) return;
-
-        if (roleErr || !roleRow || roleRow.role !== 'admin') {
-          console.log('Role check failed:', { roleErr, roleRow });
-          Alert.alert('Acceso restringido', 'Esta sección es solo para administradores.')
-          router.replace('/pueblos')
-          return
-        }
-        
-        setAccessChecked(true)
-      } catch (err) {
-        console.error('Error checking access:', err);
-        if (mounted) {
-          Alert.alert('Error', 'No se pudo verificar los permisos.')
-          router.replace('/pueblos')
-        }
-      }
-    })()
-    
-    return () => { mounted = false; }
-  }, [router])
+    if (rolesLoading) return;
+    if (!hasAccess) {
+      Alert.alert('Acceso restringido', 'Esta sección es solo para administradores.')
+      router.replace('/pueblos')
+      return
+    }
+    setAccessChecked(true)
+  }, [rolesLoading, hasAccess, router])
 
   // ===== Estado de datos =====
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
-  const [puebloId, setPuebloId] = useState<string>('todos')
+  const [puebloId, setPuebloId] = useState<string>(
+    (isPuebloAdmin || isCoAdmin) && !currentUserIsSuperAdmin && userPuebloId ? userPuebloId : 'todos'
+  )
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
   const [moreLoading, setMoreLoading] = useState(false)
@@ -118,9 +92,15 @@ export default function VerInscriptosAdmin() {
     if (!accessChecked) return
     ;(async () => {
       const { data } = await supabase.from('pueblos').select('id,nombre').order('nombre')
-      setPueblos(data || [])
+      const allPueblos = data || [];
+      // pueblo_admin/co_admin: only show their pueblo
+      if ((isPuebloAdmin || isCoAdmin) && !currentUserIsSuperAdmin && userPuebloId) {
+        setPueblos(allPueblos.filter(p => p.id === userPuebloId));
+      } else {
+        setPueblos(allPueblos);
+      }
     })()
-  }, [accessChecked])
+  }, [accessChecked, isPuebloAdmin, isCoAdmin, currentUserIsSuperAdmin, userPuebloId])
 
   function calcAge(iso?: string | null): number | null {
     if (!iso) return null
@@ -178,7 +158,12 @@ export default function VerInscriptosAdmin() {
         )
         .order('created_at', { ascending: false })
 
-      if (puebloId !== 'todos') q = q.eq('pueblo_id', puebloId)
+      // pueblo_admin/co_admin: force filter to own pueblo (backend RLS also enforces this)
+      if ((isPuebloAdmin || isCoAdmin) && !currentUserIsSuperAdmin && userPuebloId) {
+        q = q.eq('pueblo_id', userPuebloId);
+      } else if (puebloId !== 'todos') {
+        q = q.eq('pueblo_id', puebloId);
+      }
 
       const from = offRef.current
       const to = from + PAGE - 1
@@ -533,7 +518,9 @@ export default function VerInscriptosAdmin() {
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={s.title}>Inscriptos (solo admin)</Text>
+      <Text style={s.title}>
+        Inscriptos {currentUserIsSuperAdmin ? '(Super Admin)' : isPuebloAdmin || isCoAdmin ? '(Mi pueblo)' : ''}
+      </Text>
 
       <Card>
         <Text style={s.label}>Pueblo</Text>
@@ -578,8 +565,8 @@ export default function VerInscriptosAdmin() {
             const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
             const st = requiredDocsOk(r)
             const userInfo = r.email ? userRolesMap[r.email] : null
-            const isSuperAdmin = userInfo?.roles.includes('admin') || false
-            const isPuebloAdmin = userInfo?.roles.includes('pueblo_admin') || false
+            const rowIsSuperAdmin = userInfo?.roles.includes('admin') || false
+            const rowIsPuebloAdmin = userInfo?.roles.includes('pueblo_admin') || false
             const adminPuebloNombre = userInfo?.pueblo_id ? pueblosMap[userInfo.pueblo_id] : null
             
             return (
@@ -595,19 +582,19 @@ export default function VerInscriptosAdmin() {
                     {/* Mostrar roles administrativos */}
                     {r.email && userInfo && (
                       <View style={{ flexDirection: 'row', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                        {isSuperAdmin && (
+                        {rowIsSuperAdmin && (
                           <View style={{ backgroundColor: '#dc2626', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
                             <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>SUPER ADMIN</Text>
                           </View>
                         )}
-                        {isPuebloAdmin && (
+                        {rowIsPuebloAdmin && (
                           <View style={{ backgroundColor: '#f59e0b', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
                             <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>
                               ADMIN: {adminPuebloNombre || 'Sin pueblo'}
                             </Text>
                           </View>
                         )}
-                        {!isSuperAdmin && !isPuebloAdmin && (
+                        {!rowIsSuperAdmin && !rowIsPuebloAdmin && (
                           <View style={{ backgroundColor: '#9ca3af', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12 }}>
                             <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>USUARIO</Text>
                           </View>
@@ -627,61 +614,64 @@ export default function VerInscriptosAdmin() {
                       Fecha: {new Date(r.created_at).toLocaleString()}
                     </Text>
                   </View>
-                  <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
-                    {r.email && userInfo && (
-                      <>
-                        <Pressable
-                          onPress={() => toggleSuperAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
-                          style={{
-                            padding: 8,
-                            backgroundColor: isSuperAdmin ? '#dc2626' : '#0a7ea4',
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
-                            {isSuperAdmin ? 'Quitar\nSuper Admin' : 'Hacer\nSuper Admin'}
-                          </Text>
-                        </Pressable>
-                        
-                        {!isSuperAdmin && (
+                  {/* Role management & delete: only super_admin */}
+                  {currentUserIsSuperAdmin && (
+                    <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                      {r.email && userInfo && (
+                        <>
                           <Pressable
-                            onPress={() => togglePuebloAdmin(r.email!, `${r.nombres} ${r.apellidos}`, r.pueblo_id)}
+                            onPress={() => toggleSuperAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
                             style={{
                               padding: 8,
-                              backgroundColor: isPuebloAdmin ? '#9ca3af' : '#f59e0b',
+                              backgroundColor: rowIsSuperAdmin ? '#dc2626' : '#0a7ea4',
                               borderRadius: 8,
                             }}
                           >
                             <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
-                              {isPuebloAdmin ? 'Quitar\nAdmin Pueblo' : 'Hacer\nAdmin Pueblo'}
+                              {rowIsSuperAdmin ? 'Quitar\nSuper Admin' : 'Hacer\nSuper Admin'}
                             </Text>
                           </Pressable>
-                        )}
-                      </>
-                    )}
-                    {r.email && !userInfo && (
+                          
+                          {!rowIsSuperAdmin && (
+                            <Pressable
+                              onPress={() => togglePuebloAdmin(r.email!, `${r.nombres} ${r.apellidos}`, r.pueblo_id)}
+                              style={{
+                                padding: 8,
+                                backgroundColor: rowIsPuebloAdmin ? '#9ca3af' : '#f59e0b',
+                                borderRadius: 8,
+                              }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>
+                                {rowIsPuebloAdmin ? 'Quitar\nAdmin Pueblo' : 'Hacer\nAdmin Pueblo'}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </>
+                      )}
+                      {r.email && !userInfo && (
+                        <Pressable
+                          onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: colors.primary[600],
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Crear\nCuenta Admin</Text>
+                        </Pressable>
+                      )}
                       <Pressable
-                        onPress={() => promoteToAdmin(r.email!, `${r.nombres} ${r.apellidos}`)}
+                        onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
                         style={{
                           padding: 8,
-                          backgroundColor: colors.primary[600],
+                          backgroundColor: colors.error,
                           borderRadius: 8,
                         }}
                       >
-                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Crear\nCuenta Admin</Text>
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Eliminar</Text>
                       </Pressable>
-                    )}
-                    <Pressable
-                      onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
-                      style={{
-                        padding: 8,
-                        backgroundColor: colors.error,
-                        borderRadius: 8,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Eliminar</Text>
-                    </Pressable>
-                  </View>
+                    </View>
+                  )}
                 </View>
               </Card>
             )
