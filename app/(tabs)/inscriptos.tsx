@@ -19,12 +19,29 @@ type Row = {
   apellidos: string
   ci: string | null
   email: string | null
+  telefono: string | null
+  direccion: string | null
+  ciudad: string | null
   pueblo_id: string
   rol: 'Tio' | 'Misionero'
   nacimiento: string | null
-  autorizacion_url: string | null // (Aceptación adultos)
-  ficha_medica_url: string | null // (Permiso menores)
+  es_jefe: boolean
+  emergencia_nombre: string | null
+  emergencia_telefono: string | null
+  tratamiento_especial: boolean
+  tratamiento_detalle: string | null
+  alimentacion_especial: boolean
+  alimentacion_detalle: string | null
+  padre_nombre: string | null
+  padre_telefono: string | null
+  madre_nombre: string | null
+  madre_telefono: string | null
+  talle_remera: string | null
+  autorizacion_url: string | null
+  ficha_medica_url: string | null
   firma_url: string | null
+  cedula_frente_url: string | null
+  cedula_dorso_url: string | null
   user_roles?: { role: string }[]
   profile_pueblo_id?: string | null
 }
@@ -154,7 +171,7 @@ export default function VerInscriptosAdmin() {
       let q = supabase
         .from('registros')
         .select(
-          'id,created_at,nombres,apellidos,ci,email,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
         )
         .order('created_at', { ascending: false })
 
@@ -454,24 +471,16 @@ export default function VerInscriptosAdmin() {
 
   async function exportCSV() {
     const header = [
-      'id',
-      'fecha',
-      'pueblo',
-      'nombres',
-      'apellidos',
-      'ci',                // <- INCLUIMOS CI (solo admin accede a esta vista)
-      'email',
-      'rol',
-      'nacimiento',
-      'edad',
-      'es_adulto',
-      'requerido',        // Aceptación (adulto) o Permiso (menor)
-      'ok_requerido',     // true/false
-      'ok_firma',         // true/false
-      'completos',        // true/false
-      'url_aceptacion',
-      'url_permiso',
-      'url_firma',
+      'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
+      'email', 'telefono', 'direccion', 'ciudad',
+      'rol', 'es_jefe', 'nacimiento', 'edad', 'talle_remera',
+      'emergencia_nombre', 'emergencia_telefono',
+      'tratamiento_especial', 'tratamiento_detalle',
+      'alimentacion_especial', 'alimentacion_detalle',
+      'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
+      'es_adulto', 'requerido', 'ok_requerido', 'ok_firma', 'completos',
+      'url_aceptacion', 'url_permiso', 'url_firma',
+      'cedula_frente_url', 'cedula_dorso_url',
     ]
 
     const dataRows: any[][] = [header];
@@ -487,9 +496,24 @@ export default function VerInscriptosAdmin() {
         r.apellidos,
         r.ci || '',
         r.email || '',
+        r.telefono || '',
+        r.direccion || '',
+        r.ciudad || '',
         r.rol,
+        r.es_jefe ? 'SI' : 'NO',
         r.nacimiento || '',
         st.age === null ? '' : String(st.age),
+        r.talle_remera || '',
+        r.emergencia_nombre || '',
+        r.emergencia_telefono || '',
+        r.tratamiento_especial ? 'SI' : 'NO',
+        r.tratamiento_detalle || '',
+        r.alimentacion_especial ? 'SI' : 'NO',
+        r.alimentacion_detalle || '',
+        r.padre_nombre || '',
+        r.padre_telefono || '',
+        r.madre_nombre || '',
+        r.madre_telefono || '',
         st.isAdult ? 'true' : 'false',
         st.requiredName,
         st.isAdult ? (st.okAcept ? 'true' : 'false') : (st.okPerm ? 'true' : 'false'),
@@ -498,6 +522,8 @@ export default function VerInscriptosAdmin() {
         r.autorizacion_url || '',
         r.ficha_medica_url || '',
         r.firma_url || '',
+        r.cedula_frente_url || '',
+        r.cedula_dorso_url || '',
       ];
 
       dataRows.push(line);
