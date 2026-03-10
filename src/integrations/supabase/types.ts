@@ -205,45 +205,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "email_reminder_logs_registro_id_fkey"
             columns: ["registro_id"]
             isOneToOne: false
             referencedRelation: "registros"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_reminder_logs_registro_id_fkey"
-            columns: ["registro_id"]
-            isOneToOne: false
-            referencedRelation: "registros_app"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_reminder_logs_registro_id_fkey"
-            columns: ["registro_id"]
-            isOneToOne: false
-            referencedRelation: "registros_legacy"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_reminder_logs_registro_id_fkey"
-            columns: ["registro_id"]
-            isOneToOne: false
-            referencedRelation: "registros_publicos"
             referencedColumns: ["id"]
           },
           {
@@ -340,20 +305,6 @@ export type Database = {
             columns: ["pueblo_id"]
             isOneToOne: false
             referencedRelation: "pueblos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
             referencedColumns: ["id"]
           },
         ]
@@ -502,20 +453,6 @@ export type Database = {
             referencedRelation: "pueblos"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
         ]
       }
       reuniones: {
@@ -566,354 +503,20 @@ export type Database = {
     }
     Views: {
       asistencias_std: {
-        Row: {
-          created_at: string | null
-          misionero_id: string | null
-          reunion_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          misionero_id?: string | null
-          reunion_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          misionero_id?: string | null
-          reunion_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["reunion_id"]
-            isOneToOne: false
-            referencedRelation: "reuniones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["reunion_id"]
-            isOneToOne: false
-            referencedRelation: "v_historial_reuniones"
-            referencedColumns: ["reunion_id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["reunion_id"]
-            isOneToOne: false
-            referencedRelation: "v_reporte_misionero"
-            referencedColumns: ["reunion_id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["reunion_id"]
-            isOneToOne: false
-            referencedRelation: "v_reuniones"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: {}
+        Relationships: []
       }
       registros_app: {
-        Row: {
-          acepta_terminos: boolean | null
-          acepta_terminos_at: string | null
-          alimentacion_detalle: string | null
-          alimentacion_especial: boolean | null
-          apellidos: string | null
-          autorizacion_url: string | null
-          cedula_dorso_url: string | null
-          cedula_frente_url: string | null
-          ci: string | null
-          created_at: string | null
-          deleted_at: string | null
-          direccion: string | null
-          email: string | null
-          emergencia_nombre: string | null
-          emergencia_telefono: string | null
-          es_jefe: boolean | null
-          external_id: string | null
-          ficha_medica_url: string | null
-          firma_url: string | null
-          id: string | null
-          madre_nombre: string | null
-          madre_telefono: string | null
-          nacimiento: string | null
-          nombres: string | null
-          padre_nombre: string | null
-          padre_telefono: string | null
-          pueblo_id: string | null
-          rol: string | null
-          source: string | null
-          telefono: string | null
-          tratamiento_detalle: string | null
-          tratamiento_especial: boolean | null
-        }
-        Insert: {
-          acepta_terminos?: boolean | null
-          acepta_terminos_at?: string | null
-          alimentacion_detalle?: string | null
-          alimentacion_especial?: boolean | null
-          apellidos?: string | null
-          autorizacion_url?: string | null
-          cedula_dorso_url?: string | null
-          cedula_frente_url?: string | null
-          ci?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          direccion?: string | null
-          email?: string | null
-          emergencia_nombre?: string | null
-          emergencia_telefono?: string | null
-          es_jefe?: boolean | null
-          external_id?: string | null
-          ficha_medica_url?: string | null
-          firma_url?: string | null
-          id?: string | null
-          madre_nombre?: string | null
-          madre_telefono?: string | null
-          nacimiento?: string | null
-          nombres?: string | null
-          padre_nombre?: string | null
-          padre_telefono?: string | null
-          pueblo_id?: string | null
-          rol?: string | null
-          source?: string | null
-          telefono?: string | null
-          tratamiento_detalle?: string | null
-          tratamiento_especial?: boolean | null
-        }
-        Update: {
-          acepta_terminos?: boolean | null
-          acepta_terminos_at?: string | null
-          alimentacion_detalle?: string | null
-          alimentacion_especial?: boolean | null
-          apellidos?: string | null
-          autorizacion_url?: string | null
-          cedula_dorso_url?: string | null
-          cedula_frente_url?: string | null
-          ci?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          direccion?: string | null
-          email?: string | null
-          emergencia_nombre?: string | null
-          emergencia_telefono?: string | null
-          es_jefe?: boolean | null
-          external_id?: string | null
-          ficha_medica_url?: string | null
-          firma_url?: string | null
-          id?: string | null
-          madre_nombre?: string | null
-          madre_telefono?: string | null
-          nacimiento?: string | null
-          nombres?: string | null
-          padre_nombre?: string | null
-          padre_telefono?: string | null
-          pueblo_id?: string | null
-          rol?: string | null
-          source?: string | null
-          telefono?: string | null
-          tratamiento_detalle?: string | null
-          tratamiento_especial?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "pueblos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: {}
+        Relationships: []
       }
       registros_legacy: {
-        Row: {
-          acepta_terminos: boolean | null
-          acepta_terminos_at: string | null
-          alimentacion_detalle: string | null
-          alimentacion_especial: boolean | null
-          apellidos: string | null
-          autorizacion_url: string | null
-          cedula_dorso_url: string | null
-          cedula_frente_url: string | null
-          ci: string | null
-          created_at: string | null
-          deleted_at: string | null
-          direccion: string | null
-          email: string | null
-          emergencia_nombre: string | null
-          emergencia_telefono: string | null
-          es_jefe: boolean | null
-          external_id: string | null
-          ficha_medica_url: string | null
-          firma_url: string | null
-          id: string | null
-          madre_nombre: string | null
-          madre_telefono: string | null
-          nacimiento: string | null
-          nombres: string | null
-          padre_nombre: string | null
-          padre_telefono: string | null
-          pueblo_id: string | null
-          rol: string | null
-          source: string | null
-          telefono: string | null
-          tratamiento_detalle: string | null
-          tratamiento_especial: boolean | null
-        }
-        Insert: {
-          acepta_terminos?: boolean | null
-          acepta_terminos_at?: string | null
-          alimentacion_detalle?: string | null
-          alimentacion_especial?: boolean | null
-          apellidos?: string | null
-          autorizacion_url?: string | null
-          cedula_dorso_url?: string | null
-          cedula_frente_url?: string | null
-          ci?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          direccion?: string | null
-          email?: string | null
-          emergencia_nombre?: string | null
-          emergencia_telefono?: string | null
-          es_jefe?: boolean | null
-          external_id?: string | null
-          ficha_medica_url?: string | null
-          firma_url?: string | null
-          id?: string | null
-          madre_nombre?: string | null
-          madre_telefono?: string | null
-          nacimiento?: string | null
-          nombres?: string | null
-          padre_nombre?: string | null
-          padre_telefono?: string | null
-          pueblo_id?: string | null
-          rol?: string | null
-          source?: string | null
-          telefono?: string | null
-          tratamiento_detalle?: string | null
-          tratamiento_especial?: boolean | null
-        }
-        Update: {
-          acepta_terminos?: boolean | null
-          acepta_terminos_at?: string | null
-          alimentacion_detalle?: string | null
-          alimentacion_especial?: boolean | null
-          apellidos?: string | null
-          autorizacion_url?: string | null
-          cedula_dorso_url?: string | null
-          cedula_frente_url?: string | null
-          ci?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          direccion?: string | null
-          email?: string | null
-          emergencia_nombre?: string | null
-          emergencia_telefono?: string | null
-          es_jefe?: boolean | null
-          external_id?: string | null
-          ficha_medica_url?: string | null
-          firma_url?: string | null
-          id?: string | null
-          madre_nombre?: string | null
-          madre_telefono?: string | null
-          nacimiento?: string | null
-          nombres?: string | null
-          padre_nombre?: string | null
-          padre_telefono?: string | null
-          pueblo_id?: string | null
-          rol?: string | null
-          source?: string | null
-          telefono?: string | null
-          tratamiento_detalle?: string | null
-          tratamiento_especial?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "pueblos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: {}
+        Relationships: []
       }
       registros_publicos: {
-        Row: {
-          apellidos: string | null
-          ci: string | null
-          created_at: string | null
-          id: string | null
-          nombres: string | null
-          pueblo_id: string | null
-        }
-        Insert: {
-          apellidos?: string | null
-          ci?: string | null
-          created_at?: string | null
-          id?: string | null
-          nombres?: string | null
-          pueblo_id?: string | null
-        }
-        Update: {
-          apellidos?: string | null
-          ci?: string | null
-          created_at?: string | null
-          id?: string | null
-          nombres?: string | null
-          pueblo_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "pueblos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: {}
+        Relationships: []
       }
       v_historial_reuniones: {
         Row: {
@@ -988,20 +591,6 @@ export type Database = {
             referencedRelation: "pueblos"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion_completa"
-            referencedColumns: ["id"]
-          },
         ]
       }
       v_reporte_misionero: {
@@ -1032,26 +621,11 @@ export type Database = {
         Relationships: []
       }
       vw_ocupacion: {
-        Row: {
-          activo: boolean | null
-          cupo_max: number | null
-          id: string | null
-          libres: number | null
-          nombre: string | null
-          usados: number | null
-        }
+        Row: {}
         Relationships: []
       }
       vw_ocupacion_completa: {
-        Row: {
-          activo: boolean | null
-          confirmados: number | null
-          cupo_max: number | null
-          en_espera: number | null
-          id: string | null
-          libres: number | null
-          nombre: string | null
-        }
+        Row: {}
         Relationships: []
       }
     }
