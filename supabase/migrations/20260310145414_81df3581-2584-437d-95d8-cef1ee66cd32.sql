@@ -1,0 +1,1 @@
+ALTER VIEW public.vw_ocupacion SET (security_invoker = on);
