@@ -205,6 +205,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "email_reminder_logs_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "email_reminder_logs_registro_id_fkey"
             columns: ["registro_id"]
             isOneToOne: false
@@ -305,6 +312,13 @@ export type Database = {
             columns: ["pueblo_id"]
             isOneToOne: false
             referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
             referencedColumns: ["id"]
           },
         ]
@@ -453,6 +467,13 @@ export type Database = {
             referencedRelation: "pueblos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
         ]
       }
       reuniones: {
@@ -591,6 +612,13 @@ export type Database = {
             referencedRelation: "pueblos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_reporte_misionero: {
@@ -621,7 +649,14 @@ export type Database = {
         Relationships: []
       }
       vw_ocupacion: {
-        Row: {}
+        Row: {
+          activo: boolean | null
+          cupo_max: number | null
+          id: string | null
+          libres: number | null
+          nombre: string | null
+          usados: number | null
+        }
         Relationships: []
       }
       vw_ocupacion_completa: {
