@@ -20,7 +20,9 @@ export type Ocupacion = {
   id: string;
   nombre: string;
   cupo_max: number;
-  usados: number;
+  usados: number;        // misioneros que ocupan cupo
+  menores: number;       // hijos menores de 15 (no ocupan cupo)
+  total_personas: number; // total confirmados (usados + menores)
   libres: number;
   activo: boolean;
 };
@@ -83,7 +85,7 @@ export async function fetchOcupacion(): Promise<Ocupacion[]> {
   // Requiere la vista vw_ocupacion creada en SQL
   const { data, error } = await supabase
     .from('vw_ocupacion')
-    .select('id, nombre, cupo_max, usados, libres, activo')
+    .select('id, nombre, cupo_max, usados, menores, total_personas, libres, activo')
     .order('nombre', { ascending: true });
 
   if (error) throw error;

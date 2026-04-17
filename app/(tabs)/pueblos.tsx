@@ -177,6 +177,8 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
 
   const total = p.cupo_max ?? 0
   const usados = p.usados ?? 0
+  const menores = p.menores ?? 0
+  const totalPersonas = p.total_personas ?? (usados + menores)
   const libres = Math.max(p.libres ?? 0, 0)
   const pct = total > 0 ? Math.min(100, Math.round((usados / total) * 100)) : 0
 
@@ -243,9 +245,18 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
           }}
         >
           <Stat label="Cupo" value={String(total)} emoji="👥" />
-          <Stat label="Inscriptos" value={String(usados)} emoji="✅" />
+          <Stat label="Misioneros" value={String(usados)} emoji="✅" />
           <Stat label="Restantes" value={String(libres)} emoji="🎫" />
+          {menores > 0 && (
+            <Stat label="Menores" value={String(menores)} emoji="🧒" />
+          )}
         </View>
+
+        {menores > 0 && (
+          <Text style={[s.small, { marginTop: 8, color: colors.text.tertiary.light, fontStyle: 'italic' }]}>
+            👨‍👩‍👧‍👦 Total de personas que viajan: <Text style={{ fontWeight: '700' }}>{totalPersonas}</Text> (incluye {menores} {menores === 1 ? 'menor' : 'menores'} de 15)
+          </Text>
+        )}
 
         {/* Barra de progreso */}
         <View style={{ marginTop: 12 }}>
