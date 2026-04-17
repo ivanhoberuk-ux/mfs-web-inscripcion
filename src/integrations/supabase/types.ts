@@ -654,7 +654,9 @@ export type Database = {
           cupo_max: number | null
           id: string | null
           libres: number | null
+          menores: number | null
           nombre: string | null
+          total_personas: number | null
           usados: number | null
         }
         Relationships: []
@@ -877,6 +879,10 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      ocupa_cupo: {
+        Args: { p_año: number; p_nacimiento: string; p_rol: string }
+        Returns: boolean
       }
       only_digits: { Args: { txt: string }; Returns: string }
       preview_ranking_por_puntajes: {
