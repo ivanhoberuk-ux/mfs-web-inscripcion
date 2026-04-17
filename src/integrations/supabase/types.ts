@@ -788,6 +788,17 @@ export type Database = {
           total_reuniones: number
         }[]
       }
+      get_pueblos_with_cupos: {
+        Args: never
+        Returns: {
+          cupo_max: number
+          id: string
+          inscritos_2025: number
+          lugares_disponibles: number
+          nombre: string
+          porcentaje_ocupacion: number
+        }[]
+      }
       get_registro_id_from_path: { Args: { path: string }; Returns: string }
       get_reporte_misionero: {
         Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
