@@ -11,7 +11,7 @@ import {
   Linking,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { s, colors, spacing } from '../../src/lib/theme'
+import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl } from '../../src/lib/api'
 import { supabase } from '../../src/lib/supabase'
 import * as Clipboard from 'expo-clipboard'
