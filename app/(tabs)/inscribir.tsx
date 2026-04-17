@@ -768,6 +768,20 @@ export default function Inscribir() {
       <Card>
         <Label>Tipo de participante</Label>
         <SegRol />
+        {rol === 'Hijo' && computedAge !== null && computedAge < 15 && (
+          <View style={{
+            marginTop: 8,
+            padding: 10,
+            backgroundColor: colors.primary[50],
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: colors.primary[200],
+          }}>
+            <Text style={{ color: colors.primary[700], fontSize: 13, fontWeight: '600' }}>
+              🧒 Menor de 15 años: NO ocupa cupo de misionero, pero queda registrado como acompañante del pueblo.
+            </Text>
+          </View>
+        )}
         <Text style={[s.small, { marginTop: 6, color: colors.text.tertiary.light }]}>
           <Text style={{ fontWeight: '700' }}>Hijo</Text>: va con sus padres, no requiere permiso del menor.
         </Text>
