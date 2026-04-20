@@ -21,7 +21,7 @@ export type Ocupacion = {
   nombre: string;
   cupo_max: number;
   usados: number;        // misioneros que ocupan cupo
-  menores: number;       // hijos menores de 15 (no ocupan cupo)
+  menores: number;       // hijos menores de 12 (no ocupan cupo)
   total_personas: number; // total confirmados (usados + menores)
   libres: number;
   activo: boolean;
