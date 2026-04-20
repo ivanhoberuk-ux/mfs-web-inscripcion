@@ -778,7 +778,7 @@ export default function Inscribir() {
             borderColor: colors.primary[200],
           }}>
             <Text style={{ color: colors.primary[700], fontSize: 13, fontWeight: '600' }}>
-              🧒 Menor de 15 años: NO ocupa cupo de misionero, pero queda registrado como acompañante del pueblo.
+              🧒 Menor de 12 años: NO ocupa cupo de misionero, pero queda registrado como acompañante del pueblo.
             </Text>
           </View>
         )}
