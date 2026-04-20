@@ -254,7 +254,7 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
 
         {menores > 0 && (
           <Text style={[s.small, { marginTop: 8, color: colors.text.tertiary.light, fontStyle: 'italic' }]}>
-            👨‍👩‍👧‍👦 Total de personas que viajan: <Text style={{ fontWeight: '700' }}>{totalPersonas}</Text> (incluye {menores} {menores === 1 ? 'menor' : 'menores'} de 15)
+            👨‍👩‍👧‍👦 Total de personas que viajan: <Text style={{ fontWeight: '700' }}>{totalPersonas}</Text> (incluye {menores} {menores === 1 ? 'menor' : 'menores'} de 12)
           </Text>
         )}
 
