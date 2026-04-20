@@ -768,7 +768,7 @@ export default function Inscribir() {
       <Card>
         <Label>Tipo de participante</Label>
         <SegRol />
-        {rol === 'Hijo' && computedAge !== null && computedAge < 15 && (
+        {rol === 'Hijo' && computedAge !== null && computedAge < 12 && (
           <View style={{
             marginTop: 8,
             padding: 10,
