@@ -247,20 +247,38 @@ export default function Inscribir() {
       { key: 'Tio', label: 'Tío' },
       { key: 'Hijo', label: 'Hijo' },
     ]
+    const isAnticipada = estadoInsc === 'fase_anticipada'
     return (
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {options.map((o) => (
-          <Pressable
-            key={o.key}
-            onPress={() => {
-              setRol(o.key)
-              if (o.key !== 'Misionero') setEsJefe(false)
-            }}
-            style={[s.button, { paddingVertical: 8, flex: 1, backgroundColor: rol === o.key ? colors.primary[500] : colors.neutral[300] }]}
-          >
-            <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
-          </Pressable>
-        ))}
+        {options.map((o) => {
+          // En fase anticipada solo permitimos Tío o Misionero (jefe se valida aparte)
+          const disabled = isAnticipada && o.key === 'Hijo'
+          return (
+            <Pressable
+              key={o.key}
+              disabled={disabled}
+              onPress={() => {
+                setRol(o.key)
+                if (o.key !== 'Misionero') setEsJefe(false)
+              }}
+              style={[
+                s.button,
+                {
+                  paddingVertical: 8,
+                  flex: 1,
+                  backgroundColor: disabled
+                    ? colors.neutral[200]
+                    : rol === o.key
+                    ? colors.primary[500]
+                    : colors.neutral[300],
+                  opacity: disabled ? 0.5 : 1,
+                },
+              ]}
+            >
+              <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
+            </Pressable>
+          )
+        })}
       </View>
     )
   }
