@@ -183,6 +183,22 @@ export default function Inscribir() {
     })()
   }, [user])
 
+  // Cargar estado de inscripción (fechas/año activo)
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingEstado(true)
+        const { config, estado } = await fetchEstadoInscripcionActivo()
+        setConfigInsc(config)
+        setEstadoInsc(estado)
+      } catch (e) {
+        console.warn('No se pudo cargar estado de inscripción', e)
+      } finally {
+        setLoadingEstado(false)
+      }
+    })()
+  }, [])
+
   // ---------- Helpers UI ----------
   function Label({ children }: { children: React.ReactNode }) {
     return (
