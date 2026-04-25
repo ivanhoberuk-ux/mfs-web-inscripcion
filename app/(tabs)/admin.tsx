@@ -19,6 +19,7 @@ import { fetchOcupacion, updatePueblo, fetchPueblos } from '../../src/lib/api';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
+import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 
 // ===== Tipos base =====
 type Registro = {
