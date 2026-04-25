@@ -79,6 +79,36 @@ export type Database = {
           },
         ]
       }
+      configuracion_inscripcion: {
+        Row: {
+          activo: boolean
+          año: number
+          apertura_anticipada: string
+          apertura_general: string
+          cierre: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          año: number
+          apertura_anticipada: string
+          apertura_general: string
+          cierre: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          año?: number
+          apertura_anticipada?: string
+          apertura_general?: string
+          cierre?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracion_puntajes: {
         Row: {
           pueblo_id: string
@@ -724,6 +754,7 @@ export type Database = {
           msg: string
         }[]
       }
+      estado_inscripcion: { Args: { p_año: number }; Returns: string }
       fn_check_misionero_exists: { Args: { m_id: string }; Returns: boolean }
       fn_check_pueblo_exists: { Args: { p_id: string }; Returns: boolean }
       get_asistentes: {
@@ -907,7 +938,39 @@ export type Database = {
         Args: { p_pueblo_id: string }
         Returns: Json
       }
+      puede_inscribirse: {
+        Args: { p_año: number; p_es_jefe: boolean; p_rol: string }
+        Returns: Json
+      }
       register_if_capacity:
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre?: string
+              p_emergencia_telefono?: string
+              p_es_jefe?: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol?: string
+              p_talle_remera?: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: Json
+          }
         | {
             Args: {
               p_acepta_terminos?: boolean

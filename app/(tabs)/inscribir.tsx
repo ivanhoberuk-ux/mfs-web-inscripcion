@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
-import { fetchPueblos, registerIfCapacity, publicUrl } from '../../src/lib/api'
+import { fetchPueblos, registerIfCapacity, publicUrl, fetchEstadoInscripcionActivo, type EstadoInscripcion, type ConfiguracionInscripcion } from '../../src/lib/api'
 import { supabase } from '../../src/lib/supabase'
 import * as Clipboard from 'expo-clipboard'
 import { Button } from '../../src/components/Button'
@@ -65,6 +65,11 @@ export default function Inscribir() {
   const [registroExistente, setRegistroExistente] = useState<any>(null)
   const [modoEdicion, setModoEdicion] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
+
+  // Estado de inscripción (fechas/año activo)
+  const [estadoInsc, setEstadoInsc] = useState<EstadoInscripcion>('sin_config')
+  const [configInsc, setConfigInsc] = useState<ConfiguracionInscripcion | null>(null)
+  const [loadingEstado, setLoadingEstado] = useState(true)
 
   // URLs de plantillas (carga asíncrona de URLs firmadas)
   const [URL_PERMISO, setUrlPermiso] = useState<string>('');
@@ -178,6 +183,22 @@ export default function Inscribir() {
     })()
   }, [user])
 
+  // Cargar estado de inscripción (fechas/año activo)
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingEstado(true)
+        const { config, estado } = await fetchEstadoInscripcionActivo()
+        setConfigInsc(config)
+        setEstadoInsc(estado)
+      } catch (e) {
+        console.warn('No se pudo cargar estado de inscripción', e)
+      } finally {
+        setLoadingEstado(false)
+      }
+    })()
+  }, [])
+
   // ---------- Helpers UI ----------
   function Label({ children }: { children: React.ReactNode }) {
     return (
@@ -226,20 +247,38 @@ export default function Inscribir() {
       { key: 'Tio', label: 'Tío' },
       { key: 'Hijo', label: 'Hijo' },
     ]
+    const isAnticipada = estadoInsc === 'fase_anticipada'
     return (
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {options.map((o) => (
-          <Pressable
-            key={o.key}
-            onPress={() => {
-              setRol(o.key)
-              if (o.key !== 'Misionero') setEsJefe(false)
-            }}
-            style={[s.button, { paddingVertical: 8, flex: 1, backgroundColor: rol === o.key ? colors.primary[500] : colors.neutral[300] }]}
-          >
-            <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
-          </Pressable>
-        ))}
+        {options.map((o) => {
+          // En fase anticipada solo permitimos Tío o Misionero (jefe se valida aparte)
+          const disabled = isAnticipada && o.key === 'Hijo'
+          return (
+            <Pressable
+              key={o.key}
+              disabled={disabled}
+              onPress={() => {
+                setRol(o.key)
+                if (o.key !== 'Misionero') setEsJefe(false)
+              }}
+              style={[
+                s.button,
+                {
+                  paddingVertical: 8,
+                  flex: 1,
+                  backgroundColor: disabled
+                    ? colors.neutral[200]
+                    : rol === o.key
+                    ? colors.primary[500]
+                    : colors.neutral[300],
+                  opacity: disabled ? 0.5 : 1,
+                },
+              ]}
+            >
+              <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
+            </Pressable>
+          )
+        })}
       </View>
     )
   }
@@ -382,6 +421,25 @@ export default function Inscribir() {
         Alert.alert('Faltan datos', 'Revisá los campos marcados en rojo.')
         return
       }
+
+      // Validación de fase de inscripción (UI). El backend valida también.
+      if (!modoEdicion) {
+        if (estadoInsc === 'cerrado_antes' || estadoInsc === 'cerrado_despues' || estadoInsc === 'sin_config') {
+          Alert.alert('Inscripciones cerradas', 'No es posible inscribirse en este momento.')
+          return
+        }
+        if (estadoInsc === 'fase_anticipada') {
+          const permitido = rol === 'Tio' || (rol === 'Misionero' && esJefe)
+          if (!permitido) {
+            Alert.alert(
+              'Fase anticipada',
+              'En esta etapa solo pueden inscribirse Tíos y Misioneros marcados como Jefes Jóvenes.'
+            )
+            return
+          }
+        }
+      }
+
       const nacimientoISO = toYYYYMMDD_fromDDMMYYYY(nacimiento.trim())
       if (!nacimientoISO) {
         setErrs((e) => ({ ...e, nacimiento: 'Usá formato DD-MM-AAAA.' }))
@@ -581,17 +639,67 @@ export default function Inscribir() {
     )
   }
 
-  const añoActual = new Date().getFullYear();
+  const añoActivo = configInsc?.año ?? new Date().getFullYear();
+  const inscripcionesCerradas =
+    estadoInsc === 'cerrado_antes' || estadoInsc === 'cerrado_despues' || estadoInsc === 'sin_config';
+  const faseAnticipada = estadoInsc === 'fase_anticipada';
+
+  // Pantalla de cierre completo
+  if (!loadingEstado && inscripcionesCerradas && !modoEdicion) {
+    const titulo =
+      estadoInsc === 'cerrado_despues'
+        ? `Inscripciones ${añoActivo} cerradas`
+        : estadoInsc === 'cerrado_antes'
+        ? `Inscripciones ${añoActivo} aún no abiertas`
+        : 'Inscripciones cerradas';
+    const detalle =
+      estadoInsc === 'cerrado_despues'
+        ? `Las inscripciones para el año ${añoActivo} ya finalizaron.`
+        : estadoInsc === 'cerrado_antes' && configInsc
+        ? `Abren el ${new Date(configInsc.apertura_anticipada).toLocaleString('es-PY')}.`
+        : 'Por el momento no hay inscripciones disponibles.';
+    return (
+      <View style={[s.screen, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Text style={{ fontSize: 56, marginBottom: 12 }}>🚫</Text>
+        <Text style={[s.title, { textAlign: 'center', marginBottom: 12 }]}>{titulo}</Text>
+        <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginBottom: 24 }]}>
+          {detalle}
+        </Text>
+        <Button variant="secondary" onPress={() => router.push('/')}>Volver al inicio</Button>
+      </View>
+    );
+  }
 
   return (
     <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={s.title}>{modoEdicion ? 'Actualizar inscripción' : 'Inscripción'}</Text>
-      
+
       <Card style={{ backgroundColor: '#10B981', borderLeftWidth: 4, borderLeftColor: '#059669', marginVertical: 8 }}>
         <Text style={[s.text, { fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }]}>
-          📅 Inscripción para el año {añoActual}
+          📅 Inscripción para el año {añoActivo}
         </Text>
       </Card>
+
+      {faseAnticipada && (
+        <Card style={{ backgroundColor: '#FEF3C7', borderLeftWidth: 4, borderLeftColor: '#F59E0B' }}>
+          <Text style={[s.text, { fontWeight: '700', color: '#92400E' }]}>
+            ⭐ Inscripción anticipada
+          </Text>
+          <Text style={[s.text, { color: '#92400E', marginTop: 4 }]}>
+            En esta fase solo pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text> y{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text>.
+            {configInsc && (
+              <>
+                {'\n'}La inscripción general abre el{' '}
+                <Text style={{ fontWeight: '700' }}>
+                  {new Date(configInsc.apertura_general).toLocaleString('es-PY')}
+                </Text>
+                .
+              </>
+            )}
+          </Text>
+        </Card>
+      )}
       
       {modoEdicion && (
         <Card style={{ backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: '#f59e0b' }}>

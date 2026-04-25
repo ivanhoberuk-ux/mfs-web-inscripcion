@@ -19,6 +19,7 @@ import { fetchOcupacion, updatePueblo, fetchPueblos } from '../../src/lib/api';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
+import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 
 // ===== Tipos base =====
 type Registro = {
@@ -103,6 +104,9 @@ export default function Admin() {
   const [newPuebloNombre, setNewPuebloNombre] = useState('');
   const [newPuebloCupo, setNewPuebloCupo] = useState('40');
   const [creatingPueblo, setCreatingPueblo] = useState(false);
+
+  // Panel de configuración de inscripciones
+  const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -653,6 +657,7 @@ export default function Admin() {
             onPress={() => {
               setShowRolesPanel(!showRolesPanel)
               setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -666,10 +671,24 @@ export default function Admin() {
             onPress={() => {
               setShowCreatePueblo(!showCreatePueblo)
               setShowRolesPanel(false)
+              setShowInscripcionConfig(false)
             }}
           >
             <Text style={s.buttonText}>
               {showCreatePueblo ? 'Ver Exportes' : 'Crear Pueblo'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showInscripcionConfig ? '#7c3aed' : '#6b7280' }]}
+            onPress={() => {
+              setShowInscripcionConfig(!showInscripcionConfig)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showInscripcionConfig ? 'Ver Exportes' : '📅 Fechas Inscripción'}
             </Text>
           </Pressable>
         </View>
@@ -799,6 +818,8 @@ export default function Admin() {
               </ScrollView>
             )}
           </View>
+        ) : showInscripcionConfig ? (
+          <InscripcionConfigPanel />
         ) : showCreatePueblo ? (
           // Panel de crear pueblo
           <View style={{ gap: 12 }}>
