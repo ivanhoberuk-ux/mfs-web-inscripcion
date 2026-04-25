@@ -818,6 +818,8 @@ export default function Admin() {
               </ScrollView>
             )}
           </View>
+        ) : showInscripcionConfig ? (
+          <InscripcionConfigPanel />
         ) : showCreatePueblo ? (
           // Panel de crear pueblo
           <View style={{ gap: 12 }}>
