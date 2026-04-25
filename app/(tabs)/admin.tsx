@@ -104,6 +104,9 @@ export default function Admin() {
   const [newPuebloNombre, setNewPuebloNombre] = useState('');
   const [newPuebloCupo, setNewPuebloCupo] = useState('40');
   const [creatingPueblo, setCreatingPueblo] = useState(false);
+
+  // Panel de configuración de inscripciones
+  const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
