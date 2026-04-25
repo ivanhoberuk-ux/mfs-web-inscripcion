@@ -421,6 +421,25 @@ export default function Inscribir() {
         Alert.alert('Faltan datos', 'Revisá los campos marcados en rojo.')
         return
       }
+
+      // Validación de fase de inscripción (UI). El backend valida también.
+      if (!modoEdicion) {
+        if (estadoInsc === 'cerrado_antes' || estadoInsc === 'cerrado_despues' || estadoInsc === 'sin_config') {
+          Alert.alert('Inscripciones cerradas', 'No es posible inscribirse en este momento.')
+          return
+        }
+        if (estadoInsc === 'fase_anticipada') {
+          const permitido = rol === 'Tio' || (rol === 'Misionero' && esJefe)
+          if (!permitido) {
+            Alert.alert(
+              'Fase anticipada',
+              'En esta etapa solo pueden inscribirse Tíos y Misioneros marcados como Jefes Jóvenes.'
+            )
+            return
+          }
+        }
+      }
+
       const nacimientoISO = toYYYYMMDD_fromDDMMYYYY(nacimiento.trim())
       if (!nacimientoISO) {
         setErrs((e) => ({ ...e, nacimiento: 'Usá formato DD-MM-AAAA.' }))
