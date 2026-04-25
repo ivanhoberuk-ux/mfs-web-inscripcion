@@ -70,6 +70,69 @@ export type Registro = {
   año: number;
 };
 
+// --------- Configuración de Inscripción (fechas/año activo) ----------
+export type EstadoInscripcion =
+  | 'cerrado_antes'
+  | 'fase_anticipada'
+  | 'fase_general'
+  | 'cerrado_despues'
+  | 'sin_config';
+
+export type ConfiguracionInscripcion = {
+  año: number;
+  apertura_anticipada: string; // ISO
+  apertura_general: string;    // ISO
+  cierre: string;              // ISO
+  activo: boolean;
+};
+
+/** Obtiene la configuración del año activo + el estado actual evaluado por la BD. */
+export async function fetchEstadoInscripcionActivo(): Promise<{
+  config: ConfiguracionInscripcion | null;
+  estado: EstadoInscripcion;
+}> {
+  const { data: cfg, error: e1 } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .select('año, apertura_anticipada, apertura_general, cierre, activo')
+    .eq('activo', true)
+    .maybeSingle();
+  if (e1) throw e1;
+  if (!cfg) return { config: null, estado: 'sin_config' };
+
+  const { data: estado, error: e2 } = await supabase.rpc('estado_inscripcion' as any, {
+    p_año: (cfg as any).año,
+  });
+  if (e2) throw e2;
+  return { config: cfg as any, estado: (estado as EstadoInscripcion) ?? 'sin_config' };
+}
+
+/** Lista todas las configuraciones (para admin). */
+export async function fetchConfiguracionesInscripcion(): Promise<ConfiguracionInscripcion[]> {
+  const { data, error } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .select('año, apertura_anticipada, apertura_general, cierre, activo')
+    .order('año', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+/** Crea o actualiza una configuración de año. Solo super_admin (RLS). */
+export async function upsertConfiguracionInscripcion(cfg: ConfiguracionInscripcion) {
+  const { error } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .upsert(cfg, { onConflict: 'año' });
+  if (error) throw error;
+}
+
+/** Marca un año como activo (el trigger desactiva los demás). */
+export async function activarAñoInscripcion(año: number) {
+  const { error } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .update({ activo: true })
+    .eq('año', año);
+  if (error) throw error;
+}
+
 // --------- Pueblos / Ocupación ----------
 export async function fetchPueblos(): Promise<Pueblo[]> {
   const { data, error } = await supabase
