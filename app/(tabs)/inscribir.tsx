@@ -602,17 +602,67 @@ export default function Inscribir() {
     )
   }
 
-  const añoActual = new Date().getFullYear();
+  const añoActivo = configInsc?.año ?? new Date().getFullYear();
+  const inscripcionesCerradas =
+    estadoInsc === 'cerrado_antes' || estadoInsc === 'cerrado_despues' || estadoInsc === 'sin_config';
+  const faseAnticipada = estadoInsc === 'fase_anticipada';
+
+  // Pantalla de cierre completo
+  if (!loadingEstado && inscripcionesCerradas && !modoEdicion) {
+    const titulo =
+      estadoInsc === 'cerrado_despues'
+        ? `Inscripciones ${añoActivo} cerradas`
+        : estadoInsc === 'cerrado_antes'
+        ? `Inscripciones ${añoActivo} aún no abiertas`
+        : 'Inscripciones cerradas';
+    const detalle =
+      estadoInsc === 'cerrado_despues'
+        ? `Las inscripciones para el año ${añoActivo} ya finalizaron.`
+        : estadoInsc === 'cerrado_antes' && configInsc
+        ? `Abren el ${new Date(configInsc.apertura_anticipada).toLocaleString('es-PY')}.`
+        : 'Por el momento no hay inscripciones disponibles.';
+    return (
+      <View style={[s.screen, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Text style={{ fontSize: 56, marginBottom: 12 }}>🚫</Text>
+        <Text style={[s.title, { textAlign: 'center', marginBottom: 12 }]}>{titulo}</Text>
+        <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginBottom: 24 }]}>
+          {detalle}
+        </Text>
+        <Button variant="secondary" onPress={() => router.push('/')}>Volver al inicio</Button>
+      </View>
+    );
+  }
 
   return (
     <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={s.title}>{modoEdicion ? 'Actualizar inscripción' : 'Inscripción'}</Text>
-      
+
       <Card style={{ backgroundColor: '#10B981', borderLeftWidth: 4, borderLeftColor: '#059669', marginVertical: 8 }}>
         <Text style={[s.text, { fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }]}>
-          📅 Inscripción para el año {añoActual}
+          📅 Inscripción para el año {añoActivo}
         </Text>
       </Card>
+
+      {faseAnticipada && (
+        <Card style={{ backgroundColor: '#FEF3C7', borderLeftWidth: 4, borderLeftColor: '#F59E0B' }}>
+          <Text style={[s.text, { fontWeight: '700', color: '#92400E' }]}>
+            ⭐ Inscripción anticipada
+          </Text>
+          <Text style={[s.text, { color: '#92400E', marginTop: 4 }]}>
+            En esta fase solo pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text> y{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text>.
+            {configInsc && (
+              <>
+                {'\n'}La inscripción general abre el{' '}
+                <Text style={{ fontWeight: '700' }}>
+                  {new Date(configInsc.apertura_general).toLocaleString('es-PY')}
+                </Text>
+                .
+              </>
+            )}
+          </Text>
+        </Card>
+      )}
       
       {modoEdicion && (
         <Card style={{ backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: '#f59e0b' }}>
