@@ -657,6 +657,7 @@ export default function Admin() {
             onPress={() => {
               setShowRolesPanel(!showRolesPanel)
               setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -670,10 +671,24 @@ export default function Admin() {
             onPress={() => {
               setShowCreatePueblo(!showCreatePueblo)
               setShowRolesPanel(false)
+              setShowInscripcionConfig(false)
             }}
           >
             <Text style={s.buttonText}>
               {showCreatePueblo ? 'Ver Exportes' : 'Crear Pueblo'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showInscripcionConfig ? '#7c3aed' : '#6b7280' }]}
+            onPress={() => {
+              setShowInscripcionConfig(!showInscripcionConfig)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showInscripcionConfig ? 'Ver Exportes' : '📅 Fechas Inscripción'}
             </Text>
           </Pressable>
         </View>
