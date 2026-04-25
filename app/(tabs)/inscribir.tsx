@@ -66,6 +66,11 @@ export default function Inscribir() {
   const [modoEdicion, setModoEdicion] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
+  // Estado de inscripción (fechas/año activo)
+  const [estadoInsc, setEstadoInsc] = useState<EstadoInscripcion>('sin_config')
+  const [configInsc, setConfigInsc] = useState<ConfiguracionInscripcion | null>(null)
+  const [loadingEstado, setLoadingEstado] = useState(true)
+
   // URLs de plantillas (carga asíncrona de URLs firmadas)
   const [URL_PERMISO, setUrlPermiso] = useState<string>('');
   const [URL_PROTOCOLO, setUrlProtocolo] = useState<string>('');
