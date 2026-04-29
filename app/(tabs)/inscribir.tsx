@@ -251,8 +251,8 @@ export default function Inscribir() {
     return (
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {options.map((o) => {
-          // En fase anticipada solo permitimos Tío o Misionero (jefe se valida aparte)
-          const disabled = isAnticipada && o.key === 'Hijo'
+          // En fase anticipada permitimos Tío, Hijo (de Tío) y Misionero (jefe se valida aparte)
+          const disabled = false
           return (
             <Pressable
               key={o.key}
