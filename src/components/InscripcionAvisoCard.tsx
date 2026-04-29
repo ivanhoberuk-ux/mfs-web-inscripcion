@@ -77,21 +77,23 @@ export function InscripcionAvisoCard() {
     emoji = '⏳';
     titulo = `¡Inscripciones ${config.año} muy pronto!`;
     detalle = [
-      `🥇 Tíos y Jefes Jóvenes: ${fmtFechaHora(config.apertura_anticipada)} (${diffHumano(new Date(config.apertura_anticipada))})`,
-      `🌟 Todos: ${fmtFechaHora(config.apertura_general)}`,
+      `🥇 Apertura anticipada — solo Tíos y Jefes Jóvenes 🧡`,
+      `   ${fmtFechaHora(config.apertura_anticipada)} (${diffHumano(new Date(config.apertura_anticipada))})`,
+      `🌟 Apertura general — todos los misioneros e hijos`,
+      `   ${fmtFechaHora(config.apertura_general)}`,
       `🔒 Cierre: ${fmtFechaHora(config.cierre)}`,
     ];
   } else if (estado === 'fase_anticipada') {
     bg = '#DBEAFE';
     border = '#3B82F6';
     emoji = '🥇';
-    titulo = `¡Apertura anticipada ${config.año} en marcha!`;
+    titulo = `¡Apertura anticipada ${config.año} activa!`;
     detalle = [
-      `Hoy pueden inscribirse 🧡 Tíos y Jefes Jóvenes`,
-      `🌟 Apertura general: ${fmtFechaHora(config.apertura_general)} (${diffHumano(new Date(config.apertura_general))})`,
+      `Hoy pueden inscribirse SOLO 🧡 Tíos y Jefes Jóvenes (Misioneros con cargo de jefe).`,
+      `🌟 Apertura general (todos): ${fmtFechaHora(config.apertura_general)} (${diffHumano(new Date(config.apertura_general))})`,
       `🔒 Cierre: ${fmtFechaHora(config.cierre)}`,
     ];
-    cta = { label: '✍️ Inscribirme ahora', onPress: () => router.push('/inscribir') };
+    cta = { label: '✍️ Inscribirme (Tío / Jefe Joven)', onPress: () => router.push('/inscribir') };
   } else if (estado === 'fase_general') {
     bg = '#D1FAE5';
     border = '#10B981';
