@@ -116,12 +116,16 @@ export default function Inscribir() {
           return
         }
         
-        // Verificar si ya está inscripto
-        const { data: registro } = await supabase
+        // Verificar si ya está inscripto (solo año vigente y no dado de baja)
+        const { data: registros } = await supabase
           .from('registros')
           .select('*')
           .eq('email', session.user.email)
-          .maybeSingle()
+          .is('deleted_at', null)
+          .eq('año', 2026)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        const registro = registros && registros.length > 0 ? registros[0] : null
         
         if (registro) {
           // Cargar datos existentes en el formulario
