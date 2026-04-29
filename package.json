@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "@expo/cli": "^54.0.11",
+    "@expo/metro-config": "^55.0.17",
     "@types/react": "~19.1.10",
     "@types/react-dom": "~19.1.7",
     "typescript": "^5.9.2"
