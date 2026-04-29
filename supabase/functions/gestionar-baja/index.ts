@@ -182,16 +182,86 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Obtener info del pueblo para la respuesta
-    const { data: pueblo, error: puebloError } = await supabase
+    // 3. Obtener info del pueblo y registro completo (para notificación a admins)
+    const { data: pueblo } = await supabase
       .from('pueblos')
       .select('nombre')
       .eq('id', cancelResult.pueblo_id)
       .single()
 
-    if (!puebloError && pueblo) {
+    const { data: registroCompleto } = await supabase
+      .from('registros')
+      .select('nombres, apellidos, ci, rol, email, telefono')
+      .eq('id', registro_id)
+      .maybeSingle()
+
+    if (pueblo) {
       resultado.pueblo_nombre = pueblo.nombre
       console.log('Baja procesada para pueblo:', pueblo.nombre)
+    }
+
+    // 4. Notificar a admins del pueblo (pueblo_admin y co_admin_pueblo)
+    const resendKey = Deno.env.get('RESEND_API_KEY')
+    if (resendKey && pueblo && registroCompleto) {
+      try {
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('email, id, user_roles!inner(role)')
+          .eq('pueblo_id', cancelResult.pueblo_id)
+          .in('user_roles.role', ['pueblo_admin', 'co_admin_pueblo'])
+
+        const adminEmails = (adminProfiles || [])
+          .map((p: any) => p.email)
+          .filter((e: string | null) => !!e)
+
+        if (adminEmails.length > 0) {
+          const estadoTxt = cancelResult.estado_anterior === 'confirmado'
+            ? 'confirmada'
+            : cancelResult.estado_anterior === 'lista_espera'
+              ? 'en lista de espera'
+              : cancelResult.estado_anterior
+
+          const promovidoHtml = resultado.promovido
+            ? `<p style="margin-top:16px;padding:12px;background:#dcfce7;border-radius:8px;color:#065f46;">
+                ✅ Se promovió automáticamente a <strong>${resultado.promovido.nombres} ${resultado.promovido.apellidos}</strong> de la lista de espera.
+              </p>`
+            : ''
+
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'MFS Inscripciones <onboarding@resend.dev>',
+              to: adminEmails,
+              subject: `📤 Baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#0369a1;">📤 Aviso de baja</h2>
+                  <p>Hola, te informamos que la siguiente persona se dio de baja del pueblo <strong>${pueblo.nombre}</strong>:</p>
+                  <div style="padding:16px;background:#f1f5f9;border-radius:8px;border-left:4px solid #ef4444;">
+                    <p style="margin:4px 0;"><strong>Nombre:</strong> ${registroCompleto.nombres} ${registroCompleto.apellidos}</p>
+                    <p style="margin:4px 0;"><strong>CI:</strong> ${registroCompleto.ci}</p>
+                    <p style="margin:4px 0;"><strong>Rol:</strong> ${registroCompleto.rol}</p>
+                    <p style="margin:4px 0;"><strong>Email:</strong> ${registroCompleto.email}</p>
+                    <p style="margin:4px 0;"><strong>Teléfono:</strong> ${registroCompleto.telefono}</p>
+                    <p style="margin:4px 0;"><strong>Estado anterior:</strong> ${estadoTxt}</p>
+                  </div>
+                  ${promovidoHtml}
+                  <p style="margin-top:16px;color:#64748b;font-size:13px;">
+                    Esta persona podrá inscribirse a otro pueblo si hay cupo disponible.
+                  </p>
+                </div>
+              `,
+            }),
+          })
+          console.log('Email de baja enviado a admins:', adminEmails)
+        }
+      } catch (notifyError) {
+        console.error('Error notificando admins de baja:', notifyError)
+      }
     }
 
     return new Response(
