@@ -5,7 +5,7 @@ import { s, colors, spacing } from '../../src/lib/theme'
 import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import { shareOrDownload } from '../../src/lib/sharing'
-import { generateExcelBlob } from '../../src/lib/excel'
+import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel'
 import { useRouter } from 'expo-router'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
@@ -529,8 +529,26 @@ export default function VerInscriptosAdmin() {
       dataRows.push(line);
     }
 
-    const blob = generateExcelBlob(dataRows);
-    await shareOrDownload(blob, `inscriptos_${Date.now()}.xlsx`);
+    const puebloNombre = puebloId === 'todos' ? null : (pueblosMap[puebloId] || null);
+    const ambito = puebloNombre ? `Pueblo: ${puebloNombre}` : 'Todos los pueblos';
+    const filtros: string[] = [];
+    if (rol && rol !== 'todos') filtros.push(`Rol: ${rol}`);
+    if (typeof q === 'string' && q.trim()) filtros.push(`Búsqueda: "${q.trim()}"`);
+    const filtrosTxt = filtros.length ? ` · ${filtros.join(' · ')}` : '';
+    const titulo = puebloNombre
+      ? `MFS — Inscriptos de ${puebloNombre}`
+      : `MFS — Inscriptos (todos los pueblos)`;
+    const subtitulo = `${ambito} · ${rows.length} inscriptos${filtrosTxt} · Generado el ${humanDate()}`;
+    const fileBase = puebloNombre
+      ? `MFS_inscriptos_${safeFileName(puebloNombre)}`
+      : `MFS_inscriptos_general`;
+
+    const blob = generateExcelBlob(dataRows, {
+      title: titulo,
+      subtitle: subtitulo,
+      sheetName: puebloNombre ? safeFileName(puebloNombre).slice(0, 31) : 'Inscriptos',
+    });
+    await shareOrDownload(blob, `${fileBase}_${fileStamp()}.xlsx`);
   }
 
   if (!accessChecked) {
