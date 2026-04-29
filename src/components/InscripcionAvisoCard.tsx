@@ -89,7 +89,7 @@ export function InscripcionAvisoCard() {
         icon: '🥇',
         label: 'Apertura anticipada',
         value: fmtFechaHora(config.apertura_anticipada),
-        sub: `${diffHumano(new Date(config.apertura_anticipada))} · solo Tíos y Jefes Jóvenes 🧡`,
+        sub: `${diffHumano(new Date(config.apertura_anticipada))} · Tíos, Hijos de Tíos y Jefes Jóvenes 🧡`,
         color: '#3B82F6',
       },
       {
