@@ -129,7 +129,7 @@ export function InscripcionAvisoCard() {
         color: '#EF4444',
       },
     ];
-    cta = { label: '✍️ Inscribirme (Tío / Jefe Joven)', onPress: () => router.push('/inscribir') };
+    cta = { label: '✍️ Inscribirme (Tío / Hijo / Jefe Joven)', onPress: () => router.push('/inscribir') };
   } else if (estado === 'fase_general') {
     gradient = ['#D1FAE5', '#A7F3D0'];
     border = '#10B981';
