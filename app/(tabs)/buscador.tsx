@@ -14,7 +14,7 @@ import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
-import { generateExcelBase64 } from '../../src/lib/excel'
+import { generateExcelBase64, fileStamp, humanDate, safeFileName, type ExcelOptions } from '../../src/lib/excel'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
 
 type Row = {
@@ -185,19 +185,44 @@ export default function Buscador() {
     const escaped = s.replace(/"/g, '""')
     return `"${escaped}"`
   }
-  async function saveAndShareExcel(filename: string, data: any[][]) {
-    const base64 = generateExcelBase64(data, filename);
+  async function saveAndShareExcel(filename: string, data: any[][], opts: ExcelOptions = {}) {
+    const base64 = generateExcelBase64(data, opts);
     const uri = FileSystem.cacheDirectory + filename;
     await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
     const canShare = await Sharing.isAvailableAsync();
     if (canShare) {
-      await Sharing.shareAsync(uri, { 
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
-        dialogTitle: filename 
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        dialogTitle: opts.title || filename,
       });
     } else {
       Alert.alert('Excel generado', uri);
     }
+  }
+
+  function buildExcelContext(scope: 'page' | 'all', count: number) {
+    const puebloNombre = puebloId === 'todos' ? null : (pueblosMap[puebloId] || null);
+    const tituloBase = puebloNombre
+      ? `MFS — Buscador · ${puebloNombre}`
+      : `MFS — Buscador · Todos los pueblos`;
+    const partes: string[] = [];
+    if (q?.trim()) partes.push(`Búsqueda: "${q.trim()}"`);
+    if (rol && rol !== 'todos') partes.push(`Rol: ${rol}`);
+    if (docStatus && docStatus !== 'todos') partes.push(`Documentos: ${docStatus}`);
+    partes.push(scope === 'page' ? 'Página actual' : 'Todos los resultados');
+    const subtitulo = `${partes.join(' · ')} · ${count} inscriptos · Generado el ${humanDate()}`;
+    const fileBase = puebloNombre
+      ? `MFS_buscador_${safeFileName(puebloNombre)}`
+      : `MFS_buscador_general`;
+    const fileName = `${fileBase}_${scope === 'page' ? 'pagina' : 'todo'}_${fileStamp()}.xlsx`;
+    return {
+      fileName,
+      opts: {
+        title: tituloBase,
+        subtitle: subtitulo,
+        sheetName: 'Buscador',
+      } as ExcelOptions,
+    };
   }
   function mapRowToCsvArray(r: Row) {
     const { age, okRequeridos, okAcept, okPerm, okFirma } = requiredDocsOk(r)
@@ -245,7 +270,8 @@ export default function Buscador() {
       }
       setExporting('page');
       const data = rowsToArray(rows);
-      await saveAndShareExcel('buscador_pagina.xlsx', data);
+      const ctx = buildExcelContext('page', rows.length);
+      await saveAndShareExcel(ctx.fileName, data, ctx.opts);
     } catch (e: any) {
       Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
     } finally {
@@ -284,7 +310,8 @@ export default function Buscador() {
       }
 
       const data = rowsToArray(all);
-      await saveAndShareExcel('buscador_todo.xlsx', data);
+      const ctx = buildExcelContext('all', all.length);
+      await saveAndShareExcel(ctx.fileName, data, ctx.opts);
     } catch (e: any) {
       Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
     } finally {

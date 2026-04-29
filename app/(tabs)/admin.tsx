@@ -17,7 +17,7 @@ import { s } from '../../src/lib/theme';
 import { supabase } from '../../src/lib/supabase';
 import { fetchOcupacion, updatePueblo, fetchPueblos } from '../../src/lib/api';
 import { shareOrDownload } from '../../src/lib/sharing';
-import { generateExcelBlob } from '../../src/lib/excel';
+import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 
@@ -485,8 +485,12 @@ export default function Admin() {
         rows.push(row);
       });
 
-      const blob = generateExcelBlob(rows);
-      await shareOrDownload(blob, `registros_${stamp()}.xlsx`);
+      const blob = generateExcelBlob(rows, {
+        title: 'Inscriptos MFS — Reporte general',
+        subtitle: `Todos los pueblos · ${(data ?? []).length} registros · Generado el ${humanDate()}`,
+        sheetName: 'Inscriptos',
+      });
+      await shareOrDownload(blob, `MFS_inscriptos_general_${fileStamp()}.xlsx`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -506,8 +510,12 @@ export default function Admin() {
         rows.push([p.id, p.nombre]);
       });
 
-      const blob = generateExcelBlob(rows);
-      await shareOrDownload(blob, `pueblos_${stamp()}.xlsx`);
+      const blob = generateExcelBlob(rows, {
+        title: 'MFS — Listado de pueblos',
+        subtitle: `${(pueblos as any[]).length} pueblos · Generado el ${humanDate()}`,
+        sheetName: 'Pueblos',
+      });
+      await shareOrDownload(blob, `MFS_pueblos_${fileStamp()}.xlsx`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -595,8 +603,12 @@ export default function Admin() {
         rows.push(row);
       });
 
-      const blob = generateExcelBlob(rows);
-      await shareOrDownload(blob, `faltan_documentos_${stamp()}.xlsx`);
+      const blob = generateExcelBlob(rows, {
+        title: 'MFS — Inscriptos con documentos faltantes',
+        subtitle: `${faltantes.length} inscriptos pendientes · Generado el ${humanDate()}`,
+        sheetName: 'Faltan documentos',
+      });
+      await shareOrDownload(blob, `MFS_faltan_documentos_${fileStamp()}.xlsx`);
       
       Alert.alert('Exportado', `Se exportaron ${faltantes.length} inscriptos con documentos faltantes`);
     } catch (e: any) {
