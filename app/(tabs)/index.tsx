@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../src/context/AuthProvider'
 import { supabase } from '../../src/lib/supabase'
 import { Button } from '../../src/components/Button'
+import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
@@ -181,6 +182,9 @@ export default function Home() {
           Encendé tu corazón. La misión arranca acá 🔥💛
         </Text>
       </Animated.View>
+
+      {/* Aviso de fechas de inscripción */}
+      <InscripcionAvisoCard />
 
       {/* Accesos rápidos con emojis */}
       <View
