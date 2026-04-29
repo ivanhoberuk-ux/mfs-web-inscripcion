@@ -380,6 +380,7 @@ export default function Home() {
         Hecho con 💙 para las MFS Paraguay
       </Text>
     </ScrollView>
+    </View>
   )
 }
 
