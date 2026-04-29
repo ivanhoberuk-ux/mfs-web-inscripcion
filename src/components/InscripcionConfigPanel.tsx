@@ -467,6 +467,23 @@ export function InscripcionConfigPanel() {
         const d = drafts[cfg.año];
         if (!d) return null;
         const año = cfg.año;
+
+        // Detectar inconsistencias entre fechas guardadas y "ahora"
+        const ahora = new Date();
+        const antDate = new Date(cfg.apertura_anticipada);
+        const genDate = new Date(cfg.apertura_general);
+        const cieDate = new Date(cfg.cierre);
+        const estadoActual: string =
+          ahora < antDate ? 'cerrado_antes' :
+          ahora < genDate ? 'fase_anticipada' :
+          ahora < cieDate ? 'fase_general' : 'cerrado_despues';
+        const labelEstado: Record<string, { txt: string; bg: string; fg: string }> = {
+          cerrado_antes: { txt: '⏳ Aún no abre', bg: '#FEF3C7', fg: '#92400E' },
+          fase_anticipada: { txt: '🥇 Fase anticipada (Tíos/Jefes)', bg: '#DBEAFE', fg: '#1E40AF' },
+          fase_general: { txt: '🎉 Abierto a todos', bg: '#D1FAE5', fg: '#065F46' },
+          cerrado_despues: { txt: '🔒 Cerrado', bg: '#FEE2E2', fg: '#991B1B' },
+        };
+
         return (
           <View
             key={año}
@@ -495,6 +512,13 @@ export function InscripcionConfigPanel() {
                   <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>Activar este año</Text>
                 </Pressable>
               )}
+              {cfg.activo ? (
+                <View style={{ backgroundColor: labelEstado[estadoActual].bg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: labelEstado[estadoActual].fg }}>
+                    Estado real ahora: {labelEstado[estadoActual].txt}
+                  </Text>
+                </View>
+              ) : null}
               <View style={{ flex: 1 }} />
               <Pressable
                 onPress={() => aplicarPlantilla(año)}
