@@ -82,7 +82,7 @@ export function InscripcionAvisoCard() {
     emoji = '🎈';
     chip = '¡SE VIENE!';
     titulo = `Inscripciones ${config.año} muy pronto`;
-    subtitulo = '¡Preparate que arranca la aventura! 🚀✨';
+    subtitulo = 'Con María, de la mano del Padre, ¡servir es misión! 🌹💛';
     wiggle = true;
     highlights = [
       {
