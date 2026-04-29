@@ -528,6 +528,18 @@ export function InscripcionConfigPanel() {
               </Pressable>
             </View>
 
+            {/* Aviso de inconsistencia: si el draft difiere de lo guardado */}
+            {cfg.activo && estadoActual === 'fase_general' && ahora.getTime() - genDate.getTime() > 1000 * 60 * 60 * 24 * 30 ? (
+              <View style={{ padding: 10, borderRadius: 10, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5' }}>
+                <Text style={{ fontSize: 12, color: '#991B1B', fontWeight: '700' }}>
+                  ⚠️ Atención: la "Apertura general" guardada es del pasado, por eso la portada muestra "Inscripciones abiertas".
+                </Text>
+                <Text style={{ fontSize: 11, color: '#7F1D1D', marginTop: 2 }}>
+                  Si querés que vuelva a mostrar "muy pronto" o "fase anticipada", actualizá las 3 fechas y guardá los cambios.
+                </Text>
+              </View>
+            ) : null}
+
             {/* Campos */}
             <DateTimeField
               label="Apertura anticipada"
