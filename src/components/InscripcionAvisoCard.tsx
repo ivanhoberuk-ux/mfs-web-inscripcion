@@ -63,93 +63,206 @@ export function InscripcionAvisoCard() {
 
   if (!config || estado === 'sin_config') return null;
 
-  // Determinar mensaje según fase
-  let bg = colors.primary[50];
-  let border = colors.primary[200];
+  // Paleta y contenido por fase
+  let gradient: [string, string] = ['#FEF3C7', '#FDE68A'];
+  let border = '#F59E0B';
+  let accent = '#B45309';
   let emoji = '📅';
+  let chip = '';
   let titulo = '';
-  let detalle: string[] = [];
+  let subtitulo = '';
+  let highlights: { icon: string; label: string; value: string; sub?: string; color: string }[] = [];
   let cta: { label: string; onPress: () => void } | null = null;
+  let wiggle = false;
 
   if (estado === 'cerrado_antes') {
-    bg = '#FEF3C7';
-    border = '#F59E0B';
-    emoji = '⏳';
-    titulo = `¡Inscripciones ${config.año} muy pronto!`;
-    detalle = [
-      `🥇 Apertura anticipada — solo Tíos y Jefes Jóvenes 🧡`,
-      `   ${fmtFechaHora(config.apertura_anticipada)} (${diffHumano(new Date(config.apertura_anticipada))})`,
-      `🌟 Apertura general — todos los misioneros e hijos`,
-      `   ${fmtFechaHora(config.apertura_general)}`,
-      `🔒 Cierre: ${fmtFechaHora(config.cierre)}`,
+    gradient = ['#FFF7ED', '#FED7AA'];
+    border = '#FB923C';
+    accent = '#C2410C';
+    emoji = '🎈';
+    chip = '¡SE VIENE!';
+    titulo = `Inscripciones ${config.año} muy pronto`;
+    subtitulo = '¡Preparate que arranca la aventura! 🚀✨';
+    wiggle = true;
+    highlights = [
+      {
+        icon: '🥇',
+        label: 'Apertura anticipada',
+        value: fmtFechaHora(config.apertura_anticipada),
+        sub: `${diffHumano(new Date(config.apertura_anticipada))} · solo Tíos y Jefes Jóvenes 🧡`,
+        color: '#3B82F6',
+      },
+      {
+        icon: '🌟',
+        label: 'Apertura general',
+        value: fmtFechaHora(config.apertura_general),
+        sub: 'Todos los misioneros e hijos 💛',
+        color: '#10B981',
+      },
+      {
+        icon: '🔒',
+        label: 'Cierre',
+        value: fmtFechaHora(config.cierre),
+        color: '#EF4444',
+      },
     ];
   } else if (estado === 'fase_anticipada') {
-    bg = '#DBEAFE';
+    gradient = ['#DBEAFE', '#BFDBFE'];
     border = '#3B82F6';
+    accent = '#1D4ED8';
     emoji = '🥇';
-    titulo = `¡Apertura anticipada ${config.año} activa!`;
-    detalle = [
-      `Hoy pueden inscribirse SOLO 🧡 Tíos y Jefes Jóvenes (Misioneros con cargo de jefe).`,
-      `🌟 Apertura general (todos): ${fmtFechaHora(config.apertura_general)} (${diffHumano(new Date(config.apertura_general))})`,
-      `🔒 Cierre: ${fmtFechaHora(config.cierre)}`,
+    chip = '¡YA ABRIÓ!';
+    titulo = `Apertura anticipada ${config.año} activa`;
+    subtitulo = 'Hoy se inscriben SOLO 🧡 Tíos y Jefes Jóvenes';
+    highlights = [
+      {
+        icon: '🌟',
+        label: 'Apertura general (todos)',
+        value: fmtFechaHora(config.apertura_general),
+        sub: diffHumano(new Date(config.apertura_general)),
+        color: '#10B981',
+      },
+      {
+        icon: '🔒',
+        label: 'Cierre',
+        value: fmtFechaHora(config.cierre),
+        color: '#EF4444',
+      },
     ];
     cta = { label: '✍️ Inscribirme (Tío / Jefe Joven)', onPress: () => router.push('/inscribir') };
   } else if (estado === 'fase_general') {
-    bg = '#D1FAE5';
+    gradient = ['#D1FAE5', '#A7F3D0'];
     border = '#10B981';
+    accent = '#047857';
     emoji = '🎉';
-    titulo = `¡Inscripciones ${config.año} ABIERTAS para todos!`;
-    detalle = [
-      `Tíos, Misioneros e Hijos pueden inscribirse 🚀`,
-      `🔒 Cierran: ${fmtFechaHora(config.cierre)} (${diffHumano(new Date(config.cierre))})`,
+    chip = '¡ABIERTAS!';
+    titulo = `Inscripciones ${config.año} ABIERTAS`;
+    subtitulo = 'Tíos, Misioneros e Hijos: ¡a inscribirse! 🚀💛';
+    wiggle = true;
+    highlights = [
+      {
+        icon: '🔒',
+        label: 'Cierran',
+        value: fmtFechaHora(config.cierre),
+        sub: diffHumano(new Date(config.cierre)),
+        color: '#EF4444',
+      },
     ];
-    cta = { label: '✍️ ¡Inscribirme!', onPress: () => router.push('/inscribir') };
+    cta = { label: '✍️ ¡Quiero inscribirme!', onPress: () => router.push('/inscribir') };
   } else if (estado === 'cerrado_despues') {
-    bg = '#FEE2E2';
+    gradient = ['#FEE2E2', '#FECACA'];
     border = '#EF4444';
+    accent = '#991B1B';
     emoji = '🔒';
+    chip = 'CERRADAS';
     titulo = `Inscripciones ${config.año} cerradas`;
-    detalle = [`Cerraron el ${fmtFechaHora(config.cierre)}.`, `¡Nos vemos el próximo año! 💛`];
+    subtitulo = '¡Nos vemos el próximo año! 💛✨';
+    highlights = [
+      {
+        icon: '📅',
+        label: 'Cerraron el',
+        value: fmtFechaHora(config.cierre),
+        color: '#6B7280',
+      },
+    ];
   }
+
+  // Web: aplicamos clase para animación de wiggle al emoji
+  const emojiExtra: any = wiggle ? { className: 'mfs-wiggle' } : {};
 
   return (
     <View
       style={{
         width: '100%',
-        padding: 18,
-        borderRadius: radius.lg,
-        backgroundColor: bg,
+        padding: 20,
+        borderRadius: radius.xl,
+        backgroundColor: gradient[1],
+        // @ts-ignore - web only
+        backgroundImage: `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)`,
         borderWidth: 2,
         borderColor: border,
-        gap: 10,
+        gap: 14,
+        // @ts-ignore
+        boxShadow: `0 10px 30px -10px ${border}66`,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Text style={{ fontSize: 32 }}>{emoji}</Text>
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: '#111827' }}>{titulo}</Text>
-      </View>
-      <View style={{ gap: 4 }}>
-        {detalle.map((d, i) => (
-          <Text key={i} style={{ fontSize: 13, color: '#374151', lineHeight: 18 }}>
-            {d}
+      {/* Header con chip */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Text {...emojiExtra} style={{ fontSize: 44 }}>{emoji}</Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              backgroundColor: border,
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 999,
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+              {chip}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 19, fontWeight: '800', color: '#111827', lineHeight: 24 }}>
+            {titulo}
           </Text>
+          <Text style={{ fontSize: 13, color: accent, fontWeight: '600' }}>
+            {subtitulo}
+          </Text>
+        </View>
+      </View>
+
+      {/* Highlights tipo cards */}
+      <View style={{ gap: 8 }}>
+        {highlights.map((h, i) => (
+          <View
+            key={i}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              backgroundColor: 'rgba(255,255,255,0.7)',
+              borderRadius: radius.md,
+              padding: 10,
+              borderLeftWidth: 4,
+              borderLeftColor: h.color,
+            }}
+          >
+            <Text style={{ fontSize: 22 }}>{h.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: h.color, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+                {h.label}
+              </Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#111827' }}>
+                {h.value}
+              </Text>
+              {h.sub ? (
+                <Text style={{ fontSize: 12, color: '#4B5563', marginTop: 2 }}>{h.sub}</Text>
+              ) : null}
+            </View>
+          </View>
         ))}
       </View>
+
       {cta ? (
         <Pressable
           onPress={cta.onPress}
           style={({ pressed }) => ({
-            marginTop: 6,
+            marginTop: 4,
             backgroundColor: border,
-            paddingVertical: 12,
+            paddingVertical: 14,
             paddingHorizontal: 16,
-            borderRadius: radius.md,
+            borderRadius: radius.lg,
             alignItems: 'center',
             opacity: pressed ? 0.85 : 1,
+            // @ts-ignore
+            boxShadow: `0 6px 16px -4px ${border}99`,
           })}
           accessibilityRole="button"
         >
-          <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }}>{cta.label}</Text>
+          <Text style={{ color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: 0.3 }}>
+            {cta.label}
+          </Text>
         </Pressable>
       ) : null}
     </View>
