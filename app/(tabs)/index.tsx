@@ -94,9 +94,48 @@ export default function Home() {
     return '¡Buenas noches! 🌙'
   }
 
+  const LOGO_BG_URL = LOGO_URL
+
   return (
+    <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+      {/* Fondo decorativo: bandera paraguaya difuminada (3 franjas) */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          opacity: 0.08,
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: '#D52B1E' }} />
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+        <View style={{ flex: 1, backgroundColor: '#0038A8' }} />
+      </View>
+
+      {/* Logo MFS difuminado de fondo */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Image
+          source={{ uri: LOGO_BG_URL }}
+          style={{
+            width: 520,
+            height: 520,
+            opacity: 0.06,
+            resizeMode: 'contain',
+          }}
+          accessibilityLabel=""
+        />
+      </View>
+
     <ScrollView
-      style={[s.screen, { backgroundColor: colors.background.light }]}
+      style={{ flex: 1, backgroundColor: 'transparent' }}
       contentContainerStyle={{
         paddingVertical: 24,
         paddingHorizontal: 16,
