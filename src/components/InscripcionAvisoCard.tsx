@@ -113,7 +113,7 @@ export function InscripcionAvisoCard() {
     emoji = '🥇';
     chip = '¡YA ABRIÓ!';
     titulo = `Apertura anticipada ${config.año} activa`;
-    subtitulo = 'Hoy se inscriben SOLO 🧡 Tíos y Jefes Jóvenes';
+    subtitulo = 'Hoy se inscriben 🧡 Tíos, Hijos de Tíos y Jefes Jóvenes';
     highlights = [
       {
         icon: '🌟',
