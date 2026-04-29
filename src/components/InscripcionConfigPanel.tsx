@@ -238,27 +238,47 @@ function DateTimeField({
   const [open, setOpen] = useState(false);
   const current = value ?? defaultValue;
 
+  const handleToggle = () => {
+    if (!value) onChange(defaultValue);
+    setOpen((o) => !o);
+  };
+
   return (
     <View style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, backgroundColor: 'white', overflow: 'hidden' }}>
       <Pressable
-        onPress={() => {
-          if (!value) onChange(defaultValue);
-          setOpen((o) => !o);
-        }}
-        style={{ padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        onPress={handleToggle}
+        accessibilityRole="button"
+        // @ts-ignore — RN Web acepta cursor
+        style={({ pressed }) => ({
+          padding: 14,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: pressed ? '#F3F4F6' : open ? '#EFF6FF' : 'white',
+          cursor: 'pointer',
+        })}
       >
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, pointerEvents: 'none' }}>
           <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 2 }}>
-            {emoji} {label}
+            {emoji} {label}  ·  {open ? 'tocá para cerrar' : 'tocá para editar'}
           </Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: value ? '#111827' : '#9CA3AF' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: value ? '#111827' : '#9CA3AF' }}>
             {formatPretty(value)}
           </Text>
           {helpText ? (
             <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{helpText}</Text>
           ) : null}
         </View>
-        <Text style={{ fontSize: 18, color: '#0a7ea4', fontWeight: '700' }}>{open ? '▲' : '▼'}</Text>
+        <View style={{
+          width: 36, height: 36, borderRadius: 18,
+          backgroundColor: open ? '#0a7ea4' : '#E5E7EB',
+          alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <Text style={{ fontSize: 16, color: open ? 'white' : '#374151', fontWeight: '700' }}>
+            {open ? '▲' : '▼'}
+          </Text>
+        </View>
       </Pressable>
       {open ? (
         <View style={{ padding: 12, gap: 10, backgroundColor: '#F9FAFB', borderTopWidth: 1, borderTopColor: '#E5E7EB' }}>
