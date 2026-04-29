@@ -270,7 +270,8 @@ export default function Buscador() {
       }
       setExporting('page');
       const data = rowsToArray(rows);
-      await saveAndShareExcel('buscador_pagina.xlsx', data);
+      const ctx = buildExcelContext('page', rows.length);
+      await saveAndShareExcel(ctx.fileName, data, ctx.opts);
     } catch (e: any) {
       Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
     } finally {
@@ -309,7 +310,8 @@ export default function Buscador() {
       }
 
       const data = rowsToArray(all);
-      await saveAndShareExcel('buscador_todo.xlsx', data);
+      const ctx = buildExcelContext('all', all.length);
+      await saveAndShareExcel(ctx.fileName, data, ctx.opts);
     } catch (e: any) {
       Alert.alert('No se pudo exportar CSV', e?.message ?? String(e))
     } finally {
