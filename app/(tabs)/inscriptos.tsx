@@ -530,15 +530,11 @@ export default function VerInscriptosAdmin() {
     }
 
     const puebloNombre = puebloId === 'todos' ? null : (pueblosMap[puebloId] || null);
-    const ambito = puebloNombre ? `Pueblo: ${puebloNombre}` : 'Todos los pueblos';
-    const filtros: string[] = [];
-    if (rol && rol !== 'todos') filtros.push(`Rol: ${rol}`);
-    if (typeof q === 'string' && q.trim()) filtros.push(`Búsqueda: "${q.trim()}"`);
-    const filtrosTxt = filtros.length ? ` · ${filtros.join(' · ')}` : '';
     const titulo = puebloNombre
       ? `MFS — Inscriptos de ${puebloNombre}`
       : `MFS — Inscriptos (todos los pueblos)`;
-    const subtitulo = `${ambito} · ${rows.length} inscriptos${filtrosTxt} · Generado el ${humanDate()}`;
+    const ambito = puebloNombre ? `Pueblo: ${puebloNombre}` : 'Todos los pueblos';
+    const subtitulo = `${ambito} · ${rows.length} inscriptos · Generado el ${humanDate()}`;
     const fileBase = puebloNombre
       ? `MFS_inscriptos_${safeFileName(puebloNombre)}`
       : `MFS_inscriptos_general`;
