@@ -1,7 +1,7 @@
 // FILE: src/components/InscripcionConfigPanel.tsx
-// Panel admin para gestionar fechas de apertura/cierre y año activo de inscripciones.
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
+// Panel admin con UX intuitiva para gestionar fechas/horas de inscripción y año activo.
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, TextInput, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { s, colors } from '../lib/theme';
 import {
   fetchConfiguracionesInscripcion,
@@ -10,53 +10,295 @@ import {
   type ConfiguracionInscripcion,
 } from '../lib/api';
 
-// Convierte ISO -> "YYYY-MM-DDTHH:MM" (input local)
-function isoToLocalInput(iso: string): string {
+// ===== Helpers de fecha =====
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DIAS_SEMANA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+type DateTimeParts = {
+  year: number;
+  month: number; // 1-12
+  day: number;
+  hour: number;
+  minute: number;
+};
+
+function isoToParts(iso: string | null | undefined): DateTimeParts | null {
+  if (!iso) return null;
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (isNaN(d.getTime())) return null;
+  return {
+    year: d.getFullYear(),
+    month: d.getMonth() + 1,
+    day: d.getDate(),
+    hour: d.getHours(),
+    minute: d.getMinutes(),
+  };
 }
 
-// Convierte "YYYY-MM-DDTHH:MM" -> ISO
-function localInputToIso(local: string): string | null {
-  if (!local) return null;
-  const d = new Date(local);
-  if (isNaN(d.getTime())) return null;
+function partsToIso(p: DateTimeParts): string {
+  const d = new Date(p.year, p.month - 1, p.day, p.hour, p.minute, 0, 0);
   return d.toISOString();
 }
 
-function fmt(iso: string) {
-  try {
-    return new Date(iso).toLocaleString('es-PY');
-  } catch {
-    return iso;
-  }
+function formatPretty(p: DateTimeParts | null): string {
+  if (!p) return '— sin definir —';
+  const dow = new Date(p.year, p.month - 1, p.day).getDay();
+  return `${DIAS_SEMANA[dow]} ${p.day} de ${MESES[p.month - 1]} de ${p.year}, ${pad(p.hour)}:${pad(p.minute)} hs`;
 }
 
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+// ===== Mini-calendario =====
+function MiniCalendar({
+  value,
+  onChange,
+}: {
+  value: DateTimeParts;
+  onChange: (next: DateTimeParts) => void;
+}) {
+  const [viewYear, setViewYear] = useState(value.year);
+  const [viewMonth, setViewMonth] = useState(value.month);
+
+  const firstDow = new Date(viewYear, viewMonth - 1, 1).getDay();
+  const totalDays = daysInMonth(viewYear, viewMonth);
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= totalDays; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  function shiftMonth(delta: number) {
+    let m = viewMonth + delta;
+    let y = viewYear;
+    if (m < 1) { m = 12; y -= 1; }
+    if (m > 12) { m = 1; y += 1; }
+    setViewMonth(m);
+    setViewYear(y);
+  }
+
+  return (
+    <View style={{ backgroundColor: 'white', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#E5E7EB' }}>
+      {/* Header navegación */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Pressable onPress={() => shiftMonth(-1)} style={{ padding: 6 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0a7ea4' }}>‹</Text>
+        </Pressable>
+        <Text style={{ fontWeight: '700', fontSize: 14 }}>
+          {MESES[viewMonth - 1]} {viewYear}
+        </Text>
+        <Pressable onPress={() => shiftMonth(1)} style={{ padding: 6 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0a7ea4' }}>›</Text>
+        </Pressable>
+      </View>
+
+      {/* Días de la semana */}
+      <View style={{ flexDirection: 'row' }}>
+        {DIAS_SEMANA.map((d) => (
+          <View key={d} style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}>
+            <Text style={{ fontSize: 11, color: '#6B7280', fontWeight: '600' }}>{d}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Días */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, idx) => {
+          const isSelected =
+            d !== null &&
+            d === value.day &&
+            viewMonth === value.month &&
+            viewYear === value.year;
+          return (
+            <View key={idx} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 2 }}>
+              {d === null ? (
+                <View style={{ width: 32, height: 32 }} />
+              ) : (
+                <Pressable
+                  onPress={() => onChange({ ...value, year: viewYear, month: viewMonth, day: d })}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: isSelected ? '#0a7ea4' : 'transparent',
+                  }}
+                >
+                  <Text style={{ color: isSelected ? 'white' : '#111827', fontWeight: isSelected ? '700' : '500', fontSize: 13 }}>
+                    {d}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ===== Selector de hora =====
+function TimePicker({
+  value,
+  onChange,
+}: {
+  value: DateTimeParts;
+  onChange: (next: DateTimeParts) => void;
+}) {
+  const [hourStr, setHourStr] = useState(pad(value.hour));
+  const [minStr, setMinStr] = useState(pad(value.minute));
+
+  useEffect(() => {
+    setHourStr(pad(value.hour));
+    setMinStr(pad(value.minute));
+  }, [value.hour, value.minute]);
+
+  function commit(h: string, m: string) {
+    let hh = parseInt(h, 10);
+    let mm = parseInt(m, 10);
+    if (isNaN(hh) || hh < 0 || hh > 23) hh = value.hour;
+    if (isNaN(mm) || mm < 0 || mm > 59) mm = value.minute;
+    onChange({ ...value, hour: hh, minute: mm });
+  }
+
+  const presets = [
+    { label: '00:00', h: 0, m: 0 },
+    { label: '08:00', h: 8, m: 0 },
+    { label: '12:00', h: 12, m: 0 },
+    { label: '18:00', h: 18, m: 0 },
+    { label: '23:59', h: 23, m: 59 },
+  ];
+
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Text style={{ fontSize: 13, color: '#374151' }}>🕒 Hora:</Text>
+        <TextInput
+          style={[s.input, { width: 60, textAlign: 'center', fontSize: 16, fontWeight: '600' }]}
+          value={hourStr}
+          onChangeText={(t) => setHourStr(t.replace(/\D/g, '').slice(0, 2))}
+          onBlur={() => commit(hourStr, minStr)}
+          keyboardType="number-pad"
+          maxLength={2}
+          placeholder="HH"
+        />
+        <Text style={{ fontSize: 18, fontWeight: '700' }}>:</Text>
+        <TextInput
+          style={[s.input, { width: 60, textAlign: 'center', fontSize: 16, fontWeight: '600' }]}
+          value={minStr}
+          onChangeText={(t) => setMinStr(t.replace(/\D/g, '').slice(0, 2))}
+          onBlur={() => commit(hourStr, minStr)}
+          keyboardType="number-pad"
+          maxLength={2}
+          placeholder="MM"
+        />
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {presets.map((p) => (
+          <Pressable
+            key={p.label}
+            onPress={() => onChange({ ...value, hour: p.h, minute: p.m })}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 999,
+              backgroundColor: value.hour === p.h && value.minute === p.m ? '#0a7ea4' : '#E5E7EB',
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: '600', color: value.hour === p.h && value.minute === p.m ? 'white' : '#374151' }}>
+              {p.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ===== Campo fecha+hora colapsable =====
+function DateTimeField({
+  label,
+  emoji,
+  value,
+  onChange,
+  defaultValue,
+  helpText,
+}: {
+  label: string;
+  emoji: string;
+  value: DateTimeParts | null;
+  onChange: (next: DateTimeParts) => void;
+  defaultValue: DateTimeParts;
+  helpText?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = value ?? defaultValue;
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, backgroundColor: 'white', overflow: 'hidden' }}>
+      <Pressable
+        onPress={() => {
+          if (!value) onChange(defaultValue);
+          setOpen((o) => !o);
+        }}
+        style={{ padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 2 }}>
+            {emoji} {label}
+          </Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: value ? '#111827' : '#9CA3AF' }}>
+            {formatPretty(value)}
+          </Text>
+          {helpText ? (
+            <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{helpText}</Text>
+          ) : null}
+        </View>
+        <Text style={{ fontSize: 18, color: '#0a7ea4', fontWeight: '700' }}>{open ? '▲' : '▼'}</Text>
+      </Pressable>
+      {open ? (
+        <View style={{ padding: 12, gap: 10, backgroundColor: '#F9FAFB', borderTopWidth: 1, borderTopColor: '#E5E7EB' }}>
+          <MiniCalendar value={current} onChange={onChange} />
+          <TimePicker value={current} onChange={onChange} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ===== Drafts =====
 type DraftRow = {
-  año: string;
-  apertura_anticipada: string;
-  apertura_general: string;
-  cierre: string;
+  año: number;
+  apertura_anticipada: DateTimeParts | null;
+  apertura_general: DateTimeParts | null;
+  cierre: DateTimeParts | null;
   activo: boolean;
 };
 
-const emptyDraft: DraftRow = {
-  año: String(new Date().getFullYear() + 1),
-  apertura_anticipada: '',
-  apertura_general: '',
-  cierre: '',
+function defaultPartsForYear(año: number, month: number, day: number, hour = 8, minute = 0): DateTimeParts {
+  return { year: año, month, day, hour, minute };
+}
+
+const emptyDraft = (año: number): DraftRow => ({
+  año,
+  apertura_anticipada: null,
+  apertura_general: null,
+  cierre: null,
   activo: false,
-};
+});
 
 export function InscripcionConfigPanel() {
   const [items, setItems] = useState<ConfiguracionInscripcion[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<number, DraftRow>>({});
-  const [newDraft, setNewDraft] = useState<DraftRow>(emptyDraft);
+  const [newDraft, setNewDraft] = useState<DraftRow>(emptyDraft(new Date().getFullYear() + 1));
   const [creating, setCreating] = useState(false);
+  const [showNew, setShowNew] = useState(false);
 
   async function load() {
     try {
@@ -66,10 +308,10 @@ export function InscripcionConfigPanel() {
       const map: Record<number, DraftRow> = {};
       data.forEach((c) => {
         map[c.año] = {
-          año: String(c.año),
-          apertura_anticipada: isoToLocalInput(c.apertura_anticipada),
-          apertura_general: isoToLocalInput(c.apertura_general),
-          cierre: isoToLocalInput(c.cierre),
+          año: c.año,
+          apertura_anticipada: isoToParts(c.apertura_anticipada),
+          apertura_general: isoToParts(c.apertura_general),
+          cierre: isoToParts(c.cierre),
           activo: c.activo,
         };
       });
@@ -88,13 +330,13 @@ export function InscripcionConfigPanel() {
   async function onSave(año: number) {
     const d = drafts[año];
     if (!d) return;
-    const ant = localInputToIso(d.apertura_anticipada);
-    const gen = localInputToIso(d.apertura_general);
-    const cie = localInputToIso(d.cierre);
-    if (!ant || !gen || !cie) {
+    if (!d.apertura_anticipada || !d.apertura_general || !d.cierre) {
       Alert.alert('Faltan fechas', 'Completá las tres fechas (anticipada, general y cierre).');
       return;
     }
+    const ant = partsToIso(d.apertura_anticipada);
+    const gen = partsToIso(d.apertura_general);
+    const cie = partsToIso(d.cierre);
     if (new Date(ant) >= new Date(gen)) {
       Alert.alert('Fechas inválidas', 'La apertura anticipada debe ser anterior a la apertura general.');
       return;
@@ -113,7 +355,7 @@ export function InscripcionConfigPanel() {
         activo: d.activo,
       });
       await load();
-      Alert.alert('Guardado', `Configuración del año ${año} actualizada.`);
+      Alert.alert('✅ Guardado', `Configuración del año ${año} actualizada.`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -126,7 +368,7 @@ export function InscripcionConfigPanel() {
       setSavingId(año);
       await activarAñoInscripcion(año);
       await load();
-      Alert.alert('Activo', `El año ${año} es ahora el año activo de inscripciones.`);
+      Alert.alert('✅ Activo', `El año ${año} es ahora el año activo.`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -135,7 +377,7 @@ export function InscripcionConfigPanel() {
   }
 
   async function onCreate() {
-    const año = parseInt(newDraft.año, 10);
+    const año = newDraft.año;
     if (!año || año < 2000 || año > 2100) {
       Alert.alert('Año inválido', 'Ingresá un año válido (ej. 2027).');
       return;
@@ -144,10 +386,7 @@ export function InscripcionConfigPanel() {
       Alert.alert('Ya existe', `Ya hay configuración para el año ${año}.`);
       return;
     }
-    const ant = localInputToIso(newDraft.apertura_anticipada);
-    const gen = localInputToIso(newDraft.apertura_general);
-    const cie = localInputToIso(newDraft.cierre);
-    if (!ant || !gen || !cie) {
+    if (!newDraft.apertura_anticipada || !newDraft.apertura_general || !newDraft.cierre) {
       Alert.alert('Faltan fechas', 'Completá las tres fechas.');
       return;
     }
@@ -155,14 +394,15 @@ export function InscripcionConfigPanel() {
       setCreating(true);
       await upsertConfiguracionInscripcion({
         año,
-        apertura_anticipada: ant,
-        apertura_general: gen,
-        cierre: cie,
+        apertura_anticipada: partsToIso(newDraft.apertura_anticipada),
+        apertura_general: partsToIso(newDraft.apertura_general),
+        cierre: partsToIso(newDraft.cierre),
         activo: newDraft.activo,
       });
-      setNewDraft(emptyDraft);
+      setNewDraft(emptyDraft(año + 1));
+      setShowNew(false);
       await load();
-      Alert.alert('Creado', `Configuración del año ${año} creada.`);
+      Alert.alert('✅ Creado', `Configuración del año ${año} creada.`);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     } finally {
@@ -172,6 +412,18 @@ export function InscripcionConfigPanel() {
 
   function setDraftField<K extends keyof DraftRow>(año: number, key: K, val: DraftRow[K]) {
     setDrafts((prev) => ({ ...prev, [año]: { ...prev[año], [key]: val } }));
+  }
+
+  // Aplicar plantilla rápida (ejemplo: mes anterior al año, mitad de enero, fin de junio)
+  function aplicarPlantilla(año: number) {
+    const d: DraftRow = {
+      año,
+      apertura_anticipada: defaultPartsForYear(año - 1, 12, 1, 8, 0),
+      apertura_general: defaultPartsForYear(año, 1, 15, 8, 0),
+      cierre: defaultPartsForYear(año, 6, 30, 23, 59),
+      activo: drafts[año]?.activo ?? false,
+    };
+    setDrafts((prev) => ({ ...prev, [año]: d }));
   }
 
   if (loading) {
@@ -184,150 +436,194 @@ export function InscripcionConfigPanel() {
   }
 
   return (
-    <View style={{ gap: 12 }}>
-      <Text style={[s.subtitle, { marginBottom: 4 }]}>Fechas de inscripción por año</Text>
-      <Text style={[s.small, { color: colors.text.tertiary.light }]}>
-        Definí las fechas de apertura anticipada (solo Tíos y Jefes Jóvenes), apertura general (todos) y cierre.
-        Solo puede haber un año activo a la vez.
+    <View style={{ gap: 14 }}>
+      <Text style={[s.subtitle, { marginBottom: 0 }]}>📅 Fechas de inscripción</Text>
+      <Text style={[s.small, { color: colors.text.tertiary.light, marginBottom: 4 }]}>
+        Tocá cada fecha para abrir el calendario. Definí apertura anticipada (Tíos y Jefes Jóvenes),
+        apertura general (todos) y cierre. Solo puede haber un año activo a la vez.
       </Text>
 
       {items.map((cfg) => {
         const d = drafts[cfg.año];
         if (!d) return null;
+        const año = cfg.año;
         return (
           <View
-            key={cfg.año}
+            key={año}
             style={{
-              padding: 12,
-              borderRadius: 10,
+              padding: 14,
+              borderRadius: 14,
               backgroundColor: cfg.activo ? '#ECFDF5' : '#F9FAFB',
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: cfg.activo ? '#10B981' : '#E5E7EB',
-              gap: 8,
+              gap: 12,
             }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={[s.text, { fontWeight: '700', fontSize: 18 }]}>Año {cfg.año}</Text>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827' }}>📆 {año}</Text>
               {cfg.activo ? (
-                <View style={{ backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 }}>
-                  <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>ACTIVO</Text>
+                <View style={{ backgroundColor: '#10B981', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 }}>
+                  <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>● ACTIVO</Text>
                 </View>
               ) : (
                 <Pressable
-                  onPress={() => onActivar(cfg.año)}
-                  disabled={savingId === cfg.año}
-                  style={[s.button, { paddingVertical: 4, paddingHorizontal: 10, backgroundColor: '#0a7ea4' }]}
+                  onPress={() => onActivar(año)}
+                  disabled={savingId === año}
+                  style={{ backgroundColor: '#0a7ea4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}
                 >
-                  <Text style={[s.buttonText, { fontSize: 12 }]}>Marcar como activo</Text>
+                  <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>Activar este año</Text>
                 </Pressable>
               )}
+              <View style={{ flex: 1 }} />
+              <Pressable
+                onPress={() => aplicarPlantilla(año)}
+                style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEF3C7' }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#92400E' }}>⚡ Plantilla rápida</Text>
+              </Pressable>
             </View>
 
-            <View style={{ gap: 6 }}>
-              <Text style={s.small}>Apertura anticipada (solo Tíos y Jefes Jóvenes):</Text>
-              <TextInput
-                style={s.input}
-                value={d.apertura_anticipada}
-                onChangeText={(t) => setDraftField(cfg.año, 'apertura_anticipada', t)}
-                placeholder="2025-12-01T08:00"
-              />
-              <Text style={[s.small, { color: colors.text.tertiary.light }]}>
-                Actual: {fmt(cfg.apertura_anticipada)}
-              </Text>
-
-              <Text style={[s.small, { marginTop: 6 }]}>Apertura general (todos):</Text>
-              <TextInput
-                style={s.input}
-                value={d.apertura_general}
-                onChangeText={(t) => setDraftField(cfg.año, 'apertura_general', t)}
-                placeholder="2026-01-15T08:00"
-              />
-              <Text style={[s.small, { color: colors.text.tertiary.light }]}>
-                Actual: {fmt(cfg.apertura_general)}
-              </Text>
-
-              <Text style={[s.small, { marginTop: 6 }]}>Cierre:</Text>
-              <TextInput
-                style={s.input}
-                value={d.cierre}
-                onChangeText={(t) => setDraftField(cfg.año, 'cierre', t)}
-                placeholder="2026-06-30T23:59"
-              />
-              <Text style={[s.small, { color: colors.text.tertiary.light }]}>Actual: {fmt(cfg.cierre)}</Text>
-            </View>
+            {/* Campos */}
+            <DateTimeField
+              label="Apertura anticipada"
+              emoji="🥇"
+              helpText="Solo Tíos y Jefes Jóvenes"
+              value={d.apertura_anticipada}
+              defaultValue={defaultPartsForYear(año - 1, 12, 1, 8, 0)}
+              onChange={(p) => setDraftField(año, 'apertura_anticipada', p)}
+            />
+            <DateTimeField
+              label="Apertura general"
+              emoji="🌟"
+              helpText="Abierto para todos los misioneros e hijos"
+              value={d.apertura_general}
+              defaultValue={defaultPartsForYear(año, 1, 15, 8, 0)}
+              onChange={(p) => setDraftField(año, 'apertura_general', p)}
+            />
+            <DateTimeField
+              label="Cierre de inscripciones"
+              emoji="🔒"
+              helpText="Después de esta fecha no se aceptan nuevas inscripciones"
+              value={d.cierre}
+              defaultValue={defaultPartsForYear(año, 6, 30, 23, 59)}
+              onChange={(p) => setDraftField(año, 'cierre', p)}
+            />
 
             <Pressable
-              onPress={() => onSave(cfg.año)}
-              disabled={savingId === cfg.año}
-              style={[s.button, { marginTop: 8, opacity: savingId === cfg.año ? 0.6 : 1 }]}
+              onPress={() => onSave(año)}
+              disabled={savingId === año}
+              style={[s.button, { opacity: savingId === año ? 0.6 : 1 }]}
             >
-              <Text style={s.buttonText}>{savingId === cfg.año ? 'Guardando...' : 'Guardar cambios'}</Text>
+              <Text style={s.buttonText}>{savingId === año ? 'Guardando...' : '💾 Guardar cambios'}</Text>
             </Pressable>
           </View>
         );
       })}
 
-      {/* Crear nuevo año */}
-      <View
-        style={{
-          padding: 12,
-          borderRadius: 10,
-          backgroundColor: '#F0F9FF',
-          borderWidth: 1,
-          borderColor: '#0EA5E9',
-          gap: 8,
-          marginTop: 8,
-        }}
-      >
-        <Text style={[s.text, { fontWeight: '700' }]}>➕ Habilitar nuevo año</Text>
-        <Text style={s.small}>Año:</Text>
-        <TextInput
-          style={s.input}
-          value={newDraft.año}
-          onChangeText={(t) => setNewDraft((p) => ({ ...p, año: t.replace(/\D/g, '') }))}
-          keyboardType="number-pad"
-          placeholder="2027"
-        />
-        <Text style={s.small}>Apertura anticipada:</Text>
-        <TextInput
-          style={s.input}
-          value={newDraft.apertura_anticipada}
-          onChangeText={(t) => setNewDraft((p) => ({ ...p, apertura_anticipada: t }))}
-          placeholder="2026-12-01T08:00"
-        />
-        <Text style={s.small}>Apertura general:</Text>
-        <TextInput
-          style={s.input}
-          value={newDraft.apertura_general}
-          onChangeText={(t) => setNewDraft((p) => ({ ...p, apertura_general: t }))}
-          placeholder="2027-01-15T08:00"
-        />
-        <Text style={s.small}>Cierre:</Text>
-        <TextInput
-          style={s.input}
-          value={newDraft.cierre}
-          onChangeText={(t) => setNewDraft((p) => ({ ...p, cierre: t }))}
-          placeholder="2027-06-30T23:59"
-        />
+      {/* Nuevo año */}
+      {!showNew ? (
         <Pressable
-          onPress={() => setNewDraft((p) => ({ ...p, activo: !p.activo }))}
-          style={[
-            s.button,
-            { paddingVertical: 6, backgroundColor: newDraft.activo ? '#10B981' : '#9CA3AF' },
-          ]}
+          onPress={() => setShowNew(true)}
+          style={{
+            padding: 14,
+            borderRadius: 14,
+            borderWidth: 2,
+            borderColor: '#0EA5E9',
+            borderStyle: 'dashed',
+            backgroundColor: '#F0F9FF',
+            alignItems: 'center',
+          }}
         >
-          <Text style={s.buttonText}>
-            {newDraft.activo ? '✓ Activar al crear' : 'Marcar como activo al crear'}
-          </Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#0369A1' }}>➕ Habilitar un nuevo año</Text>
         </Pressable>
-        <Pressable
-          onPress={onCreate}
-          disabled={creating}
-          style={[s.button, { backgroundColor: '#0a7ea4', opacity: creating ? 0.6 : 1 }]}
-        >
-          <Text style={s.buttonText}>{creating ? 'Creando...' : 'Crear configuración'}</Text>
-        </Pressable>
-      </View>
+      ) : (
+        <View style={{ padding: 14, borderRadius: 14, backgroundColor: '#F0F9FF', borderWidth: 2, borderColor: '#0EA5E9', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#0369A1' }}>➕ Nuevo año</Text>
+            <Pressable onPress={() => setShowNew(false)}>
+              <Text style={{ color: '#6B7280', fontSize: 13 }}>Cancelar</Text>
+            </Pressable>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 13, color: '#374151', fontWeight: '600' }}>Año:</Text>
+            <Pressable
+              onPress={() => setNewDraft((p) => ({ ...p, año: p.año - 1 }))}
+              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 18 }}>−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 22, fontWeight: '800', minWidth: 70, textAlign: 'center' }}>{newDraft.año}</Text>
+            <Pressable
+              onPress={() => setNewDraft((p) => ({ ...p, año: p.año + 1 }))}
+              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#0a7ea4', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 18 }}>+</Text>
+            </Pressable>
+            <View style={{ flex: 1 }} />
+            <Pressable
+              onPress={() =>
+                setNewDraft((p) => ({
+                  ...p,
+                  apertura_anticipada: defaultPartsForYear(p.año - 1, 12, 1, 8, 0),
+                  apertura_general: defaultPartsForYear(p.año, 1, 15, 8, 0),
+                  cierre: defaultPartsForYear(p.año, 6, 30, 23, 59),
+                }))
+              }
+              style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEF3C7' }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#92400E' }}>⚡ Plantilla</Text>
+            </Pressable>
+          </View>
+
+          <DateTimeField
+            label="Apertura anticipada"
+            emoji="🥇"
+            helpText="Solo Tíos y Jefes Jóvenes"
+            value={newDraft.apertura_anticipada}
+            defaultValue={defaultPartsForYear(newDraft.año - 1, 12, 1, 8, 0)}
+            onChange={(p) => setNewDraft((prev) => ({ ...prev, apertura_anticipada: p }))}
+          />
+          <DateTimeField
+            label="Apertura general"
+            emoji="🌟"
+            helpText="Abierto para todos"
+            value={newDraft.apertura_general}
+            defaultValue={defaultPartsForYear(newDraft.año, 1, 15, 8, 0)}
+            onChange={(p) => setNewDraft((prev) => ({ ...prev, apertura_general: p }))}
+          />
+          <DateTimeField
+            label="Cierre de inscripciones"
+            emoji="🔒"
+            value={newDraft.cierre}
+            defaultValue={defaultPartsForYear(newDraft.año, 6, 30, 23, 59)}
+            onChange={(p) => setNewDraft((prev) => ({ ...prev, cierre: p }))}
+          />
+
+          <Pressable
+            onPress={() => setNewDraft((p) => ({ ...p, activo: !p.activo }))}
+            style={{
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: newDraft.activo ? '#10B981' : '#E5E7EB',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: newDraft.activo ? 'white' : '#374151', fontWeight: '700', fontSize: 13 }}>
+              {newDraft.activo ? '✓ Se activará al crear' : 'Marcar como activo al crear'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onCreate}
+            disabled={creating}
+            style={[s.button, { backgroundColor: '#0a7ea4', opacity: creating ? 0.6 : 1 }]}
+          >
+            <Text style={s.buttonText}>{creating ? 'Creando...' : '✨ Crear configuración'}</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
