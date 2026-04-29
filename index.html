@@ -34,6 +34,35 @@
     
     <!-- Favicon -->
     <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- Fuentes juveniles y frescas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root, body, #root, button, input, textarea, select {
+        font-family: 'Quicksand', 'Fredoka', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+      }
+      h1, h2, h3, h4, h5, h6, [role="heading"] {
+        font-family: 'Fredoka', 'Quicksand', system-ui, sans-serif !important;
+        letter-spacing: -0.01em;
+      }
+      /* Forzar a que los <Text> de React Native Web también hereden */
+      div[dir="auto"], span, p {
+        font-family: 'Quicksand', 'Fredoka', system-ui, sans-serif;
+      }
+      @keyframes mfs-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.06); }
+      }
+      @keyframes mfs-wiggle {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-8deg); }
+        75% { transform: rotate(8deg); }
+      }
+      .mfs-pulse { animation: mfs-pulse 2.2s ease-in-out infinite; }
+      .mfs-wiggle { animation: mfs-wiggle 2.5s ease-in-out infinite; display: inline-block; }
+    </style>
   <meta property="og:title" content="MFS Paraguay - Inscripción Misiones Familiares de Schoenstatt">
   <meta name="twitter:title" content="MFS Paraguay - Inscripción Misiones Familiares de Schoenstatt">
   <meta property="og:description" content="Inscribite a las Misiones Familiares de Schoenstatt en Paraguay. Comunidad de fe, servicio y formación familiar.">
