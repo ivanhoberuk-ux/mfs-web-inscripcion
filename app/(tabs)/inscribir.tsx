@@ -25,7 +25,7 @@ const Alert = {
     options?: { onDismiss?: () => void }
   ) => {
     if (Platform.OS !== 'web') {
-      return RNAlert.alert(title, message, buttons as any)
+      return RNAlert.alert(title, message, buttons as any, options as any)
     }
     const text = [title, message].filter(Boolean).join('\n\n')
     const actionable = (buttons ?? []).filter(
