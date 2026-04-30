@@ -21,7 +21,8 @@ const Alert = {
   alert: (
     title: string,
     message?: string,
-    buttons?: Array<{ text?: string; style?: string; onPress?: () => void }>
+    buttons?: Array<{ text?: string; style?: string; onPress?: () => void }>,
+    options?: { onDismiss?: () => void }
   ) => {
     if (Platform.OS !== 'web') {
       return RNAlert.alert(title, message, buttons as any)
