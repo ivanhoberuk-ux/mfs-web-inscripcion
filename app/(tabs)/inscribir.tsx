@@ -6,10 +6,46 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Alert,
+  Alert as RNAlert,
   ActivityIndicator,
   Linking,
+  Platform,
 } from 'react-native'
+
+// Web-compatible Alert wrapper. React Native's Alert.alert is a no-op on web,
+// which made the "Confirmar inscripción" button appear to do nothing when
+// validation errors or success dialogs were shown. This shim uses
+// window.alert / window.confirm on web and triggers the appropriate button
+// callback so flows that rely on onPress (e.g. navigation after success) work.
+const Alert = {
+  alert: (
+    title: string,
+    message?: string,
+    buttons?: Array<{ text?: string; style?: string; onPress?: () => void }>
+  ) => {
+    if (Platform.OS !== 'web') {
+      return RNAlert.alert(title, message, buttons as any)
+    }
+    const text = [title, message].filter(Boolean).join('\n\n')
+    const actionable = (buttons ?? []).filter(
+      (b) => b.style !== 'cancel' && typeof b.onPress === 'function'
+    )
+    if (actionable.length === 0) {
+      if (typeof window !== 'undefined') window.alert(text)
+      return
+    }
+    if (typeof window !== 'undefined') {
+      const ok = window.confirm(text)
+      if (ok) actionable[0].onPress?.()
+      else {
+        const cancel = (buttons ?? []).find(
+          (b) => b.style === 'cancel' && typeof b.onPress === 'function'
+        )
+        cancel?.onPress?.()
+      }
+    }
+  },
+}
 import { useRouter } from 'expo-router'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl, fetchEstadoInscripcionActivo, type EstadoInscripcion, type ConfiguracionInscripcion } from '../../src/lib/api'
