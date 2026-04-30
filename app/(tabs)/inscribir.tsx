@@ -602,8 +602,8 @@ export default function Inscribir() {
           : '📋 Lista de espera'
         
         const mensaje = result.estado === 'confirmado'
-          ? `Tu código: ${result.id}\n\nAhora te llevamos a cargar tus documentos.`
-          : `Tu código: ${result.id}\n\n${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
+          ? `🎉 ¡Bienvenido/a a esta hermosa locura de amor!\n\nAhora te llevamos a cargar tus documentos.`
+          : `${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
 
         Alert.alert(
           titulo,
