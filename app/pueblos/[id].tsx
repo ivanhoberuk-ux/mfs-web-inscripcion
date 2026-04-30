@@ -11,9 +11,8 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import * as FileSystem from 'expo-file-system'
-import * as Sharing from 'expo-sharing'
-import { generateExcelBase64, fileStamp, humanDate, safeFileName } from '../../src/lib/excel'
+import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel'
+import { shareOrDownload } from '../../src/lib/sharing'
 import { supabase } from '../../src/lib/supabase'
 import { s } from '../../src/lib/theme'
 import { Picker } from '@react-native-picker/picker'
@@ -249,23 +248,12 @@ export default function PuebloInscriptosScreen() {
       const titulo = `MFS — Inscriptos de ${nombrePueblo}`;
       const subtitulo = `Pueblo: ${nombrePueblo} · ${filtered.length} inscriptos${hideCi ? ' · (sin CI)' : ''} · Generado el ${humanDate()}`;
       const fileName = `MFS_inscriptos_${safeFileName(nombrePueblo)}_${fileStamp()}.xlsx`;
-      const base64 = generateExcelBase64(rows, {
+      const blob = generateExcelBlob(rows, {
         title: titulo,
         subtitle: subtitulo,
         sheetName: safeFileName(nombrePueblo).slice(0, 31) || 'Inscriptos',
       });
-      const uri = FileSystem.cacheDirectory + fileName;
-      await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
-
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: titulo,
-        });
-      } else {
-        Alert.alert('Excel generado', uri);
-      }
+      await shareOrDownload(blob, fileName);
     } catch (e: any) {
       Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
     }
