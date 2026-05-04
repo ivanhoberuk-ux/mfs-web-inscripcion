@@ -256,6 +256,60 @@ export default function Home() {
           </View>
         </View>
 
+        {/* Banda con Santuario y Mater Paraguay */}
+        <View style={{
+          width: '100%',
+          flexDirection: 'row',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <View style={{
+            flex: 1, minWidth: 220,
+            backgroundColor: colors.surface.light,
+            borderRadius: radius.lg,
+            overflow: 'hidden',
+            ...shadows.md,
+            borderWidth: 2, borderColor: colors.primary[100],
+          }}>
+            <Image
+              source={santuarioImg}
+              style={{ width: '100%', height: 140, resizeMode: 'cover' }}
+              accessibilityLabel="Santuario de Schoenstatt"
+            />
+            <View style={{ padding: spacing.md }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
+                Nuestro Santuario ⛪
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2 }}>
+                Lugar de gracia y misión
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            flex: 1, minWidth: 220,
+            backgroundColor: colors.surface.light,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+            ...shadows.md,
+            borderWidth: 2, borderColor: colors.secondary[200],
+          }}>
+            <Image
+              source={materParaguay}
+              style={{ width: 80, height: 110, resizeMode: 'contain' }}
+              accessibilityLabel="Mater Paraguay"
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
+                Mater Paraguay 💛
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2, lineHeight: 16 }}>
+                Madre y reina de nuestras misiones
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Card capillita decorativa */}
         <View style={{
           width: '100%',
