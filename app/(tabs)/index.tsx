@@ -105,6 +105,19 @@ export default function Home() {
           width: '100%',
         }}
       >
+        {/* Logo MFS destacado */}
+        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', marginTop: 4 }}>
+          <View style={{
+            width: 110, height: 110, borderRadius: radius.full,
+            backgroundColor: '#ffffff',
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 4, borderColor: colors.secondary[500],
+            ...shadows.lg,
+          }}>
+            <Image source={logoMfs} style={{ width: 88, height: 88, resizeMode: 'contain' }} accessibilityLabel="Logo MFS" />
+          </View>
+        </Animated.View>
+
         {/* Saludo */}
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%' }}>
           <Text style={{
