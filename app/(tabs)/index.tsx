@@ -62,18 +62,12 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
-      {/* Fondo decorativo: gradiente celeste suave */}
-      <View
-        pointerEvents="none"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 320, backgroundColor: colors.primary[50] }}
-      />
-      {/* Bandera de Paraguay esfumada de fondo */}
+      {/* Bandera de Paraguay esfumada de fondo (toda la pantalla) */}
       <View
         pointerEvents="none"
         style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          alignItems: 'center', justifyContent: 'center',
-          opacity: 0.10,
+          opacity: 0.28,
         }}
       >
         <Image
@@ -81,15 +75,23 @@ export default function Home() {
           style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
         />
       </View>
+      {/* Velo blanco para suavizar la bandera */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(247, 250, 255, 0.55)',
+        }}
+      />
       {/* Logo MFS difuminado en esquina */}
       <View
         pointerEvents="none"
         style={{
-          position: 'absolute', top: 40, right: -60,
-          opacity: 0.08,
+          position: 'absolute', top: 60, right: -40,
+          opacity: 0.10,
         }}
       >
-        <Image source={logoMfs} style={{ width: 280, height: 280, resizeMode: 'contain' }} />
+        <Image source={logoMfs} style={{ width: 260, height: 260, resizeMode: 'contain' }} />
       </View>
 
       <ScrollView
