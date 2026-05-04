@@ -15,6 +15,12 @@ import capillitaImg from '../../src/assets/capillita-hero.png'
 import logoMfs from '../../src/assets/mfs-logo.png'
 // @ts-ignore
 import banderaPy from '../../src/assets/bandera-paraguay.png'
+// @ts-ignore
+import materIcono from '../../src/assets/mater-icono.png'
+// @ts-ignore
+import materParaguay from '../../src/assets/mater-paraguay.png'
+// @ts-ignore
+import santuarioImg from '../../src/assets/santuario.png'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
