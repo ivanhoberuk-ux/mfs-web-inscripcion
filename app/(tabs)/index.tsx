@@ -13,6 +13,8 @@ import familiaImg from '../../src/assets/familia-misionera.png'
 import capillitaImg from '../../src/assets/capillita-hero.png'
 // @ts-ignore
 import logoMfs from '../../src/assets/mfs-logo.png'
+// @ts-ignore
+import banderaPy from '../../src/assets/bandera-paraguay.png'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
