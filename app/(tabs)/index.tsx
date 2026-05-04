@@ -13,6 +13,8 @@ import familiaImg from '../../src/assets/familia-misionera.png'
 import capillitaImg from '../../src/assets/capillita-hero.png'
 // @ts-ignore
 import logoMfs from '../../src/assets/mfs-logo.png'
+// @ts-ignore
+import banderaPy from '../../src/assets/bandera-paraguay.png'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
@@ -60,16 +62,31 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
-      {/* Fondo decorativo: gradiente celeste suave + logo difuminado */}
+      {/* Fondo decorativo: gradiente celeste suave */}
       <View
         pointerEvents="none"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 320, backgroundColor: colors.primary[50] }}
       />
+      {/* Bandera de Paraguay esfumada de fondo */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          alignItems: 'center', justifyContent: 'center',
+          opacity: 0.10,
+        }}
+      >
+        <Image
+          source={banderaPy}
+          style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+        />
+      </View>
+      {/* Logo MFS difuminado en esquina */}
       <View
         pointerEvents="none"
         style={{
           position: 'absolute', top: 40, right: -60,
-          opacity: 0.07,
+          opacity: 0.08,
         }}
       >
         <Image source={logoMfs} style={{ width: 280, height: 280, resizeMode: 'contain' }} />
@@ -88,6 +105,19 @@ export default function Home() {
           width: '100%',
         }}
       >
+        {/* Logo MFS destacado */}
+        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', marginTop: 4 }}>
+          <View style={{
+            width: 110, height: 110, borderRadius: radius.full,
+            backgroundColor: '#ffffff',
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 4, borderColor: colors.secondary[500],
+            ...shadows.lg,
+          }}>
+            <Image source={logoMfs} style={{ width: 88, height: 88, resizeMode: 'contain' }} accessibilityLabel="Logo MFS" />
+          </View>
+        </Animated.View>
+
         {/* Saludo */}
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%' }}>
           <Text style={{
