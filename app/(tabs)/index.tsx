@@ -15,6 +15,12 @@ import capillitaImg from '../../src/assets/capillita-hero.png'
 import logoMfs from '../../src/assets/mfs-logo.png'
 // @ts-ignore
 import banderaPy from '../../src/assets/bandera-paraguay.png'
+// @ts-ignore
+import materIcono from '../../src/assets/mater-icono.png'
+// @ts-ignore
+import materParaguay from '../../src/assets/mater-paraguay.png'
+// @ts-ignore
+import santuarioImg from '../../src/assets/santuario.png'
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
@@ -62,18 +68,12 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
-      {/* Fondo decorativo: gradiente celeste suave */}
-      <View
-        pointerEvents="none"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 320, backgroundColor: colors.primary[50] }}
-      />
-      {/* Bandera de Paraguay esfumada de fondo */}
+      {/* Bandera de Paraguay esfumada de fondo (toda la pantalla) */}
       <View
         pointerEvents="none"
         style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          alignItems: 'center', justifyContent: 'center',
-          opacity: 0.10,
+          opacity: 0.28,
         }}
       >
         <Image
@@ -81,15 +81,23 @@ export default function Home() {
           style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
         />
       </View>
+      {/* Velo blanco para suavizar la bandera */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(247, 250, 255, 0.55)',
+        }}
+      />
       {/* Logo MFS difuminado en esquina */}
       <View
         pointerEvents="none"
         style={{
-          position: 'absolute', top: 40, right: -60,
-          opacity: 0.08,
+          position: 'absolute', top: 60, right: -40,
+          opacity: 0.10,
         }}
       >
-        <Image source={logoMfs} style={{ width: 280, height: 280, resizeMode: 'contain' }} />
+        <Image source={logoMfs} style={{ width: 260, height: 260, resizeMode: 'contain' }} />
       </View>
 
       <ScrollView
@@ -245,6 +253,60 @@ export default function Home() {
                 delay={400}
               />
             ) : null}
+          </View>
+        </View>
+
+        {/* Banda con Santuario y Mater Paraguay */}
+        <View style={{
+          width: '100%',
+          flexDirection: 'row',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <View style={{
+            flex: 1, minWidth: 220,
+            backgroundColor: colors.surface.light,
+            borderRadius: radius.lg,
+            overflow: 'hidden',
+            ...shadows.md,
+            borderWidth: 2, borderColor: colors.primary[100],
+          }}>
+            <Image
+              source={santuarioImg}
+              style={{ width: '100%', height: 140, resizeMode: 'cover' }}
+              accessibilityLabel="Santuario de Schoenstatt"
+            />
+            <View style={{ padding: spacing.md }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
+                Nuestro Santuario ⛪
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2 }}>
+                Lugar de gracia y misión
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            flex: 1, minWidth: 220,
+            backgroundColor: colors.surface.light,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            flexDirection: 'row', alignItems: 'center', gap: 12,
+            ...shadows.md,
+            borderWidth: 2, borderColor: colors.secondary[200],
+          }}>
+            <Image
+              source={materParaguay}
+              style={{ width: 80, height: 110, resizeMode: 'contain' }}
+              accessibilityLabel="Mater Paraguay"
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
+                Mater Paraguay 💛
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2, lineHeight: 16 }}>
+                Madre y reina de nuestras misiones
+              </Text>
+            </View>
           </View>
         </View>
 
