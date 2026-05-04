@@ -1,12 +1,14 @@
 // FILE: app/login.tsx
 import React, { useState, useEffect } from 'react'
-import { View, Text, ActivityIndicator, ScrollView, Alert } from 'react-native'
+import { View, Text, ScrollView, Image } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
-import { s } from '../src/lib/theme'
+import { s, colors, spacing, radius, shadows } from '../src/lib/theme'
 import { Button } from '../src/components/Button'
 import { Card } from '../src/components/Card'
 import { Field } from '../src/components/Field'
+// @ts-ignore
+import capillitaImg from '../src/assets/capillita-hero.png'
 
 function sanitizeNext(raw: unknown): string {
   const v = typeof raw === 'string' ? raw : ''
@@ -167,86 +169,140 @@ export default function Login() {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ maxWidth: 560, alignSelf: 'center', width: '100%', paddingBottom: 120 }}>
-      <Text style={s.title}>{getTitle()}</Text>
-      <Text style={[s.text, s.mb3]}>{getSubtitle()}</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+      {/* Fondo decorativo */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 280,
+          backgroundColor: colors.primary[600],
+          borderBottomLeftRadius: 40,
+          borderBottomRightRadius: 40,
+        }}
+      />
 
-      {meEmail ? (
-        <Card>
-          <Text style={s.text}>Ya estás logueado como</Text>
-          <Text style={[s.cardTitle, s.mt1]}>{meEmail}</Text>
-          <Button 
-            variant="primary" 
-            onPress={() => router.replace('/pueblos')}
-            style={s.mt3}
-          >
-            Ir a Pueblos
-          </Button>
-        </Card>
-      ) : (
-        <Card>
-          <Field
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="tu@correo.com"
-          />
-
-          {!isForgot && (
-            <Field
-              label="Contraseña"
-              value={pass}
-              onChangeText={setPass}
-              secureTextEntry
-              placeholder="••••••••"
-              onSubmitEditing={onLogin}
-              returnKeyType="go"
+      <ScrollView
+        contentContainerStyle={{
+          maxWidth: 520,
+          alignSelf: 'center',
+          width: '100%',
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.xl,
+          paddingBottom: 120,
+          gap: spacing.lg,
+        }}
+      >
+        {/* Hero capillita */}
+        <View style={{ alignItems: 'center', gap: 8 }}>
+          <View style={{
+            width: 130, height: 130,
+            borderRadius: radius.full,
+            backgroundColor: colors.secondary[100],
+            alignItems: 'center', justifyContent: 'center',
+            ...shadows.lg,
+            borderWidth: 4,
+            borderColor: colors.secondary[500],
+          }}>
+            <Image
+              source={capillitaImg}
+              style={{ width: 110, height: 110, resizeMode: 'contain' }}
+              accessibilityLabel="Capillita peregrina"
             />
-          )}
+          </View>
+          <Text style={{
+            fontSize: 26,
+            fontWeight: '800',
+            color: '#ffffff',
+            textAlign: 'center',
+            marginTop: spacing.sm,
+          }}>
+            {getTitle()}
+          </Text>
+          <Text style={{
+            fontSize: 14,
+            color: colors.secondary[100],
+            textAlign: 'center',
+            paddingHorizontal: spacing.md,
+          }}>
+            {getSubtitle()}
+          </Text>
+        </View>
 
-          <Button 
-            variant="primary" 
-            onPress={isForgot ? onForgot : (isSignup ? onSignup : onLogin)} 
-            loading={busy}
-            style={s.mt2}
-          >
-            {isForgot ? 'Enviar link de recuperación' : (isSignup ? 'Crear cuenta' : 'Ingresar')}
-          </Button>
+        {meEmail ? (
+          <Card>
+            <Text style={s.text}>Ya estás logueado como</Text>
+            <Text style={[s.cardTitle, s.mt1]}>{meEmail}</Text>
+            <Button variant="primary" onPress={() => router.replace('/pueblos')} style={s.mt3}>
+              Ir a Pueblos
+            </Button>
+          </Card>
+        ) : (
+          <Card style={{ ...shadows.lg, borderWidth: 2, borderColor: colors.secondary[200] }}>
+            <Field
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="tu@correo.com"
+            />
 
-          {/* Olvidé mi contraseña (solo en login) */}
-          {!isSignup && !isForgot && (
+            {!isForgot && (
+              <Field
+                label="Contraseña"
+                value={pass}
+                onChangeText={setPass}
+                secureTextEntry
+                placeholder="••••••••"
+                onSubmitEditing={onLogin}
+                returnKeyType="go"
+              />
+            )}
+
             <Button
-              variant="outline"
-              onPress={() => router.push('/login?mode=forgot')}
+              variant="primary"
+              onPress={isForgot ? onForgot : (isSignup ? onSignup : onLogin)}
+              loading={busy}
               style={s.mt2}
             >
-              ¿Olvidaste tu contraseña? 🔑
+              {isForgot ? 'Enviar link de recuperación' : (isSignup ? 'Crear cuenta ✨' : 'Ingresar 🔑')}
             </Button>
-          )}
 
-          {/* Toggle entre login y signup */}
-          <Button
-            variant="outline"
-            onPress={() => router.push(isSignup || isForgot ? '/login' : '/login?mode=signup')}
-            style={s.mt2}
-          >
-            {isSignup || isForgot ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear cuenta'}
-          </Button>
+            {!isSignup && !isForgot && (
+              <Button variant="outline" onPress={() => router.push('/login?mode=forgot')} style={s.mt2}>
+                ¿Olvidaste tu contraseña? 🔑
+              </Button>
+            )}
 
-          {msg && (
-            <View style={[s.mt2, { backgroundColor: '#e8f5ef', padding: 12, borderRadius: 8 }]}>
-              <Text style={[s.small, { color: '#0b8d62' }]}>{msg}</Text>
-            </View>
-          )}
-          {err && (
-            <View style={[s.mt2, { backgroundColor: '#fee2e2', padding: 12, borderRadius: 8 }]}>
-              <Text style={[s.small, { color: '#b91c1c' }]}>{err}</Text>
-            </View>
-          )}
-        </Card>
-      )}
-    </ScrollView>
+            <Button
+              variant="outline"
+              onPress={() => router.push(isSignup || isForgot ? '/login' : '/login?mode=signup')}
+              style={s.mt2}
+            >
+              {isSignup || isForgot ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Crear cuenta'}
+            </Button>
+
+            {msg && (
+              <View style={[s.mt2, { backgroundColor: '#e8f5ef', padding: 12, borderRadius: 12 }]}>
+                <Text style={[s.small, { color: '#0b8d62' }]}>{msg}</Text>
+              </View>
+            )}
+            {err && (
+              <View style={[s.mt2, { backgroundColor: '#fee2e2', padding: 12, borderRadius: 12 }]}>
+                <Text style={[s.small, { color: '#b91c1c' }]}>{err}</Text>
+              </View>
+            )}
+          </Card>
+        )}
+
+        <Text style={{
+          fontSize: 12,
+          color: colors.text.tertiary.light,
+          textAlign: 'center',
+        }}>
+          MFS Paraguay 💛 Servus Mariae nunquam peribit
+        </Text>
+      </ScrollView>
+    </View>
   )
 }

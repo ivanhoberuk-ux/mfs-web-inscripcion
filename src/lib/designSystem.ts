@@ -2,32 +2,42 @@
 // Colores, tipografía, espaciado y tokens semánticos para React Native
 
 export const colors = {
-  // Paleta primaria - Indigo vibrante moderno
+  // Paleta primaria - Azul marino MFS (logo 10 pueblos)
   primary: {
-    50: '#eef2ff',
-    100: '#e0e7ff',
-    200: '#c7d2fe',
-    300: '#a5b4fc',
-    400: '#818cf8',
-    500: '#6366f1',  // Primary base - Indigo vibrante
-    600: '#4f46e5',
-    700: '#4338ca',
-    800: '#3730a3',
-    900: '#312e81',
+    50: '#eef2fb',
+    100: '#d6def4',
+    200: '#aebde9',
+    300: '#7e94d8',
+    400: '#4d6cc4',
+    500: '#2848aa',  // Primary base - Azul MFS
+    600: '#0E2A6B',  // Azul marino oficial logo
+    700: '#0b2057',
+    800: '#091944',
+    900: '#06122f',
   },
   
-  // Paleta secundaria - Cyan/Teal vibrante
+  // Paleta secundaria - Amarillo sol MFS
   secondary: {
-    50: '#ecfeff',
-    100: '#cffafe',
-    200: '#a5f3fc',
-    300: '#67e8f9',
-    400: '#22d3ee',
-    500: '#06b6d4',  // Secondary base - Cyan vibrante
-    600: '#0891b2',
-    700: '#0e7490',
-    800: '#155e75',
-    900: '#164e63',
+    50: '#fffbea',
+    100: '#fff3c4',
+    200: '#fce588',
+    300: '#fadb5f',
+    400: '#f7c948',
+    500: '#F5C518',  // Amarillo sol oficial logo
+    600: '#d4a90f',
+    700: '#a8850b',
+    800: '#7c6208',
+    900: '#574505',
+  },
+  
+  // Celeste suave - acento Mater
+  sky: {
+    50: '#f0f9ff',
+    100: '#e0f2fe',
+    200: '#bae6fd',
+    300: '#7dd3fc',
+    400: '#38bdf8',
+    500: '#0ea5e9',
   },
   
   // Neutros - Grises modernos para textos y fondos
@@ -50,10 +60,10 @@ export const colors = {
   error: '#ef4444',    // Rojo vibrante
   info: '#3b82f6',     // Azul cielo
   
-  // Fondos modernos
+  // Fondos modernos - blanco cálido con tinte celeste
   background: {
-    light: '#fafafa',
-    dark: '#18181b',
+    light: '#f7faff',
+    dark: '#0a1428',
   },
   
   // Superficie (cards, modales) con más contraste
@@ -144,31 +154,31 @@ export const radius = {
   full: 999,
 };
 
-// Sombras modernas con colores (para iOS/Android)
+// Sombras con tinte azul marino MFS
 export const shadows = {
   sm: {
-    shadowColor: '#6366f1',
+    shadowColor: '#0E2A6B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: '#6366f1',
+    shadowColor: '#0E2A6B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 4,
   },
   lg: {
-    shadowColor: '#6366f1',
+    shadowColor: '#0E2A6B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#6366f1',
+    shadowColor: '#0E2A6B',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 24,
