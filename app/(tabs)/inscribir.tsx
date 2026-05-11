@@ -308,7 +308,10 @@ export default function Inscribir() {
               disabled={disabled}
               onPress={() => {
                 setRol(o.key)
-                if (o.key !== 'Misionero') setEsJefe(false)
+                if (o.key !== 'Misionero') {
+                  setEsJefe(false)
+                  setMisionoAntes(null)
+                }
               }}
               style={[
                 s.button,
