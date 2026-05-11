@@ -29,7 +29,7 @@ export default function Documentos() {
   const { user } = useAuth();
   const { isSuperAdmin, isPuebloAdmin, puebloId, loading: rolesLoading } = useUserRoles();
   
-  const [mode, setMode] = useState<'code' | 'ci'>('code');
+  const [mode, setMode] = useState<'code' | 'ci' | 'nombre'>('code');
 
   // Búsqueda por CÓDIGO (UUID)
   const [code, setCode] = useState('');
@@ -37,6 +37,9 @@ export default function Documentos() {
   // Búsqueda por CÉDULA + EMAIL
   const [ci, setCi] = useState('');
   const [email, setEmail] = useState('');
+
+  // Búsqueda por NOMBRE
+  const [nombre, setNombre] = useState('');
 
   const [record, setRecord] = useState<any | null>(null);
   const [results, setResults] = useState<any[]>([]);
