@@ -446,6 +446,11 @@ export default function Inscribir() {
         e.ramaSchoenstatt = 'Elegí a qué rama pertenecés.'
       }
 
+      // Misionó antes (solo para Misionero)
+      if (rol === 'Misionero' && misionoAntes !== true && misionoAntes !== false) {
+        e.misionoAntes = 'Elegí Sí o No.'
+      }
+
       // Padres/Tutores validation if required
       if (requierePadres) {
         if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
