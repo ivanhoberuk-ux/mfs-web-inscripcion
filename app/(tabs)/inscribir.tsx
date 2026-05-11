@@ -98,6 +98,10 @@ export default function Inscribir() {
   const [acepta, setAcepta] = useState(false)
   const [talleRemera, setTalleRemera] = useState('')
 
+  // Pertenencia al Movimiento de Schoenstatt
+  const [perteneceSchoenstatt, setPerteneceSchoenstatt] = useState<boolean | null>(null)
+  const [ramaSchoenstatt, setRamaSchoenstatt] = useState<string>('')
+
   const [errs, setErrs] = useState<Errs>({})
   const [registroExistente, setRegistroExistente] = useState<any>(null)
   const [modoEdicion, setModoEdicion] = useState(false)
