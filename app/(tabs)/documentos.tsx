@@ -698,7 +698,7 @@ export default function Documentos() {
 
       {/* Selector de modo de búsqueda - solo para admins */}
       {(isSuperAdmin || isPuebloAdmin) && (
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
           <Pressable
             style={[s.button, { paddingVertical: 8, opacity: mode === 'code' ? 1 : 0.6 }]}
             onPress={() => setMode('code')}
@@ -710,6 +710,12 @@ export default function Documentos() {
             onPress={() => setMode('ci')}
           >
             <Text style={s.buttonText}>Por cédula</Text>
+          </Pressable>
+          <Pressable
+            style={[s.button, { paddingVertical: 8, opacity: mode === 'nombre' ? 1 : 0.6 }]}
+            onPress={() => setMode('nombre')}
+          >
+            <Text style={s.buttonText}>Por nombre</Text>
           </Pressable>
         </View>
       )}
@@ -767,6 +773,30 @@ export default function Documentos() {
           <Pressable
             style={[s.button, { marginTop: 8 }]}
             onPress={buscarPorCedula}
+            disabled={loading}
+          >
+            <Text style={s.buttonText}>{loading ? 'Buscando…' : 'Buscar'}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Búsqueda por NOMBRE - solo para admins */}
+      {(isSuperAdmin || isPuebloAdmin) && mode === 'nombre' && (
+        <View style={s.card}>
+          <Text style={s.text}>
+            Buscá al inscripto por <Text style={{ fontWeight: '700' }}>Nombre</Text> o <Text style={{ fontWeight: '700' }}>Apellido</Text>.
+          </Text>
+          <Text style={s.label}>Nombre o apellido</Text>
+          <TextInput
+            value={nombre}
+            onChangeText={setNombre}
+            style={s.input}
+            autoCapitalize="none"
+            placeholder="Ej: María o González"
+          />
+          <Pressable
+            style={[s.button, { marginTop: 8 }]}
+            onPress={buscarPorNombre}
             disabled={loading}
           >
             <Text style={s.buttonText}>{loading ? 'Buscando…' : 'Buscar'}</Text>
