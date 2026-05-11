@@ -532,6 +532,8 @@ export default function Inscribir() {
             madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
             ciudad: ciudad.trim() || null,
             talle_remera: talleRemera || null,
+            pertenece_schoenstatt: !!perteneceSchoenstatt,
+            rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
           })
           .eq('id', registroExistente.id)
 
