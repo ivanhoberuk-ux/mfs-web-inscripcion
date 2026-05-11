@@ -198,6 +198,9 @@ export async function registerIfCapacity(input: {
   // Pertenencia al Movimiento de Schoenstatt
   pertenece_schoenstatt?: boolean;
   rama_schoenstatt?: string | null;
+
+  // Misionó antes en MFS
+  misiono_antes?: boolean;
 }): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
