@@ -401,6 +401,7 @@ export type Database = {
           id: string
           madre_nombre: string | null
           madre_telefono: string | null
+          misiono_antes: boolean
           nacimiento: string
           nombres: string
           padre_nombre: string | null
@@ -441,6 +442,7 @@ export type Database = {
           id?: string
           madre_nombre?: string | null
           madre_telefono?: string | null
+          misiono_antes?: boolean
           nacimiento: string
           nombres: string
           padre_nombre?: string | null
@@ -481,6 +483,7 @@ export type Database = {
           id?: string
           madre_nombre?: string | null
           madre_telefono?: string | null
+          misiono_antes?: boolean
           nacimiento?: string
           nombres?: string
           padre_nombre?: string | null
@@ -951,29 +954,31 @@ export type Database = {
       register_if_capacity:
         | {
             Args: {
-              p_acepta_terminos?: boolean
-              p_alimentacion_detalle?: string
-              p_alimentacion_especial?: boolean
+              p_acepta_terminos: boolean
+              p_alimentacion_detalle: string
+              p_alimentacion_especial: boolean
               p_apellidos: string
               p_ci: string
-              p_ciudad?: string
+              p_ciudad: string
               p_direccion: string
               p_email: string
-              p_emergencia_nombre?: string
-              p_emergencia_telefono?: string
-              p_es_jefe?: boolean
-              p_madre_nombre?: string
-              p_madre_telefono?: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_madre_nombre: string
+              p_madre_telefono: string
               p_nacimiento: string
               p_nombres: string
-              p_padre_nombre?: string
-              p_padre_telefono?: string
+              p_padre_nombre: string
+              p_padre_telefono: string
+              p_pertenece_schoenstatt?: boolean
               p_pueblo_id: string
-              p_rol?: string
-              p_talle_remera?: string
+              p_rama_schoenstatt?: string
+              p_rol: string
+              p_talle_remera: string
               p_telefono: string
-              p_tratamiento_detalle?: string
-              p_tratamiento_especial?: boolean
+              p_tratamiento_detalle: string
+              p_tratamiento_especial: boolean
             }
             Returns: Json
           }
@@ -992,6 +997,7 @@ export type Database = {
               p_es_jefe: boolean
               p_madre_nombre: string
               p_madre_telefono: string
+              p_misiono_antes?: boolean
               p_nacimiento: string
               p_nombres: string
               p_padre_nombre: string

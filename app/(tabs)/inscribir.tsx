@@ -83,6 +83,7 @@ export default function Inscribir() {
   const [emTelefono, setEmTelefono] = useState('')
   const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo'>('Misionero')
   const [esJefe, setEsJefe] = useState(false)
+  const [misionoAntes, setMisionoAntes] = useState<boolean | null>(null)
 
   // Nuevos (obligatorios)
   const [tratamiento, setTratamiento] = useState<boolean | null>(false)
@@ -190,6 +191,7 @@ export default function Inscribir() {
           setEmTelefono(registro.emergencia_telefono || '')
           setRol(registro.rol || 'Misionero')
           setEsJefe(registro.es_jefe || false)
+          setMisionoAntes(registro.misiono_antes ?? null)
           setTratamiento(registro.tratamiento_especial || false)
           setTratamientoDetalle(registro.tratamiento_detalle || '')
           setAlimento(registro.alimentacion_especial || false)
@@ -306,7 +308,10 @@ export default function Inscribir() {
               disabled={disabled}
               onPress={() => {
                 setRol(o.key)
-                if (o.key !== 'Misionero') setEsJefe(false)
+                if (o.key !== 'Misionero') {
+                  setEsJefe(false)
+                  setMisionoAntes(null)
+                }
               }}
               style={[
                 s.button,
@@ -441,6 +446,11 @@ export default function Inscribir() {
         e.ramaSchoenstatt = 'Elegí a qué rama pertenecés.'
       }
 
+      // Misionó antes (solo para Misionero)
+      if (rol === 'Misionero' && misionoAntes !== true && misionoAntes !== false) {
+        e.misionoAntes = 'Elegí Sí o No.'
+      }
+
       // Padres/Tutores validation if required
       if (requierePadres) {
         if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
@@ -484,11 +494,14 @@ export default function Inscribir() {
           return
         }
         if (estadoInsc === 'fase_anticipada') {
-          const permitido = rol === 'Tio' || rol === 'Hijo' || (rol === 'Misionero' && esJefe)
+          const permitido =
+            rol === 'Tio' ||
+            rol === 'Hijo' ||
+            (rol === 'Misionero' && (esJefe || misionoAntes === true))
           if (!permitido) {
             Alert.alert(
               'Fase anticipada',
-              'En esta etapa solo pueden inscribirse Tíos, Hijos de Tíos y Misioneros marcados como Jefes Jóvenes.'
+              'En esta etapa solo pueden inscribirse Tíos, Hijos, Misioneros marcados como Jefes Jóvenes o Misioneros que ya misionaron antes en las MFS.'
             )
             return
           }
@@ -522,6 +535,7 @@ export default function Inscribir() {
             emergencia_telefono: normPhone(emTelefono),
             rol,
             es_jefe: rol === 'Misionero' ? !!esJefe : false,
+            misiono_antes: rol === 'Misionero' ? !!misionoAntes : false,
             tratamiento_especial: !!tratamiento,
             tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
             alimentacion_especial: !!alimento,
@@ -585,6 +599,7 @@ export default function Inscribir() {
           emergencia_telefono: normPhone(emTelefono),
           rol,
           es_jefe: rol === 'Misionero' ? !!esJefe : false,
+          misiono_antes: rol === 'Misionero' ? !!misionoAntes : false,
 
           tratamiento_especial: !!tratamiento,
           tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
@@ -652,7 +667,7 @@ export default function Inscribir() {
         setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
         setEmail(''); setTelefono(''); setDireccion(''); setCiudad('')
         setEmNombre(''); setEmTelefono('')
-        setRol('Misionero'); setEsJefe(false)
+        setRol('Misionero'); setEsJefe(false); setMisionoAntes(null)
         setTratamiento(false); setTratamientoDetalle('')
         setAlimento(false); setAlimentoDetalle('')
         setPadreNombre(''); setPadreTelefono('')
@@ -746,8 +761,10 @@ export default function Inscribir() {
             ⭐ Inscripción anticipada
           </Text>
           <Text style={[s.text, { color: '#92400E', marginTop: 4 }]}>
-            En esta fase solo pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text> y{' '}
-            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text>.
+            En esta fase pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text>,{' '}
+            <Text style={{ fontWeight: '700' }}>Hijos</Text>,{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text> y{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros que ya misionaron antes en las MFS</Text>.
             {configInsc && (
               <>
                 {'\n'}La inscripción general abre el{' '}
@@ -960,6 +977,22 @@ export default function Inscribir() {
           <View style={{ marginTop: 8 }}>
             <Text style={s.label}>¿Es Jefe?</Text>
             <SegToggle value={esJefe} onChange={setEsJefe} labels={['No', 'Sí']} />
+
+            <Text style={[s.label, { marginTop: 12 }]}>¿Ya misionaste antes en las MFS?</Text>
+            <SegToggle
+              value={misionoAntes}
+              onChange={(v) => {
+                setMisionoAntes(v)
+                setErrs((e) => ({ ...e, misionoAntes: null }))
+              }}
+              labels={['No', 'Sí']}
+              err={errs.misionoAntes}
+            />
+            {faseAnticipada && misionoAntes === true && !esJefe && (
+              <Text style={[s.small, { color: '#059669', marginTop: 6, fontWeight: '600' }]}>
+                ✨ Como ya misionaste antes, podés inscribirte en la fase anticipada.
+              </Text>
+            )}
           </View>
         )}
       </Card>
