@@ -667,7 +667,7 @@ export default function Inscribir() {
         setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
         setEmail(''); setTelefono(''); setDireccion(''); setCiudad('')
         setEmNombre(''); setEmTelefono('')
-        setRol('Misionero'); setEsJefe(false)
+        setRol('Misionero'); setEsJefe(false); setMisionoAntes(null)
         setTratamiento(false); setTratamientoDetalle('')
         setAlimento(false); setAlimentoDetalle('')
         setPadreNombre(''); setPadreTelefono('')
