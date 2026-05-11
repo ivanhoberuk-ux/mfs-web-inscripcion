@@ -494,11 +494,14 @@ export default function Inscribir() {
           return
         }
         if (estadoInsc === 'fase_anticipada') {
-          const permitido = rol === 'Tio' || rol === 'Hijo' || (rol === 'Misionero' && esJefe)
+          const permitido =
+            rol === 'Tio' ||
+            rol === 'Hijo' ||
+            (rol === 'Misionero' && (esJefe || misionoAntes === true))
           if (!permitido) {
             Alert.alert(
               'Fase anticipada',
-              'En esta etapa solo pueden inscribirse Tíos, Hijos de Tíos y Misioneros marcados como Jefes Jóvenes.'
+              'En esta etapa solo pueden inscribirse Tíos, Hijos, Misioneros marcados como Jefes Jóvenes o Misioneros que ya misionaron antes en las MFS.'
             )
             return
           }
