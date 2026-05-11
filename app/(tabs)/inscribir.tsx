@@ -47,7 +47,7 @@ const Alert = {
     }
   },
 }
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl, fetchEstadoInscripcionActivo, type EstadoInscripcion, type ConfiguracionInscripcion } from '../../src/lib/api'
 import { supabase } from '../../src/lib/supabase'
