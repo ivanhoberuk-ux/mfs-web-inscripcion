@@ -1069,6 +1069,54 @@ export default function Inscribir() {
         </View>
       )}
 
+      {/* Pertenencia al Movimiento de Schoenstatt */}
+      <Card>
+        <Label>¿Perteneces al Movimiento de Schoenstatt?</Label>
+        <SegToggle
+          value={perteneceSchoenstatt}
+          onChange={(v) => {
+            setPerteneceSchoenstatt(v)
+            if (!v) setRamaSchoenstatt('')
+            setErrs((e) => ({ ...e, perteneceSchoenstatt: null }))
+          }}
+          err={errs.perteneceSchoenstatt}
+        />
+        {perteneceSchoenstatt === true && (
+          <View style={{ marginTop: 10 }}>
+            <Label>¿Dónde?</Label>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                'Juventud Masculina',
+                'Juventud Femenina',
+                'Colaboradores',
+                'Liga Apostólica',
+                'Federación Apostólica',
+                'Instituto Secular',
+              ].map((r) => (
+                <Pressable
+                  key={r}
+                  onPress={() => {
+                    setRamaSchoenstatt(r)
+                    setErrs((e) => ({ ...e, ramaSchoenstatt: null }))
+                  }}
+                  style={[
+                    s.button,
+                    {
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      backgroundColor: ramaSchoenstatt === r ? colors.primary[500] : colors.neutral[300],
+                    },
+                  ]}
+                >
+                  <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>{r}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!!errs.ramaSchoenstatt && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{errs.ramaSchoenstatt}</Text>}
+          </View>
+        )}
+      </Card>
+
       {/* Talle de remera */}
       <Card>
         <Label>Talle de remera</Label>
