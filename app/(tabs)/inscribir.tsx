@@ -191,6 +191,7 @@ export default function Inscribir() {
           setEmTelefono(registro.emergencia_telefono || '')
           setRol(registro.rol || 'Misionero')
           setEsJefe(registro.es_jefe || false)
+          setMisionoAntes(registro.misiono_antes ?? null)
           setTratamiento(registro.tratamiento_especial || false)
           setTratamientoDetalle(registro.tratamiento_detalle || '')
           setAlimento(registro.alimentacion_especial || false)
