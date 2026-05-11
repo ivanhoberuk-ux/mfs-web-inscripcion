@@ -225,6 +225,8 @@ export async function registerIfCapacity(input: {
 
     p_acepta_terminos: !!input.acepta_terminos,
     p_talle_remera: input.talle_remera ?? null,
+    p_pertenece_schoenstatt: !!input.pertenece_schoenstatt,
+    p_rama_schoenstatt: input.pertenece_schoenstatt ? (input.rama_schoenstatt ?? null) : null,
   };
 
   const { data, error } = await supabase.rpc('register_if_capacity', payload);
