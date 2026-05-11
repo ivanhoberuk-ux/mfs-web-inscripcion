@@ -108,21 +108,16 @@ export default function Login() {
     }
     setBusy(true)
     try {
-      const redirectUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/`
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: pass,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
+      const cleanEmail = email.trim().toLowerCase()
+      const { error } = await supabase.functions.invoke('create-account', {
+        body: { email: cleanEmail, password: pass },
       })
       if (error) {
-        setErr(error.message)
+        setErr(error.message || 'No se pudo crear la cuenta. Intentá de nuevo.')
         return
       }
-      if (data.user) {
-        setMsg('¡Cuenta creada! Revisá tu email para confirmar tu cuenta.')
-      }
+      setMsg('¡Cuenta creada! Ya podés iniciar sesión con tu email y contraseña.')
+      setPass('')
     } catch (e: any) {
       setErr(e?.message ?? String(e))
     } finally {

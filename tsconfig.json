@@ -18,5 +18,8 @@
       "expo-router"
     ]
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "exclude": [
+    "supabase/functions"
+  ]
 }

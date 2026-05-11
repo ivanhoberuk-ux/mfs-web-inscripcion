@@ -3,6 +3,8 @@ project_id = "npekpdkywsneylddzzuu"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.create-account]
+    verify_jwt = false
   [functions.daily-doc-reminders]
     verify_jwt = false
   [functions.gestionar-baja]
