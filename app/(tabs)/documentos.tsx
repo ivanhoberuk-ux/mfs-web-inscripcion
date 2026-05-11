@@ -342,7 +342,49 @@ export default function Documentos() {
       Alert.alert('Error', e.message || String(e));
     } finally {
       setLoading(false);
+  }
+
+  // === BUSCAR POR NOMBRE ===
+  async function buscarPorNombre() {
+    try {
+      const nombreSan = nombre.trim()
+      if (!nombreSan) return Alert.alert('Ingresá un nombre o apellido.')
+      setLoading(true)
+      let q = supabase
+        .from('registros')
+        .select(
+          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
+        )
+        .or(`nombres.ilike.%${nombreSan}%,apellidos.ilike.%${nombreSan}%`)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      
+      // Si es pueblo_admin (no super admin), filtrar por su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && puebloId) {
+        q = q.eq('pueblo_id', puebloId)
+      }
+
+      const { data, error } = await q
+      if (error) throw error
+      if (!data || data.length === 0) {
+        if (isPuebloAdmin && !isSuperAdmin) {
+          return Alert.alert('Sin resultados', 'No encontramos inscriptos con ese nombre en tu pueblo.')
+        }
+        return Alert.alert('Sin resultados', 'No encontramos inscriptos con ese nombre.')
+      }
+      if (data.length === 1) {
+        setRecord(data[0])
+        setResults([])
+      } else {
+        setResults(data)
+        setRecord(null)
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || String(e))
+    } finally {
+      setLoading(false)
     }
+  }
   }
 
   // === Subir IMAGEN (único método para todo) ===
