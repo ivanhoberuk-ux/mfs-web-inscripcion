@@ -194,6 +194,10 @@ export async function registerIfCapacity(input: {
   acepta_terminos: boolean;
   // talle de remera
   talle_remera?: string | null;
+
+  // Pertenencia al Movimiento de Schoenstatt
+  pertenece_schoenstatt?: boolean;
+  rama_schoenstatt?: string | null;
 }): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
@@ -221,6 +225,8 @@ export async function registerIfCapacity(input: {
 
     p_acepta_terminos: !!input.acepta_terminos,
     p_talle_remera: input.talle_remera ?? null,
+    p_pertenece_schoenstatt: !!input.pertenece_schoenstatt,
+    p_rama_schoenstatt: input.pertenece_schoenstatt ? (input.rama_schoenstatt ?? null) : null,
   };
 
   const { data, error } = await supabase.rpc('register_if_capacity', payload);

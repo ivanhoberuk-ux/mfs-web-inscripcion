@@ -98,6 +98,10 @@ export default function Inscribir() {
   const [acepta, setAcepta] = useState(false)
   const [talleRemera, setTalleRemera] = useState('')
 
+  // Pertenencia al Movimiento de Schoenstatt
+  const [perteneceSchoenstatt, setPerteneceSchoenstatt] = useState<boolean | null>(null)
+  const [ramaSchoenstatt, setRamaSchoenstatt] = useState<string>('')
+
   const [errs, setErrs] = useState<Errs>({})
   const [registroExistente, setRegistroExistente] = useState<any>(null)
   const [modoEdicion, setModoEdicion] = useState(false)
@@ -196,6 +200,8 @@ export default function Inscribir() {
           setMadreTelefono(registro.madre_telefono || '')
           setCiudad(registro.ciudad || '')
           setTalleRemera(registro.talle_remera || '')
+          setPerteneceSchoenstatt(registro.pertenece_schoenstatt ?? null)
+          setRamaSchoenstatt(registro.rama_schoenstatt || '')
           setAcepta(true) // Ya aceptó términos previamente
         }
         
@@ -427,6 +433,14 @@ export default function Inscribir() {
         e.nacimiento = 'Usá formato DD-MM-AAAA válido.'
       }
 
+      // Pertenencia a Schoenstatt
+      if (perteneceSchoenstatt !== true && perteneceSchoenstatt !== false) {
+        e.perteneceSchoenstatt = 'Elegí Sí o No.'
+      }
+      if (perteneceSchoenstatt === true && !ramaSchoenstatt) {
+        e.ramaSchoenstatt = 'Elegí a qué rama pertenecés.'
+      }
+
       // Padres/Tutores validation if required
       if (requierePadres) {
         if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
@@ -518,6 +532,8 @@ export default function Inscribir() {
             madre_telefono: requierePadres ? normPhone(madreTelefono) : null,
             ciudad: ciudad.trim() || null,
             talle_remera: talleRemera || null,
+            pertenece_schoenstatt: !!perteneceSchoenstatt,
+            rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
           })
           .eq('id', registroExistente.id)
 
@@ -583,6 +599,8 @@ export default function Inscribir() {
 
           acepta_terminos: acepta,
           talle_remera: talleRemera || null,
+          pertenece_schoenstatt: !!perteneceSchoenstatt,
+          rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
         })
         
         // Actualizar el pueblo_id en el profile del usuario
@@ -640,6 +658,7 @@ export default function Inscribir() {
         setPadreNombre(''); setPadreTelefono('')
         setMadreNombre(''); setMadreTelefono('')
         setAcepta(false); setTalleRemera('')
+        setPerteneceSchoenstatt(null); setRamaSchoenstatt('')
       }
     } catch (e: any) {
       Alert.alert('No se pudo inscribir', e?.message ?? String(e))
@@ -1049,6 +1068,54 @@ export default function Inscribir() {
           />
         </View>
       )}
+
+      {/* Pertenencia al Movimiento de Schoenstatt */}
+      <Card>
+        <Label>¿Perteneces al Movimiento de Schoenstatt?</Label>
+        <SegToggle
+          value={perteneceSchoenstatt}
+          onChange={(v) => {
+            setPerteneceSchoenstatt(v)
+            if (!v) setRamaSchoenstatt('')
+            setErrs((e) => ({ ...e, perteneceSchoenstatt: null }))
+          }}
+          err={errs.perteneceSchoenstatt}
+        />
+        {perteneceSchoenstatt === true && (
+          <View style={{ marginTop: 10 }}>
+            <Label>¿Dónde?</Label>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                'Juventud Masculina',
+                'Juventud Femenina',
+                'Colaboradores',
+                'Liga Apostólica',
+                'Federación Apostólica',
+                'Instituto Secular',
+              ].map((r) => (
+                <Pressable
+                  key={r}
+                  onPress={() => {
+                    setRamaSchoenstatt(r)
+                    setErrs((e) => ({ ...e, ramaSchoenstatt: null }))
+                  }}
+                  style={[
+                    s.button,
+                    {
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      backgroundColor: ramaSchoenstatt === r ? colors.primary[500] : colors.neutral[300],
+                    },
+                  ]}
+                >
+                  <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>{r}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!!errs.ramaSchoenstatt && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{errs.ramaSchoenstatt}</Text>}
+          </View>
+        )}
+      </Card>
 
       {/* Talle de remera */}
       <Card>
