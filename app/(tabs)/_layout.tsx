@@ -111,6 +111,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="mi-familia"
+        options={{
+          href: !loading && !!user ? undefined : null,
+          title: 'Mi Familia',
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="👨‍👩‍👧" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="pueblos"
         options={{
           title: 'Pueblos',

@@ -47,7 +47,7 @@ const Alert = {
     }
   },
 }
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { fetchPueblos, registerIfCapacity, publicUrl, fetchEstadoInscripcionActivo, type EstadoInscripcion, type ConfiguracionInscripcion } from '../../src/lib/api'
 import { supabase } from '../../src/lib/supabase'
@@ -64,6 +64,7 @@ const inputErrorStyle = { borderColor: colors.error, borderWidth: 1 }
 
 export default function Inscribir() {
   const router = useRouter()
+  const params = useLocalSearchParams<{ edit?: string; nuevoHijo?: string }>()
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -244,11 +245,41 @@ export default function Inscribir() {
         const lista = registros ?? []
         setMisRegistros(lista)
 
-        // El registro "del titular" es el primero que NO sea Hijo (o el primero si todos son Hijo)
-        const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+        // Si llega ?edit=<id>, abrir ese registro específico
+        const editId = typeof params.edit === 'string' ? params.edit : null
+        const wantNuevoHijo = params.nuevoHijo === '1' || params.nuevoHijo === 'true'
+        const target = editId ? lista.find((r: any) => r.id === editId) : null
 
-        if (titular) {
-          cargarRegistroEnFormulario(titular)
+        if (target) {
+          cargarRegistroEnFormulario(target)
+        } else if (wantNuevoHijo && lista.length > 0) {
+          // Diferimos para que misRegistros ya esté en state
+          setTimeout(() => {
+            const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+            setRegistroExistente(null)
+            setModoEdicion(false)
+            setPuebloId(titular?.pueblo_id || '')
+            setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
+            setTelefono(''); setDireccion(''); setCiudad(titular?.ciudad || '')
+            setEmNombre(titular?.emergencia_nombre || '')
+            setEmTelefono(titular?.emergencia_telefono || '')
+            setRol('Hijo'); setEsJefe(false); setMisionoAntes(null)
+            setTratamiento(false); setTratamientoDetalle('')
+            setAlimento(false); setAlimentoDetalle('')
+            if (titular) {
+              setPadreNombre(`${titular.nombres || ''} ${titular.apellidos || ''}`.trim())
+              setPadreTelefono(titular.telefono || '')
+            }
+            setMadreNombre(''); setMadreTelefono('')
+            setTalleRemera('')
+            setPerteneceSchoenstatt(null); setRamaSchoenstatt('')
+            setAcepta(true)
+            setErrs({})
+          }, 0)
+        } else {
+          // Por defecto: cargar el titular si existe
+          const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+          if (titular) cargarRegistroEnFormulario(titular)
         }
 
       } catch (e: any) {
