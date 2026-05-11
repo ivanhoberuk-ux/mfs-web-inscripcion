@@ -405,7 +405,9 @@ export type Database = {
           nombres: string
           padre_nombre: string | null
           padre_telefono: string | null
+          pertenece_schoenstatt: boolean
           pueblo_id: string
+          rama_schoenstatt: string | null
           rol: string
           source: string | null
           talle_remera: string | null
@@ -443,7 +445,9 @@ export type Database = {
           nombres: string
           padre_nombre?: string | null
           padre_telefono?: string | null
+          pertenece_schoenstatt?: boolean
           pueblo_id: string
+          rama_schoenstatt?: string | null
           rol: string
           source?: string | null
           talle_remera?: string | null
@@ -481,7 +485,9 @@ export type Database = {
           nombres?: string
           padre_nombre?: string | null
           padre_telefono?: string | null
+          pertenece_schoenstatt?: boolean
           pueblo_id?: string
+          rama_schoenstatt?: string | null
           rol?: string
           source?: string | null
           talle_remera?: string | null
@@ -942,34 +948,65 @@ export type Database = {
         Args: { p_año: number; p_es_jefe: boolean; p_rol: string }
         Returns: Json
       }
-      register_if_capacity: {
-        Args: {
-          p_acepta_terminos?: boolean
-          p_alimentacion_detalle?: string
-          p_alimentacion_especial?: boolean
-          p_apellidos: string
-          p_ci: string
-          p_ciudad?: string
-          p_direccion: string
-          p_email: string
-          p_emergencia_nombre?: string
-          p_emergencia_telefono?: string
-          p_es_jefe?: boolean
-          p_madre_nombre?: string
-          p_madre_telefono?: string
-          p_nacimiento: string
-          p_nombres: string
-          p_padre_nombre?: string
-          p_padre_telefono?: string
-          p_pueblo_id: string
-          p_rol?: string
-          p_talle_remera?: string
-          p_telefono: string
-          p_tratamiento_detalle?: string
-          p_tratamiento_especial?: boolean
-        }
-        Returns: Json
-      }
+      register_if_capacity:
+        | {
+            Args: {
+              p_acepta_terminos?: boolean
+              p_alimentacion_detalle?: string
+              p_alimentacion_especial?: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad?: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre?: string
+              p_emergencia_telefono?: string
+              p_es_jefe?: boolean
+              p_madre_nombre?: string
+              p_madre_telefono?: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre?: string
+              p_padre_telefono?: string
+              p_pueblo_id: string
+              p_rol?: string
+              p_talle_remera?: string
+              p_telefono: string
+              p_tratamiento_detalle?: string
+              p_tratamiento_especial?: boolean
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_acepta_terminos: boolean
+              p_alimentacion_detalle: string
+              p_alimentacion_especial: boolean
+              p_apellidos: string
+              p_ci: string
+              p_ciudad: string
+              p_direccion: string
+              p_email: string
+              p_emergencia_nombre: string
+              p_emergencia_telefono: string
+              p_es_jefe: boolean
+              p_madre_nombre: string
+              p_madre_telefono: string
+              p_nacimiento: string
+              p_nombres: string
+              p_padre_nombre: string
+              p_padre_telefono: string
+              p_pertenece_schoenstatt?: boolean
+              p_pueblo_id: string
+              p_rama_schoenstatt?: string
+              p_rol: string
+              p_talle_remera: string
+              p_telefono: string
+              p_tratamiento_detalle: string
+              p_tratamiento_especial: boolean
+            }
+            Returns: Json
+          }
       remove_co_admin_pueblo: {
         Args: { p_user_id: string }
         Returns: undefined
