@@ -64,6 +64,7 @@ const inputErrorStyle = { borderColor: colors.error, borderWidth: 1 }
 
 export default function Inscribir() {
   const router = useRouter()
+  const params = useLocalSearchParams<{ edit?: string; nuevoHijo?: string }>()
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
