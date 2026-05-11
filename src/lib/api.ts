@@ -2,6 +2,7 @@
 // Funciones de acceso a datos (Supabase) y helpers de Storage para la app MFS
 
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 // Constantes de Supabase (para URL públicas y Storage)
