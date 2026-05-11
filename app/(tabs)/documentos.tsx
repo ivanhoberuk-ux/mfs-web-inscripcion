@@ -230,7 +230,7 @@ export default function Documentos() {
     
     idx = url.indexOf(signedMarker);
     if (idx !== -1) {
-      return url.slice(idx + signedMarker.length).split('?')[0].split('/').slice(1).join('/');
+      return url.slice(idx + signedMarker.length).split('?')[0];
     }
     
     // Intenta extraer el path después de /documentos/
