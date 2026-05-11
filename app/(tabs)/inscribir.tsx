@@ -211,6 +211,7 @@ export default function Inscribir() {
         if (!mounted) return
         
         setUser(session?.user || null)
+        if (mounted) setCheckingAuth(false)
         
         if (!session?.user) {
           // No mostrar alert durante la carga inicial para evitar problemas de hidratación
