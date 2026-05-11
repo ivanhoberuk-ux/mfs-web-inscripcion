@@ -599,6 +599,8 @@ export default function Inscribir() {
 
           acepta_terminos: acepta,
           talle_remera: talleRemera || null,
+          pertenece_schoenstatt: !!perteneceSchoenstatt,
+          rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
         })
         
         // Actualizar el pueblo_id en el profile del usuario
