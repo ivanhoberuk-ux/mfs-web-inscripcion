@@ -433,6 +433,14 @@ export default function Inscribir() {
         e.nacimiento = 'Usá formato DD-MM-AAAA válido.'
       }
 
+      // Pertenencia a Schoenstatt
+      if (perteneceSchoenstatt !== true && perteneceSchoenstatt !== false) {
+        e.perteneceSchoenstatt = 'Elegí Sí o No.'
+      }
+      if (perteneceSchoenstatt === true && !ramaSchoenstatt) {
+        e.ramaSchoenstatt = 'Elegí a qué rama pertenecés.'
+      }
+
       // Padres/Tutores validation if required
       if (requierePadres) {
         if (!padreNombre.trim()) e.padreNombre = 'Completá nombre del padre.'
