@@ -842,6 +842,66 @@ export default function Inscribir() {
         </Text>
       </Card>
 
+      {/* Mis inscripciones (titular + hijos) */}
+      {misRegistros.length > 0 && (
+        <Card style={{ backgroundColor: '#ECFEFF', borderLeftWidth: 4, borderLeftColor: colors.primary[500] }}>
+          <Text style={[s.text, { fontWeight: '700', marginBottom: 8 }]}>
+            👨‍👩‍👧 Mis inscripciones {añoActivo}
+          </Text>
+          {misRegistros.map((r: any) => {
+            const editando = registroExistente?.id === r.id
+            return (
+              <View
+                key={r.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 6,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0F2FE',
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.text, { fontWeight: '600' }]}>
+                    {r.rol === 'Hijo' ? '🧒' : r.rol === 'Tio' ? '🧑‍🏫' : '✝️'} {r.nombres} {r.apellidos}
+                  </Text>
+                  <Text style={[s.small, { color: colors.text.tertiary.light }]}>
+                    {r.rol} · {r.estado === 'lista_espera' ? '📋 Lista de espera' : '✅ Confirmado'}
+                  </Text>
+                </View>
+                <Pressable
+                  disabled={editando}
+                  onPress={() => cargarRegistroEnFormulario(r)}
+                  style={[
+                    s.button,
+                    { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: editando ? colors.neutral[300] : colors.primary[500] },
+                  ]}
+                >
+                  <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>
+                    {editando ? 'Editando' : 'Editar'}
+                  </Text>
+                </Pressable>
+              </View>
+            )
+          })}
+          <Pressable
+            onPress={iniciarInscribirHijo}
+            style={[
+              s.button,
+              { marginTop: 12, backgroundColor: '#10B981', paddingVertical: 10 },
+            ]}
+          >
+            <Text style={[s.buttonText, { color: 'white' }]}>
+              ➕ Inscribir a un hijo/a
+            </Text>
+          </Pressable>
+          <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 8 }]}>
+            Los niños chicos sin email se inscriben bajo tu cuenta. Cada hijo necesita su propia cédula.
+          </Text>
+        </Card>
+      )}
+
       {/* Pueblo */}
       <Card>
         <Label>Pueblo (Elegí uno)</Label>
