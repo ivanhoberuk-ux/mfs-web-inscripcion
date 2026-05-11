@@ -599,6 +599,7 @@ export default function Inscribir() {
           emergencia_telefono: normPhone(emTelefono),
           rol,
           es_jefe: rol === 'Misionero' ? !!esJefe : false,
+          misiono_antes: rol === 'Misionero' ? !!misionoAntes : false,
 
           tratamiento_especial: !!tratamiento,
           tratamiento_detalle: tratamiento ? tratamientoDetalle.trim() : null,
