@@ -2,6 +2,7 @@
 // Funciones de acceso a datos (Supabase) y helpers de Storage para la app MFS
 
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 // Constantes de Supabase (para URL públicas y Storage)
@@ -319,10 +320,52 @@ export async function uploadToStorage(
   fileUriOrBase64: string
 ): Promise<string | null> {
   const objectPath = path.replace(/^\/+/, '');
-  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${objectPath}`;
 
   // Content-Type
   let contentType = guessContentType(fileUriOrBase64, objectPath);
+
+  // ---------- WEB: usar fetch + supabase.storage.upload (Blob) ----------
+  // expo-file-system.uploadAsync NO funciona en web. Aquí hacemos un fetch del
+  // recurso (data:, blob:, http(s):, file desde input) y subimos como Blob.
+  if (Platform.OS === 'web') {
+    try {
+      let blob: Blob;
+      if (fileUriOrBase64.startsWith('data:')) {
+        const resp = await fetch(fileUriOrBase64);
+        blob = await resp.blob();
+        if (blob.type) contentType = blob.type;
+      } else {
+        // blob:, https:, http:, etc.
+        const resp = await fetch(fileUriOrBase64);
+        if (!resp.ok) {
+          console.warn('uploadToStorage web fetch failed', resp.status);
+          return null;
+        }
+        blob = await resp.blob();
+        if (blob.type) contentType = blob.type;
+      }
+
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(objectPath, blob, {
+          contentType,
+          upsert: true,
+        });
+
+      if (error) {
+        console.warn('uploadToStorage web upload error', error.message);
+        return null;
+      }
+
+      return publicUrl(bucket, objectPath);
+    } catch (e: any) {
+      console.warn('uploadToStorage web error', e?.message ?? String(e));
+      return null;
+    }
+  }
+
+  // ---------- NATIVO: usar expo-file-system uploadAsync ----------
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${objectPath}`;
 
   // Resolver a file:// local
   let localUri = fileUriOrBase64;
@@ -360,7 +403,6 @@ export async function uploadToStorage(
     return null;
   }
 
-  // Devolvemos la pública por conveniencia (si el bucket no es público, esta URL no cargará sin signed URL)
   return publicUrl(bucket, objectPath);
 }
 
