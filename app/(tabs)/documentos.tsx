@@ -29,7 +29,7 @@ export default function Documentos() {
   const { user } = useAuth();
   const { isSuperAdmin, isPuebloAdmin, puebloId, loading: rolesLoading } = useUserRoles();
   
-  const [mode, setMode] = useState<'code' | 'ci'>('code');
+  const [mode, setMode] = useState<'code' | 'ci' | 'nombre'>('code');
 
   // Búsqueda por CÓDIGO (UUID)
   const [code, setCode] = useState('');
@@ -37,6 +37,9 @@ export default function Documentos() {
   // Búsqueda por CÉDULA + EMAIL
   const [ci, setCi] = useState('');
   const [email, setEmail] = useState('');
+
+  // Búsqueda por NOMBRE
+  const [nombre, setNombre] = useState('');
 
   const [record, setRecord] = useState<any | null>(null);
   const [results, setResults] = useState<any[]>([]);
@@ -327,6 +330,48 @@ export default function Documentos() {
           return Alert.alert('Sin resultados', 'Verificá cédula y email, y que sea de tu pueblo.');
         }
         return Alert.alert('Sin resultados', 'Verificá cédula y email.');
+      }
+      if (data.length === 1) {
+        setRecord(data[0]);
+        setResults([]);
+      } else {
+      setResults(data);
+        setRecord(null);
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // === BUSCAR POR NOMBRE ===
+  async function buscarPorNombre() {
+    try {
+      const nombreSan = nombre.trim();
+      if (!nombreSan) return Alert.alert('Ingresá un nombre o apellido.');
+      setLoading(true);
+      let q = supabase
+        .from('registros')
+        .select(
+          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
+        )
+        .or(`nombres.ilike.%${nombreSan}%,apellidos.ilike.%${nombreSan}%`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Si es pueblo_admin (no super admin), filtrar por su pueblo
+      if (isPuebloAdmin && !isSuperAdmin && puebloId) {
+        q = q.eq('pueblo_id', puebloId);
+      }
+
+      const { data, error } = await q;
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        if (isPuebloAdmin && !isSuperAdmin) {
+          return Alert.alert('Sin resultados', 'No encontramos inscriptos con ese nombre en tu pueblo.');
+        }
+        return Alert.alert('Sin resultados', 'No encontramos inscriptos con ese nombre.');
       }
       if (data.length === 1) {
         setRecord(data[0]);
@@ -653,7 +698,7 @@ export default function Documentos() {
 
       {/* Selector de modo de búsqueda - solo para admins */}
       {(isSuperAdmin || isPuebloAdmin) && (
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
           <Pressable
             style={[s.button, { paddingVertical: 8, opacity: mode === 'code' ? 1 : 0.6 }]}
             onPress={() => setMode('code')}
@@ -665,6 +710,12 @@ export default function Documentos() {
             onPress={() => setMode('ci')}
           >
             <Text style={s.buttonText}>Por cédula</Text>
+          </Pressable>
+          <Pressable
+            style={[s.button, { paddingVertical: 8, opacity: mode === 'nombre' ? 1 : 0.6 }]}
+            onPress={() => setMode('nombre')}
+          >
+            <Text style={s.buttonText}>Por nombre</Text>
           </Pressable>
         </View>
       )}
@@ -722,6 +773,30 @@ export default function Documentos() {
           <Pressable
             style={[s.button, { marginTop: 8 }]}
             onPress={buscarPorCedula}
+            disabled={loading}
+          >
+            <Text style={s.buttonText}>{loading ? 'Buscando…' : 'Buscar'}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Búsqueda por NOMBRE - solo para admins */}
+      {(isSuperAdmin || isPuebloAdmin) && mode === 'nombre' && (
+        <View style={s.card}>
+          <Text style={s.text}>
+            Buscá al inscripto por <Text style={{ fontWeight: '700' }}>Nombre</Text> o <Text style={{ fontWeight: '700' }}>Apellido</Text>.
+          </Text>
+          <Text style={s.label}>Nombre o apellido</Text>
+          <TextInput
+            value={nombre}
+            onChangeText={setNombre}
+            style={s.input}
+            autoCapitalize="none"
+            placeholder="Ej: María o González"
+          />
+          <Pressable
+            style={[s.button, { marginTop: 8 }]}
+            onPress={buscarPorNombre}
             disabled={loading}
           >
             <Text style={s.buttonText}>{loading ? 'Buscando…' : 'Buscar'}</Text>
