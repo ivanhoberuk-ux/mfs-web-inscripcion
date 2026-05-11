@@ -83,6 +83,7 @@ export default function Inscribir() {
   const [emTelefono, setEmTelefono] = useState('')
   const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo'>('Misionero')
   const [esJefe, setEsJefe] = useState(false)
+  const [misionoAntes, setMisionoAntes] = useState<boolean | null>(null)
 
   // Nuevos (obligatorios)
   const [tratamiento, setTratamiento] = useState<boolean | null>(false)
