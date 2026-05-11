@@ -194,6 +194,10 @@ export async function registerIfCapacity(input: {
   acepta_terminos: boolean;
   // talle de remera
   talle_remera?: string | null;
+
+  // Pertenencia al Movimiento de Schoenstatt
+  pertenece_schoenstatt?: boolean;
+  rama_schoenstatt?: string | null;
 }): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
