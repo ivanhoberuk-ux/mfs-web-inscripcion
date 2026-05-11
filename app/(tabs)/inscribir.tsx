@@ -965,6 +965,22 @@ export default function Inscribir() {
           <View style={{ marginTop: 8 }}>
             <Text style={s.label}>¿Es Jefe?</Text>
             <SegToggle value={esJefe} onChange={setEsJefe} labels={['No', 'Sí']} />
+
+            <Text style={[s.label, { marginTop: 12 }]}>¿Ya misionaste antes en las MFS?</Text>
+            <SegToggle
+              value={misionoAntes}
+              onChange={(v) => {
+                setMisionoAntes(v)
+                setErrs((e) => ({ ...e, misionoAntes: null }))
+              }}
+              labels={['No', 'Sí']}
+              err={errs.misionoAntes}
+            />
+            {faseAnticipada && misionoAntes === true && !esJefe && (
+              <Text style={[s.small, { color: '#059669', marginTop: 6, fontWeight: '600' }]}>
+                ✨ Como ya misionaste antes, podés inscribirte en la fase anticipada.
+              </Text>
+            )}
           </View>
         )}
       </Card>
