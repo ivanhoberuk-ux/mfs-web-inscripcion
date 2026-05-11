@@ -200,6 +200,8 @@ export default function Inscribir() {
           setMadreTelefono(registro.madre_telefono || '')
           setCiudad(registro.ciudad || '')
           setTalleRemera(registro.talle_remera || '')
+          setPerteneceSchoenstatt(registro.pertenece_schoenstatt ?? null)
+          setRamaSchoenstatt(registro.rama_schoenstatt || '')
           setAcepta(true) // Ya aceptó términos previamente
         }
         
