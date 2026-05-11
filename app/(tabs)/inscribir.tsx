@@ -761,8 +761,10 @@ export default function Inscribir() {
             ⭐ Inscripción anticipada
           </Text>
           <Text style={[s.text, { color: '#92400E', marginTop: 4 }]}>
-            En esta fase solo pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text> y{' '}
-            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text>.
+            En esta fase pueden inscribirse <Text style={{ fontWeight: '700' }}>Tíos</Text>,{' '}
+            <Text style={{ fontWeight: '700' }}>Hijos</Text>,{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros marcados como Jefes Jóvenes</Text> y{' '}
+            <Text style={{ fontWeight: '700' }}>Misioneros que ya misionaron antes en las MFS</Text>.
             {configInsc && (
               <>
                 {'\n'}La inscripción general abre el{' '}
