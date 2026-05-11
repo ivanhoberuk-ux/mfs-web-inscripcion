@@ -60,19 +60,8 @@ export default function Pueblos() {
   }, [])
 
   useEffect(() => {
-    if (!rolesLoading) {
-      load()
-    }
-  }, [load, rolesLoading])
-
-  if (rolesLoading) {
-    return (
-      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator />
-        <Text style={[s.small, { marginTop: 6, color: '#666' }]}>Verificando permisos…</Text>
-      </View>
-    );
-  }
+    load()
+  }, [load])
 
   return (
     <ScrollView
