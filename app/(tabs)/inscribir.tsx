@@ -129,6 +129,78 @@ export default function Inscribir() {
     })();
   }, []);
 
+  // Cargar datos de un registro existente al formulario
+  function cargarRegistroEnFormulario(registro: any) {
+    setRegistroExistente(registro)
+    setModoEdicion(true)
+    setPuebloId(registro.pueblo_id || '')
+    setNombres(registro.nombres || '')
+    setApellidos(registro.apellidos || '')
+    setCi(registro.ci || '')
+    const fechaNac = registro.nacimiento ? new Date(registro.nacimiento) : null
+    if (fechaNac) {
+      const dd = String(fechaNac.getUTCDate()).padStart(2, '0')
+      const mm = String(fechaNac.getUTCMonth() + 1).padStart(2, '0')
+      const yyyy = fechaNac.getUTCFullYear()
+      setNacimiento(`${dd}-${mm}-${yyyy}`)
+    } else {
+      setNacimiento('')
+    }
+    setEmail(registro.email || '')
+    setTelefono(registro.telefono || '')
+    setDireccion(registro.direccion || '')
+    setEmNombre(registro.emergencia_nombre || '')
+    setEmTelefono(registro.emergencia_telefono || '')
+    setRol(registro.rol || 'Misionero')
+    setEsJefe(registro.es_jefe || false)
+    setMisionoAntes(registro.misiono_antes ?? null)
+    setTratamiento(registro.tratamiento_especial || false)
+    setTratamientoDetalle(registro.tratamiento_detalle || '')
+    setAlimento(registro.alimentacion_especial || false)
+    setAlimentoDetalle(registro.alimentacion_detalle || '')
+    setPadreNombre(registro.padre_nombre || '')
+    setPadreTelefono(registro.padre_telefono || '')
+    setMadreNombre(registro.madre_nombre || '')
+    setMadreTelefono(registro.madre_telefono || '')
+    setCiudad(registro.ciudad || '')
+    setTalleRemera(registro.talle_remera || '')
+    setPerteneceSchoenstatt(registro.pertenece_schoenstatt ?? null)
+    setRamaSchoenstatt(registro.rama_schoenstatt || '')
+    setAcepta(true)
+    setErrs({})
+    setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50)
+  }
+
+  // Inicia una nueva inscripción de hijo/a bajo el mismo email del usuario
+  function iniciarInscribirHijo() {
+    const titular = misRegistros.find((r: any) => r.rol !== 'Hijo') ?? misRegistros[0] ?? null
+    setRegistroExistente(null)
+    setModoEdicion(false)
+    // Preservar pueblo elegido por el padre como sugerencia
+    setPuebloId(titular?.pueblo_id || '')
+    setNombres(''); setApellidos(''); setCi(''); setNacimiento('')
+    setTelefono(''); setDireccion(''); setCiudad(titular?.ciudad || '')
+    setEmNombre(titular?.emergencia_nombre || '')
+    setEmTelefono(titular?.emergencia_telefono || '')
+    setRol('Hijo'); setEsJefe(false); setMisionoAntes(null)
+    setTratamiento(false); setTratamientoDetalle('')
+    setAlimento(false); setAlimentoDetalle('')
+    // Pre-cargar uno de los tutores con datos del titular
+    if (titular) {
+      const nombreTitular = `${titular.nombres || ''} ${titular.apellidos || ''}`.trim()
+      setPadreNombre(nombreTitular)
+      setPadreTelefono(titular.telefono || '')
+    } else {
+      setPadreNombre(''); setPadreTelefono('')
+    }
+    setMadreNombre(''); setMadreTelefono('')
+    setTalleRemera('')
+    setPerteneceSchoenstatt(null); setRamaSchoenstatt('')
+    setAcepta(true) // el titular ya aceptó términos
+    setErrs({})
+    setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50)
+  }
+
   // Verificar autenticación
   useEffect(() => {
     let mounted = true
