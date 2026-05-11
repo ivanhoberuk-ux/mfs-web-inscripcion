@@ -160,55 +160,25 @@ export default function Inscribir() {
           return
         }
         
-        // Verificar si ya está inscripto (solo año vigente y no dado de baja)
+        // Cargar TODAS las inscripciones del usuario (propias + hijos) del año vigente
         const { data: registros } = await supabase
           .from('registros')
           .select('*')
           .eq('email', session.user.email)
           .is('deleted_at', null)
           .eq('año', 2026)
-          .order('created_at', { ascending: false })
-          .limit(1)
-        const registro = registros && registros.length > 0 ? registros[0] : null
-        
-        if (registro) {
-          // Cargar datos existentes en el formulario
-          setRegistroExistente(registro)
-          setModoEdicion(true)
-          setPuebloId(registro.pueblo_id || '')
-          setNombres(registro.nombres || '')
-          setApellidos(registro.apellidos || '')
-          setCi(registro.ci || '')
-          const fechaNac = registro.nacimiento ? new Date(registro.nacimiento) : null
-          if (fechaNac) {
-            const dd = String(fechaNac.getUTCDate()).padStart(2, '0')
-            const mm = String(fechaNac.getUTCMonth() + 1).padStart(2, '0')
-            const yyyy = fechaNac.getUTCFullYear()
-            setNacimiento(`${dd}-${mm}-${yyyy}`)
-          }
-          setEmail(registro.email || '')
-          setTelefono(registro.telefono || '')
-          setDireccion(registro.direccion || '')
-          setEmNombre(registro.emergencia_nombre || '')
-          setEmTelefono(registro.emergencia_telefono || '')
-          setRol(registro.rol || 'Misionero')
-          setEsJefe(registro.es_jefe || false)
-          setMisionoAntes(registro.misiono_antes ?? null)
-          setTratamiento(registro.tratamiento_especial || false)
-          setTratamientoDetalle(registro.tratamiento_detalle || '')
-          setAlimento(registro.alimentacion_especial || false)
-          setAlimentoDetalle(registro.alimentacion_detalle || '')
-          setPadreNombre(registro.padre_nombre || '')
-          setPadreTelefono(registro.padre_telefono || '')
-          setMadreNombre(registro.madre_nombre || '')
-          setMadreTelefono(registro.madre_telefono || '')
-          setCiudad(registro.ciudad || '')
-          setTalleRemera(registro.talle_remera || '')
-          setPerteneceSchoenstatt(registro.pertenece_schoenstatt ?? null)
-          setRamaSchoenstatt(registro.rama_schoenstatt || '')
-          setAcepta(true) // Ya aceptó términos previamente
+          .order('created_at', { ascending: true })
+
+        const lista = registros ?? []
+        setMisRegistros(lista)
+
+        // El registro "del titular" es el primero que NO sea Hijo (o el primero si todos son Hijo)
+        const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+
+        if (titular) {
+          cargarRegistroEnFormulario(titular)
         }
-        
+
       } catch (e: any) {
         console.error('Error verificando autenticación:', e)
       } finally {
