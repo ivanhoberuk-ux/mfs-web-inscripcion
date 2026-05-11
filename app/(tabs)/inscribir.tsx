@@ -658,6 +658,7 @@ export default function Inscribir() {
         setPadreNombre(''); setPadreTelefono('')
         setMadreNombre(''); setMadreTelefono('')
         setAcepta(false); setTalleRemera('')
+        setPerteneceSchoenstatt(null); setRamaSchoenstatt('')
       }
     } catch (e: any) {
       Alert.alert('No se pudo inscribir', e?.message ?? String(e))
