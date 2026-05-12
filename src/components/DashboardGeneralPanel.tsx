@@ -143,25 +143,20 @@ export function DashboardGeneralPanel() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [registros, pueblos]);
 
-  // ===== Rangos etarios =====
-  const rangos = useMemo(() => {
+  // ===== Edades exactas =====
+  const edadesExactas = useMemo(() => {
     const refDate = new Date(year, 0, 1);
-    const buckets = [
-      { label: '0-11 años', min: 0, max: 11, count: 0, color: '#06b6d4' },
-      { label: '12-17 años', min: 12, max: 17, count: 0, color: '#0a7ea4' },
-      { label: '18-25 años', min: 18, max: 25, count: 0, color: '#7c3aed' },
-      { label: '26-35 años', min: 26, max: 35, count: 0, color: '#0b9850' },
-      { label: '36-50 años', min: 36, max: 50, count: 0, color: '#f59e0b' },
-      { label: '50+ años', min: 51, max: 200, count: 0, color: '#dc2626' },
-      { label: 'Sin fecha', min: -1, max: -1, count: 0, color: '#9ca3af' },
-    ];
+    const counts: Record<number, number> = {};
+    let sinFecha = 0;
     filtered.forEach(r => {
       const a = ageOn(r.nacimiento, refDate);
-      if (a == null) { buckets[6].count++; return; }
-      const b = buckets.find(x => a >= x.min && a <= x.max);
-      if (b) b.count++;
+      if (a == null) { sinFecha++; return; }
+      counts[a] = (counts[a] || 0) + 1;
     });
-    return buckets;
+    const entries = Object.entries(counts)
+      .map(([edad, count]) => ({ edad: Number(edad), count }))
+      .sort((a, b) => a.edad - b.edad);
+    return { entries, sinFecha };
   }, [filtered, year]);
 
   // ===== Por rol =====
@@ -231,7 +226,7 @@ export function DashboardGeneralPanel() {
   }
 
   const maxPueblo = Math.max(1, ...porPueblo.map(p => p.total));
-  const maxRango = Math.max(1, ...rangos.map(r => r.count));
+  const maxEdad = Math.max(1, ...edadesExactas.entries.map(e => e.count));
   const maxRol = Math.max(1, ...porRol.map(r => r.value));
   const maxRama = Math.max(1, ...porRama.map(r => r.value));
   const maxTalle = Math.max(1, ...porTalle.map(r => r.value));
@@ -306,11 +301,17 @@ export function DashboardGeneralPanel() {
         ))}
       </Section>
 
-      {/* Rangos etarios */}
-      <Section title="Rango etario (al 1° de enero del año)" emoji="🎂">
-        {rangos.map(r => (
-          <BarRow key={r.label} label={r.label} value={r.count} max={maxRango} color={r.color} />
+      {/* Edades exactas */}
+      <Section title="Edades exactas (al 1° de enero del año)" emoji="🎂">
+        {edadesExactas.entries.map((e, i) => (
+          <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxEdad} color={COLORS[i % COLORS.length]} />
         ))}
+        {edadesExactas.sinFecha > 0 && (
+          <BarRow label="Sin fecha de nacimiento" value={edadesExactas.sinFecha} max={maxEdad} color="#9ca3af" />
+        )}
+        {edadesExactas.entries.length === 0 && edadesExactas.sinFecha === 0 && (
+          <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin datos de edad</Text>
+        )}
       </Section>
 
       {/* Pertenencia al movimiento */}
