@@ -85,36 +85,36 @@ export default function Documentos() {
       return;
     }
 
+    let active = true;
+
     (async () => {
       const urls: typeof signedUrls = {};
-      
-      if (record.autorizacion_url) {
-        const path = storagePathFromPublicUrl(record.autorizacion_url);
-        if (path) urls.autorizacion = await publicUrl('documentos', path);
-      }
-      
-      if (record.ficha_medica_url) {
-        const path = storagePathFromPublicUrl(record.ficha_medica_url);
-        if (path) urls.ficha = await publicUrl('documentos', path);
-      }
-      
-      if (record.firma_url) {
-        const path = storagePathFromPublicUrl(record.firma_url);
-        if (path) urls.firma = await publicUrl('documentos', path);
-      }
-      
-      if (record.cedula_frente_url) {
-        const path = storagePathFromPublicUrl(record.cedula_frente_url);
-        if (path) urls.cedula_frente = await publicUrl('documentos', path);
-      }
-      
-      if (record.cedula_dorso_url) {
-        const path = storagePathFromPublicUrl(record.cedula_dorso_url);
-        if (path) urls.cedula_dorso = await publicUrl('documentos', path);
-      }
-      
-      setSignedUrls(urls);
+      const refs = [
+        ['autorizacion', record.autorizacion_url],
+        ['ficha', record.ficha_medica_url],
+        ['firma', record.firma_url],
+        ['cedula_frente', record.cedula_frente_url],
+        ['cedula_dorso', record.cedula_dorso_url],
+      ] as const;
+
+      await Promise.all(
+        refs.map(async ([key, value]) => {
+          if (!value) return;
+          try {
+            const url = await resolveStoredDocumentUrl(value);
+            if (url) urls[key] = url;
+          } catch (e: any) {
+            console.warn('No se pudo generar URL del documento', key, e?.message ?? String(e));
+          }
+        })
+      );
+
+      if (active) setSignedUrls(urls);
     })();
+
+    return () => {
+      active = false;
+    };
   }, [record]);
 
   // Auto-cargar registro del usuario actual si no es admin
@@ -237,18 +237,18 @@ export default function Documentos() {
   async function openStoredDocument(value?: string | null) {
     try {
       if (!value) return;
-
-      const path = storagePathFromPublicUrl(value);
-      if (!path) {
-        await openUrl(value);
-        return;
-      }
-
-      const signedUrl = await publicUrl('documentos', path);
-      await openUrl(signedUrl);
+      const url = await resolveStoredDocumentUrl(value);
+      if (url) await openUrl(url);
     } catch (e: any) {
       Alert.alert('No se pudo abrir el documento', e?.message ?? String(e));
     }
+  }
+
+  async function resolveStoredDocumentUrl(value?: string | null): Promise<string | null> {
+    if (!value) return null;
+    const path = storagePathFromPublicUrl(value);
+    if (!path) return value;
+    return publicUrl('documentos', path);
   }
 
   // Cache busting timestamp fijo para evitar hydration mismatch
@@ -611,8 +611,9 @@ export default function Documentos() {
       // necesitamos una imagen de firma: priorizamos la recién capturada; si no, usamos la guardada
       let firmaDataUrl: string | null = firmaPreview;
       if (!firmaDataUrl && record.firma_url) {
-        // si hay una URL pública, la convertimos a dataURL para el PDF
-        const resp = await fetch(record.firma_url);
+        const firmaUrl = await resolveStoredDocumentUrl(record.firma_url);
+        if (!firmaUrl) throw new Error('No se pudo abrir la firma guardada');
+        const resp = await fetch(firmaUrl);
         const blob = await resp.blob();
         firmaDataUrl = await blobToDataURL(blob);
       }

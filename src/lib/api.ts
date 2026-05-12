@@ -306,8 +306,7 @@ export async function publicUrl(bucket: string, path: string): Promise<string> {
   
   if (error || !data?.signedUrl) {
     console.error('Error generando signed URL:', error);
-    // Fallback a URL pública (aunque el bucket sea privado, para debug)
-    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${clean}`;
+    throw new Error(error?.message || 'No se pudo generar acceso al documento');
   }
   
   return data.signedUrl;
