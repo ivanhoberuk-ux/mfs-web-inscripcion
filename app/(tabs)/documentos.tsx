@@ -218,6 +218,11 @@ export default function Documentos() {
   async function openUrl(url?: string | null) {
     try {
       if (!url) return;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.assign(url);
+        return;
+      }
+
       const supported = await Linking.canOpenURL(url);
       if (!supported) {
         Alert.alert('No se pudo abrir', 'El dispositivo no reconoce la URL.');
@@ -240,7 +245,7 @@ export default function Documentos() {
       }
 
       const signedUrl = await publicUrl('documentos', path);
-      await openUrl(bust(signedUrl));
+      await openUrl(signedUrl);
     } catch (e: any) {
       Alert.alert('No se pudo abrir el documento', e?.message ?? String(e));
     }
@@ -250,6 +255,7 @@ export default function Documentos() {
   const [cacheBuster] = useState(() => Date.now());
   function bust(url?: string | null) {
     if (!url) return url as any;
+    if (url.includes('/storage/v1/object/sign/')) return url;
     const sep = url.includes('?') ? '&' : '?';
     return `${url}${sep}cb=${cacheBuster}`;
   }
