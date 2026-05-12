@@ -182,6 +182,15 @@ export default function VerInscriptosAdmin() {
         q = q.eq('pueblo_id', puebloId);
       }
 
+      // Búsqueda server-side: si hay término, buscar en toda la BD (no solo página actual)
+      const term = searchTerm.trim()
+      if (term) {
+        const safe = term.replace(/[%,()]/g, ' ')
+        q = q.or(
+          `nombres.ilike.%${safe}%,apellidos.ilike.%${safe}%,ci.ilike.%${safe}%,email.ilike.%${safe}%`
+        )
+      }
+
       const from = offRef.current
       const to = from + PAGE - 1
       const { data, error } = await q.range(from, to)
