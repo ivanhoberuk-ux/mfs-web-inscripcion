@@ -140,11 +140,11 @@ export default function Firma() {
 
       // Subir SIEMPRE a Supabase (web o nativo) para uniformidad
       const storagePath = `${isAdult ? 'autorizaciones' : 'permisos'}/${registro.id}_${Date.now()}.pdf`
-      const publicUrl = await uploadToStorage('documentos', pdfUriOrUrl, storagePath)
-      if (!publicUrl) throw new Error('No se pudo subir el PDF a Storage')
+      const savedPath = await uploadToStorage('documentos', storagePath, pdfUriOrUrl)
+      if (!savedPath) throw new Error('No se pudo subir el PDF a Storage')
 
       // Actualizar el campo correcto del registro
-      await updateDocumento(registro.id, { [docKey]: publicUrl })
+      await updateDocumento(registro.id, { [docKey]: savedPath })
 
       Alert.alert('Listo', `PDF generado y subido (${docLabel}).`)
       // Opcional: navegar atrás

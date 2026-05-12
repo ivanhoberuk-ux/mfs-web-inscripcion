@@ -251,7 +251,14 @@ export async function updateDocumento(
     cedula_dorso_url: string | null;
   }>
 ) {
-  const { error } = await supabase.from('registros').update(fields).eq('id', id);
+  const cleanFields = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== undefined)
+  );
+
+  const { error } = await supabase.rpc('update_registro_documentos_json' as any, {
+    p_registro_id: id,
+    p_fields: cleanFields,
+  });
   if (error) throw error;
 }
 
@@ -312,7 +319,7 @@ export async function publicUrl(bucket: string, path: string): Promise<string> {
  *   - `file://...` (binario)
  *   - `data:<mime>;base64,XXXX` (firma)
  *   - ruta local sin esquema (la convierte a file://)
- * Devuelve la URL pública si el bucket es público (conveniente para abrir/compartir).
+ * Devuelve la ruta estable del objeto en Storage. Para abrirlo, generar una signed URL con publicUrl().
  */
 export async function uploadToStorage(
   bucket: string,
@@ -357,7 +364,7 @@ export async function uploadToStorage(
         return null;
       }
 
-      return publicUrl(bucket, objectPath);
+      return objectPath;
     } catch (e: any) {
       console.warn('uploadToStorage web error', e?.message ?? String(e));
       return null;
@@ -403,7 +410,7 @@ export async function uploadToStorage(
     return null;
   }
 
-  return publicUrl(bucket, objectPath);
+  return objectPath;
 }
 
 // --------- Utils internos ----------

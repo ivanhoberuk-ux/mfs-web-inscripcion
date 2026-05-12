@@ -24,6 +24,9 @@ import { shareOrDownload } from '../../src/lib/sharing';
 import { useAuth } from '../../src/context/AuthProvider';
 import { useUserRoles } from '../../src/hooks/useUserRoles';
 
+const DOC_SELECT_COLS =
+  'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,año,cedula_frente_url,cedula_dorso_url';
+
 export default function Documentos() {
   const params = useLocalSearchParams();
   const { user } = useAuth();
@@ -119,9 +122,6 @@ export default function Documentos() {
     if (rolesLoading) return;
 
     const codeParam = Array.isArray(params.code) ? params.code[0] : params.code;
-    const SELECT_COLS =
-      'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url';
-
     // Si no es admin, cargar registros del usuario
     if (!isSuperAdmin && !isPuebloAdmin && user) {
       (async () => {
@@ -133,9 +133,11 @@ export default function Documentos() {
           if (codeParam && typeof codeParam === 'string') {
             const { data, error } = await supabase
               .from('registros')
-              .select(SELECT_COLS)
+              .select(DOC_SELECT_COLS)
               .eq('id', codeParam.trim())
               .eq('email', user.email!)
+              .is('deleted_at', null)
+              .eq('año', 2026)
               .maybeSingle();
             if (error) throw error;
             if (data) {
@@ -149,8 +151,10 @@ export default function Documentos() {
           //    (puede haber varios: ej. padres inscribiendo a hijos)
           const { data: list, error: listErr } = await supabase
             .from('registros')
-            .select(SELECT_COLS)
+            .select(DOC_SELECT_COLS)
             .eq('email', user.email!)
+            .is('deleted_at', null)
+            .eq('año', 2026)
             .order('created_at', { ascending: false });
           if (listErr) throw listErr;
 
@@ -183,10 +187,10 @@ export default function Documentos() {
           setLoading(true);
           let query = supabase
             .from('registros')
-            .select(
-              'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
-            )
-            .eq('id', codeParam.trim());
+            .select(DOC_SELECT_COLS)
+            .eq('id', codeParam.trim())
+            .is('deleted_at', null)
+            .eq('año', 2026);
 
           // Si es pueblo_admin, solo puede ver su pueblo
           if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -244,6 +248,10 @@ export default function Documentos() {
     );
   }
   function storagePathFromPublicUrl(url: string): string | null {
+    if (!/^https?:\/\//i.test(url)) {
+      return url.replace(/^\/+/, '').split('?')[0];
+    }
+
     // Soporta tanto URLs públicas como signed URLs
     const publicMarker = '/storage/v1/object/public/documentos/';
     const signedMarker = '/storage/v1/object/sign/documentos/';
@@ -299,10 +307,10 @@ export default function Documentos() {
       setLoading(true);
       let query = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
-        )
-        .eq('id', code.trim());
+        .select(DOC_SELECT_COLS)
+        .eq('id', code.trim())
+        .is('deleted_at', null)
+        .eq('año', 2026);
 
       // Si es pueblo_admin (no super admin), solo puede ver su pueblo
       if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -335,10 +343,10 @@ export default function Documentos() {
       setLoading(true);
       let q = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
-        )
+        .select(DOC_SELECT_COLS)
         .eq('ci', ciSan)
+        .is('deleted_at', null)
+        .eq('año', 2026)
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -378,10 +386,10 @@ export default function Documentos() {
       setLoading(true);
       let q = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
-        )
+        .select(DOC_SELECT_COLS)
         .or(`nombres.ilike.%${nombreSan}%,apellidos.ilike.%${nombreSan}%`)
+        .is('deleted_at', null)
+        .eq('año', 2026)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -600,17 +608,18 @@ export default function Documentos() {
 
       // Subimos el PDF al storage (web: blob: URL; nativo: file:// URI)
       const storagePath = `registros/${record.id}/consentimiento.pdf`;
-      const publicURL = await uploadToStorage('documentos', storagePath, uriOrUrl);
-      if (!publicURL) throw new Error('No se pudo subir el PDF');
+      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl);
+      if (!savedPath) throw new Error('No se pudo subir el PDF');
 
       // Actualizá tu registro si corresponde (descomentar si lo usás)
       // await updateDocumento(record.id, { autorizacion_url: publicURL });
 
       // Abrir y/o descargar
+      const downloadUrl = await publicUrl('documentos', savedPath);
       if (Platform.OS === 'web') {
-        await shareOrDownload(publicURL, `consentimiento_${record.id}.pdf`);
+        await shareOrDownload(downloadUrl, `consentimiento_${record.id}.pdf`);
       } else {
-        await openUrl(publicURL);
+        await openUrl(downloadUrl);
       }
 
       Alert.alert('PDF generado', 'Se subió el consentimiento.');

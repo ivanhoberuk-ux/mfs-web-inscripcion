@@ -1055,6 +1055,56 @@ export type Database = {
           accion: string
         }[]
       }
+      update_registro_documentos_json: {
+        Args: { p_fields: Json; p_registro_id: string }
+        Returns: {
+          acepta_terminos: boolean
+          acepta_terminos_at: string | null
+          alimentacion_detalle: string | null
+          alimentacion_especial: boolean
+          año: number
+          apellidos: string
+          autorizacion_url: string | null
+          cedula_dorso_url: string | null
+          cedula_frente_url: string | null
+          ci: string
+          ciudad: string | null
+          created_at: string
+          deleted_at: string | null
+          direccion: string | null
+          email: string
+          emergencia_nombre: string | null
+          emergencia_telefono: string | null
+          es_jefe: boolean
+          estado: Database["public"]["Enums"]["estado_registro"]
+          external_id: string | null
+          ficha_medica_url: string | null
+          firma_url: string | null
+          id: string
+          madre_nombre: string | null
+          madre_telefono: string | null
+          misiono_antes: boolean
+          nacimiento: string
+          nombres: string
+          padre_nombre: string | null
+          padre_telefono: string | null
+          pertenece_schoenstatt: boolean
+          pueblo_id: string
+          rama_schoenstatt: string | null
+          rol: string
+          source: string | null
+          talle_remera: string | null
+          telefono: string
+          tratamiento_detalle: string | null
+          tratamiento_especial: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "registros"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       upsert_reunion: {
         Args: {
           p_fecha: string
