@@ -23,7 +23,6 @@ type Reg = {
 const DOC_LABELS: Record<string, string> = {
   cedula_frente_url: 'Cédula (frente)',
   cedula_dorso_url: 'Cédula (dorso)',
-  ficha_medica_url: 'Ficha médica',
   firma_url: 'Firma',
   autorizacion_url: 'Permiso del menor',
 }
