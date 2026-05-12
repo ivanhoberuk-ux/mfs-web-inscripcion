@@ -552,17 +552,19 @@ export default function Documentos() {
       const url: string | null | undefined = record[field];
       if (!url) return;
 
-      const ok = await new Promise<boolean>((resolve) => {
-        Alert.alert(
-          'Eliminar archivo',
-          '¿Querés eliminar el archivo subido?',
-          [
-            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
-            { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
-          ],
-          { cancelable: true }
-        );
-      });
+      const ok = Platform.OS === 'web'
+        ? window.confirm('¿Querés eliminar el archivo subido?')
+        : await new Promise<boolean>((resolve) => {
+            Alert.alert(
+              'Eliminar archivo',
+              '¿Querés eliminar el archivo subido?',
+              [
+                { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+              ],
+              { cancelable: true }
+            );
+          });
       if (!ok) return;
 
       const path = storagePathFromPublicUrl(url);
