@@ -1292,15 +1292,26 @@ export default function Inscribir() {
       <Card>
         <Label>Talle de remera</Label>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {[
-            { value: 'XS', label: 'XS (PP)' },
-            { value: 'S', label: 'S (P)' },
-            { value: 'M', label: 'M (M)' },
-            { value: 'L', label: 'L (G)' },
-            { value: 'XL', label: 'XL (GG)' },
-            { value: 'XXL', label: 'XXL (XGG / 2XL)' },
-            { value: 'XXXL', label: 'XXXL (3XL)' },
-          ].map((t) => (
+          {(rol === 'Hijo'
+            ? [
+                { value: '2', label: 'Niño 2' },
+                { value: '4', label: 'Niño 4' },
+                { value: '6', label: 'Niño 6' },
+                { value: '8', label: 'Niño 8' },
+                { value: '10', label: 'Niño 10' },
+                { value: '12', label: 'Niño 12' },
+                { value: '14', label: 'Niño 14' },
+              ]
+            : [
+                { value: 'XS', label: 'XS (PP)' },
+                { value: 'S', label: 'S (P)' },
+                { value: 'M', label: 'M (M)' },
+                { value: 'L', label: 'L (G)' },
+                { value: 'XL', label: 'XL (GG)' },
+                { value: 'XXL', label: 'XXL (XGG / 2XL)' },
+                { value: 'XXXL', label: 'XXXL (3XL)' },
+              ]
+          ).map((t) => (
             <Pressable
               key={t.value}
               onPress={() => {
