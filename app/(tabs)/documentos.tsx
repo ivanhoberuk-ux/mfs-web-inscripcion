@@ -237,18 +237,18 @@ export default function Documentos() {
   async function openStoredDocument(value?: string | null) {
     try {
       if (!value) return;
-
-      const path = storagePathFromPublicUrl(value);
-      if (!path) {
-        await openUrl(value);
-        return;
-      }
-
-      const signedUrl = await publicUrl('documentos', path);
-      await openUrl(signedUrl);
+      const url = await resolveStoredDocumentUrl(value);
+      if (url) await openUrl(url);
     } catch (e: any) {
       Alert.alert('No se pudo abrir el documento', e?.message ?? String(e));
     }
+  }
+
+  async function resolveStoredDocumentUrl(value?: string | null): Promise<string | null> {
+    if (!value) return null;
+    const path = storagePathFromPublicUrl(value);
+    if (!path) return value;
+    return publicUrl('documentos', path);
   }
 
   // Cache busting timestamp fijo para evitar hydration mismatch
