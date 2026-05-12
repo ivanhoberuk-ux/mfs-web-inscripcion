@@ -119,25 +119,50 @@ export default function Documentos() {
     if (rolesLoading) return;
 
     const codeParam = Array.isArray(params.code) ? params.code[0] : params.code;
-    
-    // Si no es admin, cargar automáticamente su propio registro
+    const SELECT_COLS =
+      'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url';
+
+    // Si no es admin, cargar registros del usuario
     if (!isSuperAdmin && !isPuebloAdmin && user) {
       (async () => {
         try {
           setLoading(true);
-          const { data, error } = await supabase
+
+          // 1) Si viene ?code=... (p. ej. desde Mi Familia), cargar ese registro
+          //    validando que pertenezca al email del usuario.
+          if (codeParam && typeof codeParam === 'string') {
+            const { data, error } = await supabase
+              .from('registros')
+              .select(SELECT_COLS)
+              .eq('id', codeParam.trim())
+              .eq('email', user.email!)
+              .maybeSingle();
+            if (error) throw error;
+            if (data) {
+              setResults([]);
+              setRecord(data);
+              return;
+            }
+          }
+
+          // 2) Buscar TODOS los registros con el email del usuario
+          //    (puede haber varios: ej. padres inscribiendo a hijos)
+          const { data: list, error: listErr } = await supabase
             .from('registros')
-            .select(
-              'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
-            )
-            .eq('email', user.email)
-            .maybeSingle();
-          if (error) throw error;
-          if (data) {
-            setResults([]);
-            setRecord(data);
-          } else {
+            .select(SELECT_COLS)
+            .eq('email', user.email!)
+            .order('created_at', { ascending: false });
+          if (listErr) throw listErr;
+
+          if (!list || list.length === 0) {
             Alert.alert('Sin registro', 'No encontramos tu inscripción. Contactá al administrador.');
+          } else if (list.length === 1) {
+            setResults([]);
+            setRecord(list[0]);
+          } else {
+            // Varios: mostrar selector para elegir a quién cargarle documentos
+            setRecord(null);
+            setResults(list);
           }
         } catch (e: any) {
           Alert.alert('Error', e.message || String(e));
