@@ -395,61 +395,76 @@ export async function publicUrl(bucket: string, path: string): Promise<string> {
 export async function uploadToStorage(
   bucket: string,
   path: string,
-  fileUriOrBase64: string
+  fileUriOrBase64: string,
+  onProgress?: (pct: number) => void
 ): Promise<string | null> {
   const objectPath = path.replace(/^\/+/, '');
 
   // Content-Type
   let contentType = guessContentType(fileUriOrBase64, objectPath);
 
-  // ---------- WEB: usar fetch + supabase.storage.upload (Blob) ----------
-  // expo-file-system.uploadAsync NO funciona en web. Aquí hacemos un fetch del
-  // recurso (data:, blob:, http(s):, file desde input) y subimos como Blob.
+  // ---------- WEB: XHR PUT al endpoint REST de Storage para reportar progreso ----------
   if (Platform.OS === 'web') {
     try {
-      let blob: Blob;
-      if (fileUriOrBase64.startsWith('data:')) {
-        const resp = await fetch(fileUriOrBase64);
-        blob = await resp.blob();
-        if (blob.type) contentType = blob.type;
-      } else {
-        // blob:, https:, http:, etc.
-        const resp = await fetch(fileUriOrBase64);
-        if (!resp.ok) {
-          console.warn('uploadToStorage web fetch failed', resp.status);
-          return null;
-        }
-        blob = await resp.blob();
-        if (blob.type) contentType = blob.type;
-      }
-
-      const { error } = await supabase.storage
-        .from(bucket)
-        .upload(objectPath, blob, {
-          contentType,
-          upsert: true,
-        });
-
-      if (error) {
-        console.warn('uploadToStorage web upload error', error.message);
+      const resp = await fetch(fileUriOrBase64);
+      if (!resp.ok && !fileUriOrBase64.startsWith('data:')) {
+        console.warn('uploadToStorage web fetch failed', resp.status);
         return null;
       }
+      const blob = await resp.blob();
+      if (blob.type) contentType = blob.type;
 
-      return objectPath;
+      const { data: sess } = await supabase.auth.getSession();
+      const bearer = sess?.session?.access_token ?? SUPABASE_ANON_KEY;
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${objectPath}`;
+
+      try { onProgress?.(0); } catch {}
+
+      const ok = await new Promise<boolean>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${bearer}`);
+        xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY);
+        xhr.setRequestHeader('Content-Type', contentType);
+        xhr.setRequestHeader('x-upsert', 'true');
+        if (xhr.upload && onProgress) {
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const pct = Math.round((e.loaded / e.total) * 100);
+              try { onProgress(Math.min(99, pct)); } catch {}
+            }
+          };
+        }
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { onProgress?.(100); } catch {}
+            resolve(true);
+          } else {
+            console.warn('uploadToStorage web xhr error', xhr.status, xhr.responseText);
+            resolve(false);
+          }
+        };
+        xhr.onerror = () => {
+          console.warn('uploadToStorage web xhr network error');
+          resolve(false);
+        };
+        xhr.send(blob);
+      });
+
+      return ok ? objectPath : null;
     } catch (e: any) {
       console.warn('uploadToStorage web error', e?.message ?? String(e));
       return null;
     }
   }
 
-  // ---------- NATIVO: usar expo-file-system uploadAsync ----------
+  // ---------- NATIVO: usar expo-file-system uploadAsync / createUploadTask ----------
   const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${objectPath}`;
 
   // Resolver a file:// local
   let localUri = fileUriOrBase64;
 
   if (fileUriOrBase64.startsWith('data:')) {
-    // data URL -> escribir a archivo temporal
     const { mime, base64 } = parseDataUrl(fileUriOrBase64);
     if (mime) contentType = mime;
     const tmpBase = FileSystem.cacheDirectory + `up_${Date.now()}`;
@@ -461,12 +476,11 @@ export async function uploadToStorage(
     localUri = 'file://' + fileUriOrBase64;
   }
 
-  // Bearer: token de sesión si existe; si no, ANON (útil en dev/buckets públicos)
   const { data: sess } = await supabase.auth.getSession();
   const bearer = sess?.session?.access_token ?? SUPABASE_ANON_KEY;
 
-  const res = await FileSystem.uploadAsync(uploadUrl, localUri, {
-    httpMethod: 'PUT',
+  const options = {
+    httpMethod: 'PUT' as const,
     uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
     headers: {
       Authorization: `Bearer ${bearer}`,
@@ -474,13 +488,38 @@ export async function uploadToStorage(
       'Content-Type': contentType,
       'x-upsert': 'true',
     },
-  });
+  };
+
+  try { onProgress?.(0); } catch {}
+
+  let res;
+  if (onProgress && (FileSystem as any).createUploadTask) {
+    res = await new Promise<any>((resolve, reject) => {
+      try {
+        const task = (FileSystem as any).createUploadTask(
+          uploadUrl,
+          localUri,
+          options,
+          (p: { totalBytesSent: number; totalBytesExpectedToSend: number }) => {
+            if (p.totalBytesExpectedToSend > 0) {
+              const pct = Math.round((p.totalBytesSent / p.totalBytesExpectedToSend) * 100);
+              try { onProgress(Math.min(99, pct)); } catch {}
+            }
+          }
+        );
+        task.uploadAsync().then(resolve).catch(reject);
+      } catch (e) { reject(e); }
+    });
+  } else {
+    res = await FileSystem.uploadAsync(uploadUrl, localUri, options);
+  }
 
   if (res.status < 200 || res.status >= 300) {
     console.warn('uploadToStorage error', res.status, res.body);
     return null;
   }
 
+  try { onProgress?.(100); } catch {}
   return objectPath;
 }
 
