@@ -121,12 +121,21 @@ export default function Inscribir() {
   const [URL_PROTOCOLO, setUrlProtocolo] = useState<string>('');
   const [URL_ESTATUTOS, setUrlEstatutos] = useState<string>('');
 
-  // Cargar URLs de plantillas al montar
+  // Cargar URLs de plantillas al montar (gestionadas por super admin desde panel de plantillas)
   useEffect(() => {
     (async () => {
-      setUrlPermiso(await publicUrl('plantillas', 'Permiso de menor MFS 2026.pdf'));
-      setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
-      setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+      try {
+        const { fetchPlantillasUrlMap } = await import('../../src/lib/api');
+        const map = await fetchPlantillasUrlMap();
+        if (map['permiso_menor']) setUrlPermiso(map['permiso_menor'].url);
+        if (map['protocolo']) setUrlProtocolo(map['protocolo'].url);
+        if (map['estatutos']) setUrlEstatutos(map['estatutos'].url);
+      } catch (e) {
+        console.warn('Error cargando plantillas, usando fallback:', e);
+        setUrlPermiso(await publicUrl('plantillas', 'Permiso de menor MFS 2026.pdf'));
+        setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
+        setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+      }
     })();
   }, []);
 
