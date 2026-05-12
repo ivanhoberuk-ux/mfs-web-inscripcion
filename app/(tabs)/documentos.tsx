@@ -683,6 +683,7 @@ export default function Documentos() {
 
       Alert.alert('PDF generado', 'Se subió el consentimiento.');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('No se pudo generar el PDF', e?.message ?? String(e));
     }
   }
