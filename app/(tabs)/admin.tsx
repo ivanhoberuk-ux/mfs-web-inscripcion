@@ -851,6 +851,8 @@ export default function Admin() {
           </View>
         ) : showInscripcionConfig ? (
           <InscripcionConfigPanel />
+        ) : showPlantillas ? (
+          <PlantillasManagerPanel />
         ) : showCreatePueblo ? (
           // Panel de crear pueblo
           <View style={{ gap: 12 }}>
