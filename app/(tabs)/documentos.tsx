@@ -609,7 +609,11 @@ export default function Documentos() {
       }
       setFirmaPreview(dataUrl);
       const path = `registros/${record.id}/firma.png`;
-      const url = await uploadToStorage('documentos', path, dataUrl);
+      setUploadProgress({ kind: 'firma', pct: 0 });
+      const url = await uploadToStorage('documentos', path, dataUrl, (pct) =>
+        setUploadProgress({ kind: 'firma', pct })
+      );
+      setUploadProgress(null);
       if (!url) throw new Error('No se pudo subir la firma');
       await updateDocumento(record.id, { firma_url: url });
       setRecord({ ...record, firma_url: url });
