@@ -536,6 +536,7 @@ export default function Documentos() {
 
       Alert.alert('Listo', 'Documento subido');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('Error al abrir/subir imagen', e?.message ?? String(e));
     }
   }
