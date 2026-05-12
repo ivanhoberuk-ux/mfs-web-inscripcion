@@ -108,6 +108,7 @@ export default function Admin() {
 
   // Panel de configuración de inscripciones
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
+  const [showPlantillas, setShowPlantillas] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
