@@ -68,13 +68,23 @@ export default function Documentos() {
     cedula_dorso?: string;
   }>({});
 
-  // Cargar URLs de plantillas al montar
+  // Cargar URLs de plantillas al montar (desde tabla plantillas_documentos gestionada por super admin)
   useEffect(() => {
     (async () => {
-      setUrlPermiso(await publicUrl('plantillas', 'Permiso de menor MFS 2026.pdf'));
-      setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
-      setUrlAceptacion(await publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf'));
-      setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+      try {
+        const { fetchPlantillasUrlMap } = await import('../../src/lib/api');
+        const map = await fetchPlantillasUrlMap();
+        if (map['permiso_menor']) setUrlPermiso(map['permiso_menor'].url);
+        if (map['protocolo']) setUrlProtocolo(map['protocolo'].url);
+        if (map['aceptacion_protocolo']) setUrlAceptacion(map['aceptacion_protocolo'].url);
+        if (map['estatutos']) setUrlEstatutos(map['estatutos'].url);
+      } catch (e) {
+        console.warn('Error cargando plantillas, usando fallback:', e);
+        setUrlPermiso(await publicUrl('plantillas', 'Permiso de menor MFS 2026.pdf'));
+        setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
+        setUrlAceptacion(await publicUrl('plantillas', 'aceptacion_protocolo_prevencion.pdf'));
+        setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
+      }
     })();
   }, []);
 
