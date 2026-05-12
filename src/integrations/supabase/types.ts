@@ -314,6 +314,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plantillas_documentos: {
+        Row: {
+          activo: boolean
+          bucket: string
+          descripcion: string | null
+          emoji: string | null
+          key: string
+          orden: number
+          path: string
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          activo?: boolean
+          bucket?: string
+          descripcion?: string | null
+          emoji?: string | null
+          key: string
+          orden?: number
+          path: string
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          activo?: boolean
+          bucket?: string
+          descripcion?: string | null
+          emoji?: string | null
+          key?: string
+          orden?: number
+          path?: string
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
