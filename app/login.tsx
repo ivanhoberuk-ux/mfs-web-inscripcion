@@ -109,11 +109,27 @@ export default function Login() {
     setBusy(true)
     try {
       const cleanEmail = email.trim().toLowerCase()
-      const { error } = await supabase.functions.invoke('create-account', {
+      const { data, error } = await supabase.functions.invoke('create-account', {
         body: { email: cleanEmail, password: pass },
       })
+      // supabase-js no parsea el body en respuestas no-2xx; leerlo manualmente
       if (error) {
-        setErr(error.message || 'No se pudo crear la cuenta. Intentá de nuevo.')
+        let serverMsg: string | null = null
+        try {
+          const ctx: any = (error as any).context
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json()
+            serverMsg = body?.error ?? null
+          } else if (ctx && typeof ctx.text === 'function') {
+            const txt = await ctx.text()
+            try { serverMsg = JSON.parse(txt)?.error ?? null } catch { serverMsg = txt }
+          }
+        } catch {}
+        setErr(serverMsg || 'No se pudo crear la cuenta. Intentá de nuevo.')
+        return
+      }
+      if ((data as any)?.error) {
+        setErr((data as any).error)
         return
       }
       setMsg('¡Cuenta creada! Ya podés iniciar sesión con tu email y contraseña.')
