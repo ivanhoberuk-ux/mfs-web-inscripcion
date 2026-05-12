@@ -124,7 +124,7 @@ export default function Inscribir() {
   // Cargar URLs de plantillas al montar
   useEffect(() => {
     (async () => {
-      setUrlPermiso(await publicUrl('plantillas', 'permiso_menor.pdf'));
+      setUrlPermiso(await publicUrl('plantillas', 'Permiso de menor MFS 2026.pdf'));
       setUrlProtocolo(await publicUrl('plantillas', 'protocolo_prevencion.pdf'));
       setUrlEstatutos(await publicUrl('plantillas', 'estatutos_mfs.pdf'));
     })();
