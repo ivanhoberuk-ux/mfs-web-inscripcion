@@ -344,7 +344,10 @@ export function DashboardGeneralPanel() {
               <Text style={{ color: y === year ? 'white' : '#374151', fontWeight: '700' }}>{y}</Text>
             </Pressable>
           ))}
-          <Pressable onPress={load} style={{ marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0b9850' }}>
+          <Pressable onPress={exportExcel} style={{ marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#1E40AF' }}>
+            <Text style={{ color: 'white', fontWeight: '700' }}>📥 Exportar Excel</Text>
+          </Pressable>
+          <Pressable onPress={load} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0b9850' }}>
             <Text style={{ color: 'white', fontWeight: '700' }}>🔄 Actualizar</Text>
           </Pressable>
         </View>
