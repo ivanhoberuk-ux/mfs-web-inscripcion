@@ -24,6 +24,9 @@ import { shareOrDownload } from '../../src/lib/sharing';
 import { useAuth } from '../../src/context/AuthProvider';
 import { useUserRoles } from '../../src/hooks/useUserRoles';
 
+const DOC_SELECT_COLS =
+  'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,año,cedula_frente_url,cedula_dorso_url';
+
 export default function Documentos() {
   const params = useLocalSearchParams();
   const { user } = useAuth();
@@ -119,9 +122,6 @@ export default function Documentos() {
     if (rolesLoading) return;
 
     const codeParam = Array.isArray(params.code) ? params.code[0] : params.code;
-    const SELECT_COLS =
-      'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url';
-
     // Si no es admin, cargar registros del usuario
     if (!isSuperAdmin && !isPuebloAdmin && user) {
       (async () => {
@@ -133,9 +133,11 @@ export default function Documentos() {
           if (codeParam && typeof codeParam === 'string') {
             const { data, error } = await supabase
               .from('registros')
-              .select(SELECT_COLS)
+              .select(DOC_SELECT_COLS)
               .eq('id', codeParam.trim())
               .eq('email', user.email!)
+              .is('deleted_at', null)
+              .eq('año', 2026)
               .maybeSingle();
             if (error) throw error;
             if (data) {
@@ -149,8 +151,10 @@ export default function Documentos() {
           //    (puede haber varios: ej. padres inscribiendo a hijos)
           const { data: list, error: listErr } = await supabase
             .from('registros')
-            .select(SELECT_COLS)
+            .select(DOC_SELECT_COLS)
             .eq('email', user.email!)
+            .is('deleted_at', null)
+            .eq('año', 2026)
             .order('created_at', { ascending: false });
           if (listErr) throw listErr;
 
