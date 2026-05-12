@@ -619,6 +619,7 @@ export default function Documentos() {
       setRecord({ ...record, firma_url: url });
       Alert.alert('Firma guardada', 'Se subió la firma correctamente.');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('Error al subir la firma', e?.message ?? String(e));
     } finally {
       setSavingSign(false);
