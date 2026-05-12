@@ -1257,6 +1257,8 @@ export default function Inscribir() {
               {[
                 'Juventud Masculina',
                 'Juventud Femenina',
+                'Pioneros',
+                'Apóstoles',
                 'Colaboradores',
                 'Liga Apostólica',
                 'Federación Apostólica',
