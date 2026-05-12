@@ -951,7 +951,7 @@ export default function Documentos() {
                   {isImageUrl(record.ficha_medica_url) && signedUrls.ficha && (
                     <Image
                       source={{ uri: bust(signedUrls.ficha) }}
-                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6, backgroundColor: '#f3f4f6' }}
                       resizeMode="contain"
                     />
                   )}
@@ -995,7 +995,7 @@ export default function Documentos() {
                   {isImageUrl(record.autorizacion_url) && signedUrls.autorizacion && (
                     <Image
                       source={{ uri: bust(signedUrls.autorizacion) }}
-                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                      style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6, backgroundColor: '#f3f4f6' }}
                       resizeMode="contain"
                     />
                   )}
@@ -1086,7 +1086,7 @@ export default function Documentos() {
                     {isImageUrl(record.cedula_frente_url) && signedUrls.cedula_frente && (
                       <Image
                         source={{ uri: bust(signedUrls.cedula_frente) }}
-                        style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                        style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6, backgroundColor: '#f3f4f6' }}
                         resizeMode="contain"
                       />
                     )}
@@ -1122,7 +1122,7 @@ export default function Documentos() {
                     {isImageUrl(record.cedula_dorso_url) && signedUrls.cedula_dorso && (
                       <Image
                         source={{ uri: bust(signedUrls.cedula_dorso) }}
-                        style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
+                        style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6, backgroundColor: '#f3f4f6' }}
                         resizeMode="contain"
                       />
                     )}
