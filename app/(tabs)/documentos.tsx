@@ -663,7 +663,11 @@ export default function Documentos() {
 
       // Subimos el PDF al storage (web: blob: URL; nativo: file:// URI)
       const storagePath = `registros/${record.id}/consentimiento.pdf`;
-      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl);
+      setUploadProgress({ kind: 'pdf', pct: 0 });
+      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl, (pct) =>
+        setUploadProgress({ kind: 'pdf', pct })
+      );
+      setUploadProgress(null);
       if (!savedPath) throw new Error('No se pudo subir el PDF');
 
       // Actualizá tu registro si corresponde (descomentar si lo usás)
