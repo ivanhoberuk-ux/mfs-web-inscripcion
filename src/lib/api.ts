@@ -134,6 +134,78 @@ export async function activarAñoInscripcion(año: number) {
   if (error) throw error;
 }
 
+// --------- Plantillas / Documentos comunes (super admin) ----------
+export type PlantillaDocumento = {
+  key: string;
+  titulo: string;
+  descripcion: string | null;
+  emoji: string | null;
+  bucket: string;
+  path: string;
+  orden: number;
+  activo: boolean;
+  updated_at: string;
+};
+
+export async function fetchPlantillas(): Promise<PlantillaDocumento[]> {
+  const { data, error } = await supabase
+    .from('plantillas_documentos' as any)
+    .select('key, titulo, descripcion, emoji, bucket, path, orden, activo, updated_at')
+    .order('orden', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+/** Devuelve un mapa key -> URL firmada (con cache-buster por updated_at). */
+export async function fetchPlantillasUrlMap(): Promise<Record<string, { titulo: string; emoji: string | null; url: string; path: string; updated_at: string }>> {
+  const list = await fetchPlantillas();
+  const out: Record<string, any> = {};
+  await Promise.all(
+    list.filter((p) => p.activo).map(async (p) => {
+      try {
+        const u = await publicUrl(p.bucket, p.path);
+        const sep = u.includes('?') ? '&' : '?';
+        out[p.key] = {
+          titulo: p.titulo,
+          emoji: p.emoji,
+          path: p.path,
+          updated_at: p.updated_at,
+          url: `${u}${sep}v=${encodeURIComponent(p.updated_at)}`,
+        };
+      } catch (e) {
+        console.warn('No se pudo generar URL para plantilla', p.key, e);
+      }
+    })
+  );
+  return out;
+}
+
+export async function upsertPlantilla(input: Partial<PlantillaDocumento> & { key: string; titulo: string; path: string; bucket?: string }) {
+  const { error } = await supabase
+    .from('plantillas_documentos' as any)
+    .upsert({
+      key: input.key,
+      titulo: input.titulo,
+      descripcion: input.descripcion ?? null,
+      emoji: input.emoji ?? '📄',
+      bucket: input.bucket ?? 'plantillas',
+      path: input.path,
+      orden: input.orden ?? 0,
+      activo: input.activo ?? true,
+    }, { onConflict: 'key' });
+  if (error) throw error;
+}
+
+export async function deletePlantilla(key: string) {
+  const { error } = await supabase.from('plantillas_documentos' as any).delete().eq('key', key);
+  if (error) throw error;
+}
+
+export async function deleteStorageObject(bucket: string, path: string) {
+  const { error } = await supabase.storage.from(bucket).remove([path.replace(/^\/+/, '')]);
+  if (error) throw error;
+}
+
 // --------- Pueblos / Ocupación ----------
 export async function fetchPueblos(): Promise<Pueblo[]> {
   const { data, error } = await supabase

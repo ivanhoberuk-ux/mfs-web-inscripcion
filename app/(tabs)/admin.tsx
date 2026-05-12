@@ -20,6 +20,7 @@ import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
+import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 
 // ===== Tipos base =====
 type Registro = {
@@ -107,6 +108,7 @@ export default function Admin() {
 
   // Panel de configuración de inscripciones
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
+  const [showPlantillas, setShowPlantillas] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -670,6 +672,7 @@ export default function Admin() {
               setShowRolesPanel(!showRolesPanel)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
+              setShowPlantillas(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -684,6 +687,7 @@ export default function Admin() {
               setShowCreatePueblo(!showCreatePueblo)
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
+              setShowPlantillas(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -697,10 +701,25 @@ export default function Admin() {
               setShowInscripcionConfig(!showInscripcionConfig)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
+              setShowPlantillas(false)
             }}
           >
             <Text style={s.buttonText}>
               {showInscripcionConfig ? 'Ver Exportes' : '📅 Fechas Inscripción'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showPlantillas ? '#0891b2' : '#6b7280' }]}
+            onPress={() => {
+              setShowPlantillas(!showPlantillas)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showPlantillas ? 'Ver Exportes' : '📚 Plantillas'}
             </Text>
           </Pressable>
         </View>
@@ -832,6 +851,8 @@ export default function Admin() {
           </View>
         ) : showInscripcionConfig ? (
           <InscripcionConfigPanel />
+        ) : showPlantillas ? (
+          <PlantillasManagerPanel />
         ) : showCreatePueblo ? (
           // Panel de crear pueblo
           <View style={{ gap: 12 }}>
