@@ -611,8 +611,9 @@ export default function Documentos() {
       // necesitamos una imagen de firma: priorizamos la recién capturada; si no, usamos la guardada
       let firmaDataUrl: string | null = firmaPreview;
       if (!firmaDataUrl && record.firma_url) {
-        // si hay una URL pública, la convertimos a dataURL para el PDF
-        const resp = await fetch(record.firma_url);
+        const firmaUrl = await resolveStoredDocumentUrl(record.firma_url);
+        if (!firmaUrl) throw new Error('No se pudo abrir la firma guardada');
+        const resp = await fetch(firmaUrl);
         const blob = await resp.blob();
         firmaDataUrl = await blobToDataURL(blob);
       }
