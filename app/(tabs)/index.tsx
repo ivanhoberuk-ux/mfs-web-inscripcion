@@ -7,6 +7,7 @@ import { useAuth } from '../../src/context/AuthProvider'
 import { supabase } from '../../src/lib/supabase'
 import { Button } from '../../src/components/Button'
 import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard'
+import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
 // @ts-ignore
@@ -199,6 +200,13 @@ export default function Home() {
         <View style={{ width: '100%' }}>
           <InscripcionAvisoCard />
         </View>
+
+        {/* Estado de documentos del usuario */}
+        {user ? (
+          <View style={{ width: '100%' }}>
+            <DocumentosEstadoCard />
+          </View>
+        ) : null}
 
         {/* Accesos rápidos */}
         <View style={{ width: '100%' }}>
