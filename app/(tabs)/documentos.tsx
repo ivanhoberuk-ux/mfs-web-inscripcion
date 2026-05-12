@@ -1202,5 +1202,37 @@ export default function Documentos() {
         </View>
       )}
     </ScrollView>
+
+    {uploadProgress && (
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 24,
+          backgroundColor: '#0a7ea4',
+          borderRadius: 12,
+          padding: 14,
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
+        <Text style={{ color: 'white', fontWeight: '700', marginBottom: 8 }}>
+          ⬆️ Subiendo {uploadProgress.kind === 'autorizacion' ? 'permiso' :
+                       uploadProgress.kind === 'ficha' ? 'ficha médica' :
+                       uploadProgress.kind === 'cedula_frente' ? 'cédula (frente)' :
+                       uploadProgress.kind === 'cedula_dorso' ? 'cédula (dorso)' :
+                       uploadProgress.kind === 'firma' ? 'firma' :
+                       uploadProgress.kind === 'pdf' ? 'PDF' : 'archivo'}… {uploadProgress.pct}%
+        </Text>
+        <View style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' }}>
+          <View style={{ width: `${uploadProgress.pct}%`, height: '100%', backgroundColor: 'white' }} />
+        </View>
+      </View>
+    )}
+    </View>
   );
 }
