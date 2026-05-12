@@ -20,6 +20,11 @@ export default function RegistroStorageRedirect() {
         }
 
         const signedUrl = await publicUrl('documentos', `registros/${registroId}/${fileName}`);
+        if (typeof window !== 'undefined') {
+          window.location.replace(signedUrl);
+          return;
+        }
+
         await Linking.openURL(signedUrl);
         setMessage('Si no se abrió automáticamente, volvé a Mis documentos y tocá Ver archivo.');
       } catch (e: any) {
