@@ -255,6 +255,14 @@ export default function VerInscriptosAdmin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puebloId, accessChecked])
 
+  // Debounce de búsqueda server-side
+  useEffect(() => {
+    if (!accessChecked) return
+    const t = setTimeout(() => runSearch(true), 350)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm])
+
   // ===== CSV (INCLUYE CI) =====
   function csvEscape(v: string) {
     if (v == null) return ''
