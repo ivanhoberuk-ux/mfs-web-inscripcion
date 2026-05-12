@@ -50,6 +50,7 @@ export default function Documentos() {
 
   // Firma
   const [savingSign, setSavingSign] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ kind: string; pct: number } | null>(null);
   const padRef = useRef<SignaturePadHandle | null>(null);
   const [firmaPreview, setFirmaPreview] = useState<string | null>(null);
 
@@ -509,7 +510,11 @@ export default function Documentos() {
 
       const ext = (asset.fileName?.split('.').pop() || 'jpg').toLowerCase();
       const path = `registros/${record.id}/${kind}.${ext}`;
-      const url = await uploadToStorage('documentos', path, asset.uri);
+      setUploadProgress({ kind, pct: 0 });
+      const url = await uploadToStorage('documentos', path, asset.uri, (pct) =>
+        setUploadProgress({ kind, pct })
+      );
+      setUploadProgress(null);
       if (!url) {
         Alert.alert('No se pudo subir la imagen');
         return;
@@ -531,6 +536,7 @@ export default function Documentos() {
 
       Alert.alert('Listo', 'Documento subido');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('Error al abrir/subir imagen', e?.message ?? String(e));
     }
   }
@@ -603,12 +609,17 @@ export default function Documentos() {
       }
       setFirmaPreview(dataUrl);
       const path = `registros/${record.id}/firma.png`;
-      const url = await uploadToStorage('documentos', path, dataUrl);
+      setUploadProgress({ kind: 'firma', pct: 0 });
+      const url = await uploadToStorage('documentos', path, dataUrl, (pct) =>
+        setUploadProgress({ kind: 'firma', pct })
+      );
+      setUploadProgress(null);
       if (!url) throw new Error('No se pudo subir la firma');
       await updateDocumento(record.id, { firma_url: url });
       setRecord({ ...record, firma_url: url });
       Alert.alert('Firma guardada', 'Se subió la firma correctamente.');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('Error al subir la firma', e?.message ?? String(e));
     } finally {
       setSavingSign(false);
@@ -652,7 +663,11 @@ export default function Documentos() {
 
       // Subimos el PDF al storage (web: blob: URL; nativo: file:// URI)
       const storagePath = `registros/${record.id}/consentimiento.pdf`;
-      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl);
+      setUploadProgress({ kind: 'pdf', pct: 0 });
+      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl, (pct) =>
+        setUploadProgress({ kind: 'pdf', pct })
+      );
+      setUploadProgress(null);
       if (!savedPath) throw new Error('No se pudo subir el PDF');
 
       // Actualizá tu registro si corresponde (descomentar si lo usás)
@@ -668,6 +683,7 @@ export default function Documentos() {
 
       Alert.alert('PDF generado', 'Se subió el consentimiento.');
     } catch (e: any) {
+      setUploadProgress(null);
       Alert.alert('No se pudo generar el PDF', e?.message ?? String(e));
     }
   }
@@ -709,6 +725,7 @@ export default function Documentos() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       contentContainerStyle={{ paddingBottom: 120 }}
       style={s.screen}
@@ -1185,5 +1202,37 @@ export default function Documentos() {
         </View>
       )}
     </ScrollView>
+
+    {uploadProgress && (
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 24,
+          backgroundColor: '#0a7ea4',
+          borderRadius: 12,
+          padding: 14,
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
+        <Text style={{ color: 'white', fontWeight: '700', marginBottom: 8 }}>
+          ⬆️ Subiendo {uploadProgress.kind === 'autorizacion' ? 'permiso' :
+                       uploadProgress.kind === 'ficha' ? 'ficha médica' :
+                       uploadProgress.kind === 'cedula_frente' ? 'cédula (frente)' :
+                       uploadProgress.kind === 'cedula_dorso' ? 'cédula (dorso)' :
+                       uploadProgress.kind === 'firma' ? 'firma' :
+                       uploadProgress.kind === 'pdf' ? 'PDF' : 'archivo'}… {uploadProgress.pct}%
+        </Text>
+        <View style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' }}>
+          <View style={{ width: `${uploadProgress.pct}%`, height: '100%', backgroundColor: 'white' }} />
+        </View>
+      </View>
+    )}
+    </View>
   );
 }
