@@ -672,6 +672,7 @@ export default function Admin() {
               setShowRolesPanel(!showRolesPanel)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
+              setShowPlantillas(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -686,6 +687,7 @@ export default function Admin() {
               setShowCreatePueblo(!showCreatePueblo)
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
+              setShowPlantillas(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -699,10 +701,25 @@ export default function Admin() {
               setShowInscripcionConfig(!showInscripcionConfig)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
+              setShowPlantillas(false)
             }}
           >
             <Text style={s.buttonText}>
               {showInscripcionConfig ? 'Ver Exportes' : '📅 Fechas Inscripción'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showPlantillas ? '#0891b2' : '#6b7280' }]}
+            onPress={() => {
+              setShowPlantillas(!showPlantillas)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showPlantillas ? 'Ver Exportes' : '📚 Plantillas'}
             </Text>
           </Pressable>
         </View>
