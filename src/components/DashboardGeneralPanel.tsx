@@ -301,11 +301,17 @@ export function DashboardGeneralPanel() {
         ))}
       </Section>
 
-      {/* Rangos etarios */}
-      <Section title="Rango etario (al 1° de enero del año)" emoji="🎂">
-        {rangos.map(r => (
-          <BarRow key={r.label} label={r.label} value={r.count} max={maxRango} color={r.color} />
+      {/* Edades exactas */}
+      <Section title="Edades exactas (al 1° de enero del año)" emoji="🎂">
+        {edadesExactas.entries.map((e, i) => (
+          <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxEdad} color={COLORS[i % COLORS.length]} />
         ))}
+        {edadesExactas.sinFecha > 0 && (
+          <BarRow label="Sin fecha de nacimiento" value={edadesExactas.sinFecha} max={maxEdad} color="#9ca3af" />
+        )}
+        {edadesExactas.entries.length === 0 && edadesExactas.sinFecha === 0 && (
+          <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin datos de edad</Text>
+        )}
       </Section>
 
       {/* Pertenencia al movimiento */}
