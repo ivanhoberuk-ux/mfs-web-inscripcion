@@ -21,6 +21,7 @@ import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
+import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
 
 // ===== Tipos base =====
 type Registro = {
@@ -109,6 +110,7 @@ export default function Admin() {
   // Panel de configuración de inscripciones
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   const [showPlantillas, setShowPlantillas] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -673,6 +675,7 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -688,6 +691,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -702,6 +706,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -716,15 +721,33 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
+              setShowDashboard(false)
             }}
           >
             <Text style={s.buttonText}>
               {showPlantillas ? 'Ver Exportes' : '📚 Plantillas'}
             </Text>
           </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showDashboard ? '#0a7ea4' : '#6b7280' }]}
+            onPress={() => {
+              setShowDashboard(!showDashboard)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
+              setShowPlantillas(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showDashboard ? 'Ver Exportes' : '📊 Dashboard'}
+            </Text>
+          </Pressable>
         </View>
         
-        {showRolesPanel ? (
+        {showDashboard ? (
+          <DashboardGeneralPanel />
+        ) : showRolesPanel ? (
           // Panel de gestión de roles
           <View style={{ gap: 12 }}>
             <Text style={[s.subtitle, { marginBottom: 8 }]}>Gestión de Roles de Usuario</Text>
