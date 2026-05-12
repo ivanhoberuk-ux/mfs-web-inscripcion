@@ -85,36 +85,36 @@ export default function Documentos() {
       return;
     }
 
+    let active = true;
+
     (async () => {
       const urls: typeof signedUrls = {};
-      
-      if (record.autorizacion_url) {
-        const path = storagePathFromPublicUrl(record.autorizacion_url);
-        if (path) urls.autorizacion = await publicUrl('documentos', path);
-      }
-      
-      if (record.ficha_medica_url) {
-        const path = storagePathFromPublicUrl(record.ficha_medica_url);
-        if (path) urls.ficha = await publicUrl('documentos', path);
-      }
-      
-      if (record.firma_url) {
-        const path = storagePathFromPublicUrl(record.firma_url);
-        if (path) urls.firma = await publicUrl('documentos', path);
-      }
-      
-      if (record.cedula_frente_url) {
-        const path = storagePathFromPublicUrl(record.cedula_frente_url);
-        if (path) urls.cedula_frente = await publicUrl('documentos', path);
-      }
-      
-      if (record.cedula_dorso_url) {
-        const path = storagePathFromPublicUrl(record.cedula_dorso_url);
-        if (path) urls.cedula_dorso = await publicUrl('documentos', path);
-      }
-      
-      setSignedUrls(urls);
+      const refs = [
+        ['autorizacion', record.autorizacion_url],
+        ['ficha', record.ficha_medica_url],
+        ['firma', record.firma_url],
+        ['cedula_frente', record.cedula_frente_url],
+        ['cedula_dorso', record.cedula_dorso_url],
+      ] as const;
+
+      await Promise.all(
+        refs.map(async ([key, value]) => {
+          if (!value) return;
+          try {
+            const url = await resolveStoredDocumentUrl(value);
+            if (url) urls[key] = url;
+          } catch (e: any) {
+            console.warn('No se pudo generar URL del documento', key, e?.message ?? String(e));
+          }
+        })
+      );
+
+      if (active) setSignedUrls(urls);
     })();
+
+    return () => {
+      active = false;
+    };
   }, [record]);
 
   // Auto-cargar registro del usuario actual si no es admin
