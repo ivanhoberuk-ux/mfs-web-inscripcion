@@ -4,6 +4,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { s } from '../lib/theme';
+import * as XLSX from 'xlsx-js-style';
+import { fileStamp, humanDate } from '../lib/excel';
+import { shareOrDownload } from '../lib/sharing';
+import { Alert } from 'react-native';
 
 type RegistroDash = {
   id: string;
