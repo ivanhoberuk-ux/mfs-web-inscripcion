@@ -725,6 +725,7 @@ export default function Documentos() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       contentContainerStyle={{ paddingBottom: 120 }}
       style={s.screen}
