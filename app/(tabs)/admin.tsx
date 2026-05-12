@@ -20,6 +20,7 @@ import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
+import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 
 // ===== Tipos base =====
 type Registro = {
