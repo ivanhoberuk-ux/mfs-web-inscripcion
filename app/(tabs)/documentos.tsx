@@ -187,10 +187,10 @@ export default function Documentos() {
           setLoading(true);
           let query = supabase
             .from('registros')
-            .select(
-              'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
-            )
-            .eq('id', codeParam.trim());
+            .select(DOC_SELECT_COLS)
+            .eq('id', codeParam.trim())
+            .is('deleted_at', null)
+            .eq('año', 2026);
 
           // Si es pueblo_admin, solo puede ver su pueblo
           if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -303,10 +303,10 @@ export default function Documentos() {
       setLoading(true);
       let query = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,cedula_frente_url,cedula_dorso_url'
-        )
-        .eq('id', code.trim());
+        .select(DOC_SELECT_COLS)
+        .eq('id', code.trim())
+        .is('deleted_at', null)
+        .eq('año', 2026);
 
       // Si es pueblo_admin (no super admin), solo puede ver su pueblo
       if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -339,10 +339,10 @@ export default function Documentos() {
       setLoading(true);
       let q = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
-        )
+        .select(DOC_SELECT_COLS)
         .eq('ci', ciSan)
+        .is('deleted_at', null)
+        .eq('año', 2026)
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -382,10 +382,10 @@ export default function Documentos() {
       setLoading(true);
       let q = supabase
         .from('registros')
-        .select(
-          'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,cedula_frente_url,cedula_dorso_url'
-        )
+        .select(DOC_SELECT_COLS)
         .or(`nombres.ilike.%${nombreSan}%,apellidos.ilike.%${nombreSan}%`)
+        .is('deleted_at', null)
+        .eq('año', 2026)
         .order('created_at', { ascending: false })
         .limit(10);
 
