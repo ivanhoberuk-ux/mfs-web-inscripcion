@@ -922,7 +922,7 @@ export default function Documentos() {
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                     <Pressable
                       style={[s.button, { paddingVertical: 8 }]}
-                      onPress={() => openUrl(signedUrls.ficha || record.ficha_medica_url)}
+                      onPress={() => openStoredDocument(record.ficha_medica_url)}
                     >
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
@@ -966,7 +966,7 @@ export default function Documentos() {
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                     <Pressable
                       style={[s.button, { paddingVertical: 8 }]}
-                      onPress={() => openUrl(signedUrls.autorizacion || record.autorizacion_url)}
+                      onPress={() => openStoredDocument(record.autorizacion_url)}
                     >
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
@@ -1009,13 +1009,13 @@ export default function Documentos() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
                   <Pressable
                     style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(signedUrls.cedula_frente || record.cedula_frente_url)}
+                    onPress={() => openStoredDocument(record.cedula_frente_url)}
                   >
                     <Text style={s.buttonText}>Ver frente</Text>
                   </Pressable>
                   <Pressable
                     style={[s.button, { paddingVertical: 8 }]}
-                    onPress={() => openUrl(signedUrls.cedula_dorso || record.cedula_dorso_url)}
+                    onPress={() => openStoredDocument(record.cedula_dorso_url)}
                   >
                     <Text style={s.buttonText}>Ver dorso</Text>
                   </Pressable>
@@ -1057,7 +1057,7 @@ export default function Documentos() {
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                       <Pressable
                         style={[s.button, { paddingVertical: 8 }]}
-                        onPress={() => openUrl(signedUrls.cedula_frente || record.cedula_frente_url)}
+                        onPress={() => openStoredDocument(record.cedula_frente_url)}
                       >
                         <Text style={s.buttonText}>Ver archivo</Text>
                       </Pressable>
@@ -1093,7 +1093,7 @@ export default function Documentos() {
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
                       <Pressable
                         style={[s.button, { paddingVertical: 8 }]}
-                        onPress={() => openUrl(signedUrls.cedula_dorso || record.cedula_dorso_url)}
+                        onPress={() => openStoredDocument(record.cedula_dorso_url)}
                       >
                         <Text style={s.buttonText}>Ver archivo</Text>
                       </Pressable>
@@ -1135,7 +1135,7 @@ export default function Documentos() {
                 />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
                   {record?.firma_url && (
-                    <Pressable style={[s.button, { paddingVertical: 8 }]} onPress={() => openUrl(signedUrls.firma || record.firma_url)}>
+                    <Pressable style={[s.button, { paddingVertical: 8 }]} onPress={() => openStoredDocument(record.firma_url)}>
                       <Text style={s.buttonText}>Ver archivo</Text>
                     </Pressable>
                   )}
