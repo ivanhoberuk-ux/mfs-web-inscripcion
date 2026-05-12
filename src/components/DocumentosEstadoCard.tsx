@@ -23,7 +23,6 @@ type Reg = {
 const DOC_LABELS: Record<string, string> = {
   cedula_frente_url: 'Cédula (frente)',
   cedula_dorso_url: 'Cédula (dorso)',
-  ficha_medica_url: 'Ficha médica',
   firma_url: 'Firma',
   autorizacion_url: 'Permiso del menor',
 }
@@ -49,7 +48,7 @@ function calcAge(d: Date): number {
 }
 
 function requiredDocs(r: Reg): string[] {
-  const base = ['cedula_frente_url', 'cedula_dorso_url', 'ficha_medica_url', 'firma_url']
+  const base = ['cedula_frente_url', 'cedula_dorso_url', 'firma_url']
   const nac = parseNacimiento(r.nacimiento)
   const edad = nac ? calcAge(nac) : null
   // 'Hijo' role doesn't need 'Permiso del Menor' (per memory)
