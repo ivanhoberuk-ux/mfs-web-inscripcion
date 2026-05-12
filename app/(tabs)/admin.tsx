@@ -21,6 +21,7 @@ import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
+import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
 
 // ===== Tipos base =====
 type Registro = {
