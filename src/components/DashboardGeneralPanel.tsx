@@ -237,12 +237,107 @@ export function DashboardGeneralPanel() {
   const maxDia = Math.max(1, ...porDia.map(d => d.count));
   const maxExp = Math.max(1, ...porExperiencia.map(r => r.value));
 
+  // ===== Exportar a Excel multi-hoja =====
+  async function exportExcel() {
+    try {
+      const wb = XLSX.utils.book_new();
+      const ctx = puebloFiltro === 'all' ? 'Todos los pueblos' : (puebloMap[puebloFiltro]?.nombre || 'Pueblo');
+
+      const addSheet = (name: string, rows: any[][]) => {
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        // header style
+        const cols = rows[0]?.length || 0;
+        for (let c = 0; c < cols; c++) {
+          const ref = XLSX.utils.encode_cell({ r: 0, c });
+          if (ws[ref]) ws[ref].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { patternType: 'solid', fgColor: { rgb: '1E40AF' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+          };
+        }
+        // auto-width
+        const widths: number[] = [];
+        rows.forEach(r => r.forEach((v, i) => {
+          const len = String(v ?? '').length + 2;
+          if (len > (widths[i] || 0)) widths[i] = Math.min(50, len);
+        }));
+        ws['!cols'] = widths.map(w => ({ wch: Math.max(10, w) }));
+        ws['!freeze'] = { xSplit: 0, ySplit: 1 } as any;
+        ws['!views'] = [{ state: 'frozen', ySplit: 1 }] as any;
+        XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+      };
+
+      // Resumen
+      addSheet('Resumen', [
+        ['Métrica', 'Valor'],
+        ['Año', year],
+        ['Contexto', ctx],
+        ['Generado', humanDate()],
+        ['Total inscriptos', totales.total],
+        ['Confirmados', totales.confirmados],
+        ['Lista de espera', totales.espera],
+        ['Cancelados', totales.cancelados],
+        ['Hijos', totales.hijos],
+        ['Jefes', totales.jefes],
+        ['De Schoenstatt', totales.schoenstatt],
+        ['Misionaron antes', totales.veteranos],
+      ]);
+
+      // Por pueblo
+      addSheet('Por pueblo', [
+        ['Pueblo', 'Total', 'Confirmados', 'Lista espera', 'Hijos', 'Cupo máx', 'Ocupación %'],
+        ...porPueblo.map(p => [
+          p.nombre, p.total, p.confirmados, p.espera, p.hijos, p.cupo_max,
+          p.cupo_max > 0 ? Math.round((p.confirmados / p.cupo_max) * 100) : 0,
+        ]),
+      ]);
+
+      // Edades exactas
+      const edadesRows: any[][] = [['Edad', 'Cantidad'], ...edadesExactas.entries.map(e => [e.edad, e.count])];
+      if (edadesExactas.sinFecha > 0) edadesRows.push(['Sin fecha', edadesExactas.sinFecha]);
+      addSheet('Edades', edadesRows);
+
+      // Por rol
+      addSheet('Por rol', [['Rol', 'Cantidad'], ...porRol.map(r => [r.label.replace(/^\S+\s/, ''), r.value])]);
+
+      // Schoenstatt - ramas
+      addSheet('Ramas Schoenstatt', [['Rama', 'Cantidad'], ...porRama.map(r => [r.label, r.value])]);
+
+      // Por día
+      addSheet('Inscripciones por día', [
+        ['Fecha', 'Cantidad'],
+        ...porDia.map(d => [d.fecha, d.count]),
+        ['Total 30 días', porDia.reduce((a, b) => a + b.count, 0)],
+        ['Promedio diario', Number((porDia.reduce((a, b) => a + b.count, 0) / 30).toFixed(2))],
+      ]);
+
+      // Talles
+      addSheet('Talles remera', [['Talle', 'Cantidad'], ...porTalle.map(t => [t.label, t.value])]);
+
+      // Experiencia
+      addSheet('Experiencia', [['Experiencia', 'Cantidad'], ...porExperiencia.map(r => [r.label.replace(/^\S+\s/, ''), r.value])]);
+
+      // Hijos por pueblo
+      addSheet('Hijos por pueblo', [
+        ['Pueblo', 'Hijos'],
+        ...porPueblo.filter(p => p.hijos > 0).map(p => [p.nombre, p.hijos]),
+      ]);
+
+      const out = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const fileName = `MFS_dashboard_${year}_${puebloFiltro === 'all' ? 'todos' : 'pueblo'}_${fileStamp()}.xlsx`;
+      await shareOrDownload(blob, fileName);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar', e?.message ?? String(e));
+    }
+  }
+
   return (
     <View style={{ gap: 8 }}>
       {/* Filtros */}
       <View style={[s.card, { marginBottom: 4 }]}>
         <Text style={[s.subtitle, { marginBottom: 8 }]}>📊 Dashboard General — Año {year}</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
           {[2025, 2026, 2027].map(y => (
             <Pressable key={y} onPress={() => setYear(y)}
               style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: y === year ? '#0a7ea4' : '#f3f4f6' }}>
