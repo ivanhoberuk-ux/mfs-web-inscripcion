@@ -675,6 +675,7 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -690,6 +691,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -704,6 +706,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowPlantillas(false)
+              setShowDashboard(false)
             }}
           >
             <Text style={s.buttonText}>
