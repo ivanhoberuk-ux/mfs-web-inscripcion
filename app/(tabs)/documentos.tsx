@@ -952,7 +952,7 @@ export default function Documentos() {
                     <Image
                       source={{ uri: bust(signedUrls.ficha) }}
                       style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   )}
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
@@ -996,7 +996,7 @@ export default function Documentos() {
                     <Image
                       source={{ uri: bust(signedUrls.autorizacion) }}
                       style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   )}
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
@@ -1034,12 +1034,12 @@ export default function Documentos() {
                   <Image
                     source={{ uri: bust(signedUrls.cedula_frente) }}
                     style={{ width: '49%', height: 150, borderRadius: 6 }}
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                   <Image
                     source={{ uri: bust(signedUrls.cedula_dorso) }}
                     style={{ width: '49%', height: 150, borderRadius: 6 }}
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
@@ -1087,7 +1087,7 @@ export default function Documentos() {
                       <Image
                         source={{ uri: bust(signedUrls.cedula_frente) }}
                         style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                        resizeMode="cover"
+                        resizeMode="contain"
                       />
                     )}
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
@@ -1123,7 +1123,7 @@ export default function Documentos() {
                       <Image
                         source={{ uri: bust(signedUrls.cedula_dorso) }}
                         style={{ width: '100%', height: 150, marginTop: 6, borderRadius: 6 }}
-                        resizeMode="cover"
+                        resizeMode="contain"
                       />
                     )}
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
