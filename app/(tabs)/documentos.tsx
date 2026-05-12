@@ -50,6 +50,7 @@ export default function Documentos() {
 
   // Firma
   const [savingSign, setSavingSign] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ kind: string; pct: number } | null>(null);
   const padRef = useRef<SignaturePadHandle | null>(null);
   const [firmaPreview, setFirmaPreview] = useState<string | null>(null);
 
