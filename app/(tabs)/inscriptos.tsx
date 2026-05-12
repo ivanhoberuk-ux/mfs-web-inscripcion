@@ -182,6 +182,15 @@ export default function VerInscriptosAdmin() {
         q = q.eq('pueblo_id', puebloId);
       }
 
+      // Búsqueda server-side: si hay término, buscar en toda la BD (no solo página actual)
+      const term = searchTerm.trim()
+      if (term) {
+        const safe = term.replace(/[%,()]/g, ' ')
+        q = q.or(
+          `nombres.ilike.%${safe}%,apellidos.ilike.%${safe}%,ci.ilike.%${safe}%,email.ilike.%${safe}%`
+        )
+      }
+
       const from = offRef.current
       const to = from + PAGE - 1
       const { data, error } = await q.range(from, to)
@@ -245,6 +254,14 @@ export default function VerInscriptosAdmin() {
     if (accessChecked) runSearch(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puebloId, accessChecked])
+
+  // Debounce de búsqueda server-side
+  useEffect(() => {
+    if (!accessChecked) return
+    const t = setTimeout(() => runSearch(true), 350)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm])
 
   // ===== CSV (INCLUYE CI) =====
   function csvEscape(v: string) {
