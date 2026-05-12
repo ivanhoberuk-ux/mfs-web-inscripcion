@@ -251,7 +251,14 @@ export async function updateDocumento(
     cedula_dorso_url: string | null;
   }>
 ) {
-  const { error } = await supabase.from('registros').update(fields).eq('id', id);
+  const cleanFields = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== undefined)
+  );
+
+  const { error } = await supabase.rpc('update_registro_documentos_json' as any, {
+    p_registro_id: id,
+    p_fields: cleanFields,
+  });
   if (error) throw error;
 }
 
