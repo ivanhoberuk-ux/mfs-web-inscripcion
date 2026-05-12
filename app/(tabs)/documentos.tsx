@@ -510,7 +510,11 @@ export default function Documentos() {
 
       const ext = (asset.fileName?.split('.').pop() || 'jpg').toLowerCase();
       const path = `registros/${record.id}/${kind}.${ext}`;
-      const url = await uploadToStorage('documentos', path, asset.uri);
+      setUploadProgress({ kind, pct: 0 });
+      const url = await uploadToStorage('documentos', path, asset.uri, (pct) =>
+        setUploadProgress({ kind, pct })
+      );
+      setUploadProgress(null);
       if (!url) {
         Alert.alert('No se pudo subir la imagen');
         return;
