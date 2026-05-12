@@ -608,17 +608,18 @@ export default function Documentos() {
 
       // Subimos el PDF al storage (web: blob: URL; nativo: file:// URI)
       const storagePath = `registros/${record.id}/consentimiento.pdf`;
-      const publicURL = await uploadToStorage('documentos', storagePath, uriOrUrl);
-      if (!publicURL) throw new Error('No se pudo subir el PDF');
+      const savedPath = await uploadToStorage('documentos', storagePath, uriOrUrl);
+      if (!savedPath) throw new Error('No se pudo subir el PDF');
 
       // Actualizá tu registro si corresponde (descomentar si lo usás)
       // await updateDocumento(record.id, { autorizacion_url: publicURL });
 
       // Abrir y/o descargar
+      const downloadUrl = await publicUrl('documentos', savedPath);
       if (Platform.OS === 'web') {
-        await shareOrDownload(publicURL, `consentimiento_${record.id}.pdf`);
+        await shareOrDownload(downloadUrl, `consentimiento_${record.id}.pdf`);
       } else {
-        await openUrl(publicURL);
+        await openUrl(downloadUrl);
       }
 
       Alert.alert('PDF generado', 'Se subió el consentimiento.');
