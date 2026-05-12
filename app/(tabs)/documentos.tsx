@@ -248,6 +248,10 @@ export default function Documentos() {
     );
   }
   function storagePathFromPublicUrl(url: string): string | null {
+    if (!/^https?:\/\//i.test(url)) {
+      return url.replace(/^\/+/, '').split('?')[0];
+    }
+
     // Soporta tanto URLs públicas como signed URLs
     const publicMarker = '/storage/v1/object/public/documentos/';
     const signedMarker = '/storage/v1/object/sign/documentos/';
