@@ -1051,6 +1051,11 @@ export default function Inscribir() {
             Edad: {computedAge} {computedAge >= 18 ? '(Mayor de edad)' : '(Menor de edad)'}
           </Text>
         )}
+        {rol === 'Misionero' && computedAge !== null && computedAge > 25 && (
+          <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
+            ⚠️ Los Misioneros deben tener hasta 25 años. Inscribite como Tío/a.
+          </Text>
+        )}
 
         <Label>Email</Label>
         <TextInput
