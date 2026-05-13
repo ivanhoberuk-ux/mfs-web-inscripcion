@@ -652,6 +652,7 @@ export default function Inscribir() {
           .from('registros')
           .select('id, nombres, apellidos')
           .eq('ci', ciNormalizado)
+          .is('deleted_at', null)
           .maybeSingle()
 
         if (checkError) {
@@ -671,6 +672,28 @@ export default function Inscribir() {
               'Cédula duplicada',
               `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
             )
+          }
+          return
+        }
+
+        // Verificar duplicado por nombre+apellido+email (cubre tipeos de cédula)
+        const emailCheck = (user?.email || normEmail(email)).toLowerCase()
+        const { data: existePersona } = await supabase
+          .from('registros')
+          .select('id, ci, nombres, apellidos')
+          .ilike('nombres', nombres.trim())
+          .ilike('apellidos', apellidos.trim())
+          .ilike('email', emailCheck)
+          .is('deleted_at', null)
+          .maybeSingle()
+
+        if (existePersona) {
+          setSaving(false)
+          const msg = `⚠️ Inscripción duplicada\n\n${existePersona.nombres} ${existePersona.apellidos} ya está inscripto/a con este email (cédula ${existePersona.ci}).\n\nSi necesitás corregir datos, contactá con los organizadores.`
+          if (typeof window !== 'undefined' && window.alert) {
+            window.alert(msg)
+          } else {
+            Alert.alert('Inscripción duplicada', msg)
           }
           return
         }
