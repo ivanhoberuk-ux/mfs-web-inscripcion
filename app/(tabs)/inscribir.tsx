@@ -523,6 +523,11 @@ export default function Inscribir() {
         e.nacimiento = 'Usá formato DD-MM-AAAA válido.'
       }
 
+      // 🔴 Límite de edad para Misioneros: máximo 25 años
+      if (rol === 'Misionero' && computedAge !== null && computedAge > 25) {
+        e.nacimiento = `Los Misioneros deben tener hasta 25 años. Si tenés más de 25, inscribite como Tío/a.`
+      }
+
       // Pertenencia a Schoenstatt
       if (perteneceSchoenstatt !== true && perteneceSchoenstatt !== false) {
         e.perteneceSchoenstatt = 'Elegí Sí o No.'
