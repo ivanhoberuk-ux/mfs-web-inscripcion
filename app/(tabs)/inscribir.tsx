@@ -525,12 +525,12 @@ export default function Inscribir() {
 
       // Límite de edad para Misioneros: máximo 25 años
       if (rol === 'Misionero' && computedAge !== null && computedAge > 25) {
-        e.nacimiento = `¡Qué lindo que quieras seguir misionando! 💛 Lastimosamente ya pasó el límite de edad para ser Misionero en las Misiones Familiares. Podés inscribirte como Tío/a y seguir siendo parte de esta hermosa misión 🙌`
+        e.nacimiento = `¡Qué lindo que quieras seguir misionando! 💛 Lastimosamente ya pasó el límite de edad para ser Misionero en las Misiones Familiares.`
       }
 
       // Límite de edad para Hijos: máximo 14 años
       if (rol === 'Hijo' && computedAge !== null && computedAge > 14) {
-        e.nacimiento = `¡Ya sos grande! 🌟 Es momento de que vivas la misión como Misionero propiamente dicho. ¡Animate a inscribirte como Misionero!`
+        e.nacimiento = `¡Tu hijo/a ya es grande! 🌟 Es momento de que viva la misión como Misionero propiamente dicho. ¡Animate a inscribirlo/a como Misionero!`
       }
 
       // Pertenencia a Schoenstatt
@@ -1058,12 +1058,12 @@ export default function Inscribir() {
         )}
         {rol === 'Misionero' && computedAge !== null && computedAge > 25 && (
           <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
-            💛 ¡Qué lindo que quieras seguir misionando! Lastimosamente ya pasó el límite de edad para ser Misionero en las Misiones Familiares. ¡Pero podés inscribirte como Tío/a y seguir siendo parte de esta hermosa misión! 🙌
+            💛 ¡Qué lindo que quieras seguir misionando! Lastimosamente ya pasó el límite de edad para ser Misionero en las Misiones Familiares.
           </Text>
         )}
         {rol === 'Hijo' && computedAge !== null && computedAge > 14 && (
           <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
-            🌟 ¡Ya sos grande! Es momento de que vivas la misión como Misionero propiamente dicho. ¡Animate a inscribirte como Misionero! ✨
+            🌟 ¡Tu hijo/a ya es grande! Es momento de que viva la misión como Misionero propiamente dicho. ¡Animate a inscribirlo/a como Misionero! ✨
           </Text>
         )}
 
