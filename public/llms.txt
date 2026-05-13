@@ -1,0 +1,11 @@
+# MFS Paraguay
+
+> Plataforma oficial de inscripción y gestión de las Misiones Familiares de Schoenstatt en Paraguay. Comunidad de fe, servicio y formación familiar.
+
+## Pages
+
+- [Inicio](/): Bienvenida, accesos rápidos y estado de inscripción.
+- [Inscribirme](/inscribir): Formulario de inscripción anual a las misiones.
+- [Pueblos](/pueblos): Lista de pueblos disponibles para misionar.
+- [Documentos](/documentos): Carga y seguimiento de documentos requeridos.
+- [Login](/login): Acceso y registro de cuenta para misioneros.

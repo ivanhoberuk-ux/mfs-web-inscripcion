@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mfspy.org.py/sitemap.xml
