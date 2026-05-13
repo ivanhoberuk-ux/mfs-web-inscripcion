@@ -1058,7 +1058,12 @@ export default function Inscribir() {
         )}
         {rol === 'Misionero' && computedAge !== null && computedAge > 25 && (
           <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
-            ⚠️ Los Misioneros deben tener hasta 25 años. Inscribite como Tío/a.
+            💛 ¡Qué lindo que quieras seguir misionando! Lastimosamente ya pasó el límite de edad para ser Misionero en las Misiones Familiares. ¡Pero podés inscribirte como Tío/a y seguir siendo parte de esta hermosa misión! 🙌
+          </Text>
+        )}
+        {rol === 'Hijo' && computedAge !== null && computedAge > 14 && (
+          <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
+            🌟 ¡Ya sos grande! Es momento de que vivas la misión como Misionero propiamente dicho. ¡Animate a inscribirte como Misionero! ✨
           </Text>
         )}
 
