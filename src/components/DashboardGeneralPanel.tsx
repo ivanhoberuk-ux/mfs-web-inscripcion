@@ -176,13 +176,33 @@ export function DashboardGeneralPanel() {
 
   // ===== Rama Schoenstatt =====
   const porRama = useMemo(() => {
+    const RAMA_ORDER = [
+      'Pioneros',
+      'Apóstoles de María',
+      'Juventud Masculina',
+      'Juventud Femenina',
+      'Discernimiento',
+      'Colaboradores',
+      'Liga Apostólica',
+      'Federación Apostólica',
+      'Instituto Secular',
+    ];
     const m: Record<string, number> = {};
     filtered.forEach(r => {
       if (!r.pertenece_schoenstatt) return;
       const k = (r.rama_schoenstatt || 'Sin especificar').trim();
       m[k] = (m[k] || 0) + 1;
     });
-    return Object.entries(m).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+    return Object.entries(m)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => {
+        const ai = RAMA_ORDER.indexOf(a.label);
+        const bi = RAMA_ORDER.indexOf(b.label);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return b.value - a.value;
+      });
   }, [filtered]);
 
   // ===== Inscripciones por día (últimos 30 días) =====

@@ -1264,10 +1264,11 @@ export default function Inscribir() {
             <Label>¿Dónde?</Label>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {[
+                'Pioneros',
+                'Apóstoles de María',
                 'Juventud Masculina',
                 'Juventud Femenina',
-                'Pioneros',
-                'Apóstoles',
+                'Discernimiento',
                 'Colaboradores',
                 'Liga Apostólica',
                 'Federación Apostólica',
