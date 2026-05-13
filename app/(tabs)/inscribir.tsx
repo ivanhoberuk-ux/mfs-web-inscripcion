@@ -523,6 +523,11 @@ export default function Inscribir() {
         e.nacimiento = 'Usá formato DD-MM-AAAA válido.'
       }
 
+      // 🔴 Límite de edad para Misioneros: máximo 25 años
+      if (rol === 'Misionero' && computedAge !== null && computedAge > 25) {
+        e.nacimiento = `Los Misioneros deben tener hasta 25 años. Si tenés más de 25, inscribite como Tío/a.`
+      }
+
       // Pertenencia a Schoenstatt
       if (perteneceSchoenstatt !== true && perteneceSchoenstatt !== false) {
         e.perteneceSchoenstatt = 'Elegí Sí o No.'
@@ -647,6 +652,7 @@ export default function Inscribir() {
           .from('registros')
           .select('id, nombres, apellidos')
           .eq('ci', ciNormalizado)
+          .is('deleted_at', null)
           .maybeSingle()
 
         if (checkError) {
@@ -666,6 +672,28 @@ export default function Inscribir() {
               'Cédula duplicada',
               `La cédula ${ciNormalizado} ya está registrada para ${existente.nombres} ${existente.apellidos}.\n\nSi necesitás actualizar tus datos, contactá con los organizadores.`
             )
+          }
+          return
+        }
+
+        // Verificar duplicado por nombre+apellido+email (cubre tipeos de cédula)
+        const emailCheck = (user?.email || normEmail(email)).toLowerCase()
+        const { data: existePersona } = await supabase
+          .from('registros')
+          .select('id, ci, nombres, apellidos')
+          .ilike('nombres', nombres.trim())
+          .ilike('apellidos', apellidos.trim())
+          .ilike('email', emailCheck)
+          .is('deleted_at', null)
+          .maybeSingle()
+
+        if (existePersona) {
+          setSaving(false)
+          const msg = `⚠️ Inscripción duplicada\n\n${existePersona.nombres} ${existePersona.apellidos} ya está inscripto/a con este email (cédula ${existePersona.ci}).\n\nSi necesitás corregir datos, contactá con los organizadores.`
+          if (typeof window !== 'undefined' && window.alert) {
+            window.alert(msg)
+          } else {
+            Alert.alert('Inscripción duplicada', msg)
           }
           return
         }
@@ -1021,6 +1049,11 @@ export default function Inscribir() {
         {computedAge !== null && (
           <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 4 }]}>
             Edad: {computedAge} {computedAge >= 18 ? '(Mayor de edad)' : '(Menor de edad)'}
+          </Text>
+        )}
+        {rol === 'Misionero' && computedAge !== null && computedAge > 25 && (
+          <Text style={{ color: colors.error, marginTop: 4, fontSize: 12, fontWeight: '600' }}>
+            ⚠️ Los Misioneros deben tener hasta 25 años. Inscribite como Tío/a.
           </Text>
         )}
 
