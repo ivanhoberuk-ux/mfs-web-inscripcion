@@ -125,9 +125,18 @@ export default function BajaScreen() {
       registro.estado === 'lista_espera' ? 'en lista de espera' :
       registro.estado
 
+    const mensaje = `¿Estás seguro que querés dar de baja tu inscripción ${estadoTexto} para ${registro.pueblo_nombre}?\n\nEsta acción no se puede deshacer.`
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`¿Confirmar baja?\n\n${mensaje}`)) {
+        procesarBaja()
+      }
+      return
+    }
+
     Alert.alert(
       '¿Confirmar baja? 🤔',
-      `¿Estás seguro que querés dar de baja tu inscripción ${estadoTexto} para ${registro.pueblo_nombre}?\n\nEsta acción no se puede deshacer.`,
+      mensaje,
       [
         { text: 'Cancelar', style: 'cancel' },
         { 
