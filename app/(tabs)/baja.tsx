@@ -2,7 +2,7 @@
 // Página para que los usuarios autenticados puedan buscar su inscripción y darse de baja
 
 import React, { useState, useRef, useEffect } from 'react'
-import { View, Text, ScrollView, Alert, ActivityIndicator, Animated } from 'react-native'
+import { View, Text, ScrollView, Alert, ActivityIndicator, Animated, Platform } from 'react-native'
 import { Card } from '../../src/components/Card'
 import { Field } from '../../src/components/Field'
 import { Button } from '../../src/components/Button'
@@ -125,9 +125,18 @@ export default function BajaScreen() {
       registro.estado === 'lista_espera' ? 'en lista de espera' :
       registro.estado
 
+    const mensaje = `¿Estás seguro que querés dar de baja tu inscripción ${estadoTexto} para ${registro.pueblo_nombre}?\n\nEsta acción no se puede deshacer.`
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`¿Confirmar baja?\n\n${mensaje}`)) {
+        procesarBaja()
+      }
+      return
+    }
+
     Alert.alert(
       '¿Confirmar baja? 🤔',
-      `¿Estás seguro que querés dar de baja tu inscripción ${estadoTexto} para ${registro.pueblo_nombre}?\n\nEsta acción no se puede deshacer.`,
+      mensaje,
       [
         { text: 'Cancelar', style: 'cancel' },
         { 
@@ -154,22 +163,18 @@ export default function BajaScreen() {
 
       if (error) throw error
 
-      Alert.alert(
-        '✅ Baja procesada',
-        `Tu inscripción ha sido dada de baja exitosamente.${
-          data.promovido 
-            ? `\n\n🎉 Se notificó a la siguiente persona en lista de espera.`
-            : ''
-        }`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setRegistro(null)
-            }
-          }
-        ]
-      )
+      const mensajeOk = `Tu inscripción ha sido dada de baja exitosamente.${
+        data.promovido ? `\n\n🎉 Se notificó a la siguiente persona en lista de espera.` : ''
+      }`
+
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined') window.alert(`✅ Baja procesada\n\n${mensajeOk}`)
+        setRegistro(null)
+      } else {
+        Alert.alert('✅ Baja procesada', mensajeOk, [
+          { text: 'OK', onPress: () => setRegistro(null) }
+        ])
+      }
 
     } catch (error: any) {
       console.error('Error al procesar baja:', error)
