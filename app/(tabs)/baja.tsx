@@ -163,22 +163,18 @@ export default function BajaScreen() {
 
       if (error) throw error
 
-      Alert.alert(
-        '✅ Baja procesada',
-        `Tu inscripción ha sido dada de baja exitosamente.${
-          data.promovido 
-            ? `\n\n🎉 Se notificó a la siguiente persona en lista de espera.`
-            : ''
-        }`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setRegistro(null)
-            }
-          }
-        ]
-      )
+      const mensajeOk = `Tu inscripción ha sido dada de baja exitosamente.${
+        data.promovido ? `\n\n🎉 Se notificó a la siguiente persona en lista de espera.` : ''
+      }`
+
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined') window.alert(`✅ Baja procesada\n\n${mensajeOk}`)
+        setRegistro(null)
+      } else {
+        Alert.alert('✅ Baja procesada', mensajeOk, [
+          { text: 'OK', onPress: () => setRegistro(null) }
+        ])
+      }
 
     } catch (error: any) {
       console.error('Error al procesar baja:', error)
