@@ -2,7 +2,7 @@
 // Página para que los usuarios autenticados puedan buscar su inscripción y darse de baja
 
 import React, { useState, useRef, useEffect } from 'react'
-import { View, Text, ScrollView, Alert, ActivityIndicator, Animated } from 'react-native'
+import { View, Text, ScrollView, Alert, ActivityIndicator, Animated, Platform } from 'react-native'
 import { Card } from '../../src/components/Card'
 import { Field } from '../../src/components/Field'
 import { Button } from '../../src/components/Button'
