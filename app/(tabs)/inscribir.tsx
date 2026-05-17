@@ -324,16 +324,18 @@ export default function Inscribir() {
     (async () => {
       try {
         setLoadingEstado(true)
+        setErrorEstado(null)
         const { config, estado } = await fetchEstadoInscripcionActivo()
         setConfigInsc(config)
         setEstadoInsc(estado)
-      } catch (e) {
+      } catch (e: any) {
         console.warn('No se pudo cargar estado de inscripción', e)
+        setErrorEstado(e?.message || 'Error de conexión')
       } finally {
         setLoadingEstado(false)
       }
     })()
-  }, [])
+  }, [reintentoEstado])
 
   // ---------- Helpers UI ----------
   function Label({ children }: { children: React.ReactNode }) {
