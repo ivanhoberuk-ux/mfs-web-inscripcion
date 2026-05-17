@@ -115,6 +115,8 @@ export default function Inscribir() {
   const [estadoInsc, setEstadoInsc] = useState<EstadoInscripcion>('sin_config')
   const [configInsc, setConfigInsc] = useState<ConfiguracionInscripcion | null>(null)
   const [loadingEstado, setLoadingEstado] = useState(true)
+  const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  const [reintentoEstado, setReintentoEstado] = useState(0)
 
   // URLs de plantillas (carga asíncrona de URLs firmadas)
   const [URL_PERMISO, setUrlPermiso] = useState<string>('');
@@ -322,16 +324,18 @@ export default function Inscribir() {
     (async () => {
       try {
         setLoadingEstado(true)
+        setErrorEstado(null)
         const { config, estado } = await fetchEstadoInscripcionActivo()
         setConfigInsc(config)
         setEstadoInsc(estado)
-      } catch (e) {
+      } catch (e: any) {
         console.warn('No se pudo cargar estado de inscripción', e)
+        setErrorEstado(e?.message || 'Error de conexión')
       } finally {
         setLoadingEstado(false)
       }
     })()
-  }, [])
+  }, [reintentoEstado])
 
   // ---------- Helpers UI ----------
   function Label({ children }: { children: React.ReactNode }) {
@@ -837,6 +841,26 @@ export default function Inscribir() {
     estadoInsc === 'cerrado_antes' || estadoInsc === 'cerrado_despues' || estadoInsc === 'sin_config';
   const faseAnticipada = estadoInsc === 'fase_anticipada';
 
+  // Pantalla de error de carga (red/Supabase) — diferente a "cerradas"
+  if (!loadingEstado && errorEstado && !modoEdicion) {
+    return (
+      <View style={[s.screen, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Text style={{ fontSize: 56, marginBottom: 12 }}>📡</Text>
+        <Text style={[s.title, { textAlign: 'center', marginBottom: 12 }]}>No pudimos cargar las inscripciones</Text>
+        <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginBottom: 8 }]}>
+          Parece un problema de conexión. Probá de nuevo en unos segundos.
+        </Text>
+        <Text style={[s.text, { textAlign: 'center', color: colors.text.tertiary.light, marginBottom: 24, fontSize: 12 }]}>
+          {errorEstado}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Button variant="primary" onPress={() => setReintentoEstado((n) => n + 1)}>Reintentar</Button>
+          <Button variant="secondary" onPress={() => router.push('/')}>Volver al inicio</Button>
+        </View>
+      </View>
+    );
+  }
+
   // Pantalla de cierre completo
   if (!loadingEstado && inscripcionesCerradas && !modoEdicion) {
     const titulo =
@@ -858,7 +882,10 @@ export default function Inscribir() {
         <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginBottom: 24 }]}>
           {detalle}
         </Text>
-        <Button variant="secondary" onPress={() => router.push('/')}>Volver al inicio</Button>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Button variant="secondary" onPress={() => setReintentoEstado((n) => n + 1)}>Reintentar</Button>
+          <Button variant="secondary" onPress={() => router.push('/')}>Volver al inicio</Button>
+        </View>
       </View>
     );
   }
