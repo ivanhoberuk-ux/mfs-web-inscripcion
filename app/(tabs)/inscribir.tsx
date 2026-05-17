@@ -115,6 +115,8 @@ export default function Inscribir() {
   const [estadoInsc, setEstadoInsc] = useState<EstadoInscripcion>('sin_config')
   const [configInsc, setConfigInsc] = useState<ConfiguracionInscripcion | null>(null)
   const [loadingEstado, setLoadingEstado] = useState(true)
+  const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  const [reintentoEstado, setReintentoEstado] = useState(0)
 
   // URLs de plantillas (carga asíncrona de URLs firmadas)
   const [URL_PERMISO, setUrlPermiso] = useState<string>('');
