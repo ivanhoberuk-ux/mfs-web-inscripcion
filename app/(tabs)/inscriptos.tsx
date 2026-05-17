@@ -634,6 +634,7 @@ export default function VerInscriptosAdmin() {
                     {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
                     <Text style={s.small}>CI: {r.ci || '-'}</Text>
                     <Text style={s.small}>Email: {r.email || '-'}</Text>
+                    <Text style={s.small}>📱 Teléfono: {r.telefono || '-'}</Text>
                     <Text style={s.small}>Pueblo: {pueblo} · Rol: {r.rol}</Text>
                     
                     {/* Mostrar roles administrativos */}
