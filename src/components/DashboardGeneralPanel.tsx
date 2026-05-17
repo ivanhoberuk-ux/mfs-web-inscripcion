@@ -87,18 +87,32 @@ export function DashboardGeneralPanel() {
   async function load() {
     try {
       setLoading(true);
-      const [{ data: regs, error: e1 }, { data: pbs, error: e2 }] = await Promise.all([
-        supabase
+      // Cargar pueblos
+      const { data: pbs, error: e2 } = await supabase
+        .from('pueblos').select('id, nombre, cupo_max').order('nombre');
+      if (e2) throw e2;
+
+      // Cargar registros paginando (Supabase tiene límite de 1000 filas por request)
+      const PAGE = 1000;
+      const allRegs: any[] = [];
+      let offset = 0;
+      // Loop hasta que una página devuelva menos de PAGE filas
+      // Seguridad: tope de 20 páginas (20.000 registros)
+      for (let i = 0; i < 20; i++) {
+        const { data: chunk, error: e1 } = await supabase
           .from('registros')
           .select('id, pueblo_id, nombres, apellidos, nacimiento, rol, es_jefe, pertenece_schoenstatt, rama_schoenstatt, misiono_antes, talle_remera, estado, created_at, año')
           .is('deleted_at', null)
           .eq('año', year)
-          .limit(5000),
-        supabase.from('pueblos').select('id, nombre, cupo_max').order('nombre'),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
-      setRegistros((regs || []) as any);
+          .order('created_at', { ascending: true })
+          .range(offset, offset + PAGE - 1);
+        if (e1) throw e1;
+        const got = chunk || [];
+        allRegs.push(...got);
+        if (got.length < PAGE) break;
+        offset += PAGE;
+      }
+      setRegistros(allRegs as any);
       setPueblos((pbs || []) as any);
     } catch (e: any) {
       console.error('Dashboard load error', e);
