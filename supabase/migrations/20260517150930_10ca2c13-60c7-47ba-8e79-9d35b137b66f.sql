@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.registros_ci_unique_idx;
