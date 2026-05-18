@@ -255,22 +255,29 @@ Deno.serve(async (req) => {
         ].filter(Boolean);
 
         if (recipientEmails.length > 0) {
-          try {
+          for (const recipientEmail of recipientEmails) {
+            try {
             await sendLovableEmail(
               {
                 from: `Misiones Familiares <noreply@${FROM_DOMAIN}>`,
                 sender_domain: SENDER_DOMAIN,
-                to: recipientEmails,
+                to: recipientEmail,
                 subject: `Resumen diario: documentos pendientes – ${puebloNombre}`,
                 html: summaryHtml,
                 text: `Resumen diario de documentos pendientes en ${puebloNombre}. Total pendientes: ${items.length}.`,
                 purpose: "transactional",
-                unsubscribe_token: `doc-summary-${puebloId}`,
-                idempotency_key: `doc-summary-${puebloId}-${today}`,
+                unsubscribe_token: `doc-summary-${recipientEmail.toLowerCase()}`,
+                idempotency_key: `doc-summary-${puebloId}-${recipientEmail.toLowerCase()}-${today}`,
               },
               { apiKey: LOVABLE_API_KEY }
             );
             summariesSent++;
+            } catch (emailError) {
+              console.error(`Failed to send summary for ${puebloNombre} to ${recipientEmail}:`, emailError);
+            }
+            await delay(600);
+          }
+          if (summariesSent > 0) {
             // Log one entry per pueblo summary
             logInserts.push({
               registro_id: items[0].id, // reference first registro
@@ -279,10 +286,7 @@ Deno.serve(async (req) => {
               pueblo_id: puebloId,
               fecha_envio: today,
             });
-          } catch (emailError) {
-            console.error(`Failed to send summary for ${puebloNombre}:`, emailError);
           }
-          await delay(600);
         }
       }
     }
