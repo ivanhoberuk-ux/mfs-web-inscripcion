@@ -718,6 +718,10 @@ export default function VerInscriptosAdmin() {
                           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Crear\nCuenta Admin</Text>
                         </Pressable>
                       )}
+                    </View>
+                  )}
+                  {(currentUserIsSuperAdmin || isPuebloAdmin) && (
+                    <View style={{ marginLeft: 8 }}>
                       <Pressable
                         onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
                         style={{
