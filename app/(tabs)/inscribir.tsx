@@ -990,20 +990,28 @@ export default function Inscribir() {
               </View>
             )
           })}
-          <Pressable
-            onPress={iniciarInscribirHijo}
-            style={[
-              s.button,
-              { marginTop: 12, backgroundColor: '#10B981', paddingVertical: 10 },
-            ]}
-          >
-            <Text style={[s.buttonText, { color: 'white' }]}>
-              ➕ Inscribir a un hijo/a
+          {misRegistros.some((r: any) => r.rol === 'Tio') ? (
+            <>
+              <Pressable
+                onPress={iniciarInscribirHijo}
+                style={[
+                  s.button,
+                  { marginTop: 12, backgroundColor: '#10B981', paddingVertical: 10 },
+                ]}
+              >
+                <Text style={[s.buttonText, { color: 'white' }]}>
+                  ➕ Inscribir a un hijo/a
+                </Text>
+              </Pressable>
+              <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 8 }]}>
+                Los niños chicos sin email se inscriben bajo tu cuenta. Cada hijo necesita su propia cédula.
+              </Text>
+            </>
+          ) : (
+            <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 12, fontStyle: 'italic' }]}>
+              ℹ️ Solo los Tíos pueden inscribir a sus hijos/as bajo su cuenta.
             </Text>
-          </Pressable>
-          <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 8 }]}>
-            Los niños chicos sin email se inscriben bajo tu cuenta. Cada hijo necesita su propia cédula.
-          </Text>
+          )}
         </Card>
       )}
 
