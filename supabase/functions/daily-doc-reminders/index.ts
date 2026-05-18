@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
             html: body,
             text: `Hola ${r.nombres}. Te recordamos que faltan estos documentos: ${r.pendientes.join(", ")}.`,
             purpose: "transactional",
+            unsubscribe_token: `doc-reminder-${r.email.toLowerCase()}`,
             idempotency_key: `doc-reminder-${r.id}-${today}`,
           },
           { apiKey: LOVABLE_API_KEY }
@@ -264,6 +265,7 @@ Deno.serve(async (req) => {
                 html: summaryHtml,
                 text: `Resumen diario de documentos pendientes en ${puebloNombre}. Total pendientes: ${items.length}.`,
                 purpose: "transactional",
+                unsubscribe_token: `doc-summary-${puebloId}`,
                 idempotency_key: `doc-summary-${puebloId}-${today}`,
               },
               { apiKey: LOVABLE_API_KEY }
