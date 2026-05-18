@@ -164,6 +164,7 @@ Deno.serve(async (req) => {
                 `,
                 text: `Hola ${promoverResult.nombres}. Se liberó un lugar en ${pueblo?.nombre || 'tu pueblo'} y tu inscripción está ahora confirmada.`,
                 purpose: 'transactional',
+                unsubscribe_token: `promocion-${promoverResult.email.toLowerCase()}`,
                 idempotency_key: `promocion-${promoverResult.registro_id || promoverResult.email}-${Date.now()}`,
               },
               { apiKey: lovableApiKey }
@@ -252,6 +253,7 @@ Deno.serve(async (req) => {
               `,
               text: `Aviso de baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}. Estado anterior: ${estadoTxt}.`,
               purpose: 'transactional',
+              unsubscribe_token: `baja-admin-${cancelResult.pueblo_id}`,
               idempotency_key: `baja-admin-${registro_id}-${Date.now()}`,
             },
             { apiKey: lovableApiKey }
