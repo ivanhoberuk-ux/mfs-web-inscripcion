@@ -44,8 +44,8 @@ export function MiInscripcionCard() {
         if (!active) return
         const filtered = data.filter(r => r.año === AÑO)
         setRows(filtered)
-        // Primera vez que el registro propio aparece confirmado → popup de bienvenida
-        const propio = filtered.find(r => r.estado === 'confirmado' && r.email?.toLowerCase() === user.email?.toLowerCase())
+        // Primera vez que aparece confirmado → popup de bienvenida (titular, no hijos)
+        const propio = filtered.find(r => r.estado === 'confirmado' && r.rol !== 'Hijo')
         if (propio) {
           const key = `welcome_shown_${propio.id}`
           if (!storageGet(key)) {
