@@ -751,12 +751,16 @@ export default function Inscribir() {
         } catch {}
 
         // Mostrar mensaje según el estado
-        const titulo = result.estado === 'confirmado' 
-          ? '¡Inscripción confirmada!' 
+        const titulo = result.estado === 'confirmado'
+          ? '¡Inscripción confirmada!'
+          : result.estado === 'pendiente_validacion'
+          ? '🕓 Pendiente de validación'
           : '📋 Lista de espera'
-        
+
         const mensaje = result.estado === 'confirmado'
           ? `🎉 ¡Bienvenido/a a esta hermosa locura de amor!\n\nAhora te llevamos a cargar tus documentos.`
+          : result.estado === 'pendiente_validacion'
+          ? `${result.mensaje}\n\nMientras tanto podés cargar tus documentos.`
           : `${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
 
         Alert.alert(
