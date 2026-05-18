@@ -227,37 +227,39 @@ Deno.serve(async (req) => {
               </p>`
             : ''
 
-          await sendLovableEmail(
-            {
-              from: `MFS Inscripciones <noreply@${FROM_DOMAIN}>`,
-              sender_domain: SENDER_DOMAIN,
-              to: adminEmails,
-              subject: `📤 Baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}`,
-              html: `
-                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-                  <h2 style="color:#0369a1;">📤 Aviso de baja</h2>
-                  <p>Hola, te informamos que la siguiente persona se dio de baja del pueblo <strong>${pueblo.nombre}</strong>:</p>
-                  <div style="padding:16px;background:#f1f5f9;border-radius:8px;border-left:4px solid #ef4444;">
-                    <p style="margin:4px 0;"><strong>Nombre:</strong> ${registroCompleto.nombres} ${registroCompleto.apellidos}</p>
-                    <p style="margin:4px 0;"><strong>CI:</strong> ${registroCompleto.ci}</p>
-                    <p style="margin:4px 0;"><strong>Rol:</strong> ${registroCompleto.rol}</p>
-                    <p style="margin:4px 0;"><strong>Email:</strong> ${registroCompleto.email}</p>
-                    <p style="margin:4px 0;"><strong>Teléfono:</strong> ${registroCompleto.telefono}</p>
-                    <p style="margin:4px 0;"><strong>Estado anterior:</strong> ${estadoTxt}</p>
+          for (const adminEmail of adminEmails) {
+            await sendLovableEmail(
+              {
+                from: `MFS Inscripciones <noreply@${FROM_DOMAIN}>`,
+                sender_domain: SENDER_DOMAIN,
+                to: adminEmail,
+                subject: `📤 Baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}`,
+                html: `
+                  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                    <h2 style="color:#0369a1;">📤 Aviso de baja</h2>
+                    <p>Hola, te informamos que la siguiente persona se dio de baja del pueblo <strong>${pueblo.nombre}</strong>:</p>
+                    <div style="padding:16px;background:#f1f5f9;border-radius:8px;border-left:4px solid #ef4444;">
+                      <p style="margin:4px 0;"><strong>Nombre:</strong> ${registroCompleto.nombres} ${registroCompleto.apellidos}</p>
+                      <p style="margin:4px 0;"><strong>CI:</strong> ${registroCompleto.ci}</p>
+                      <p style="margin:4px 0;"><strong>Rol:</strong> ${registroCompleto.rol}</p>
+                      <p style="margin:4px 0;"><strong>Email:</strong> ${registroCompleto.email}</p>
+                      <p style="margin:4px 0;"><strong>Teléfono:</strong> ${registroCompleto.telefono}</p>
+                      <p style="margin:4px 0;"><strong>Estado anterior:</strong> ${estadoTxt}</p>
+                    </div>
+                    ${promovidoHtml}
+                    <p style="margin-top:16px;color:#64748b;font-size:13px;">
+                      Esta persona podrá inscribirse a otro pueblo si hay cupo disponible.
+                    </p>
                   </div>
-                  ${promovidoHtml}
-                  <p style="margin-top:16px;color:#64748b;font-size:13px;">
-                    Esta persona podrá inscribirse a otro pueblo si hay cupo disponible.
-                  </p>
-                </div>
-              `,
-              text: `Aviso de baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}. Estado anterior: ${estadoTxt}.`,
-              purpose: 'transactional',
-              unsubscribe_token: `baja-admin-${cancelResult.pueblo_id}`,
-              idempotency_key: `baja-admin-${registro_id}-${Date.now()}`,
-            },
-            { apiKey: lovableApiKey }
-          )
+                `,
+                text: `Aviso de baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}. Estado anterior: ${estadoTxt}.`,
+                purpose: 'transactional',
+                unsubscribe_token: `baja-admin-${adminEmail.toLowerCase()}`,
+                idempotency_key: `baja-admin-${registro_id}-${adminEmail.toLowerCase()}-${Date.now()}`,
+              },
+              { apiKey: lovableApiKey }
+            )
+          }
           console.log('Email de baja enviado a admins:', adminEmails)
         }
       } catch (notifyError) {
