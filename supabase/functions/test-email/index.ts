@@ -1,6 +1,6 @@
 // @ts-nocheck
 // Edge Function: test-email
-// Envía un email de prueba usando Resend — solo super_admin
+// Envía un email de prueba usando Lovable Emails — solo super_admin
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
         `,
         text: `¡Email de prueba exitoso!\n\nEste es un email de prueba del sistema de inscripciones MFS.\nLa configuración de correos está funcionando correctamente.\nFecha: ${new Date().toLocaleString()}`,
         purpose: 'transactional',
+        unsubscribe_token: `test-email-${email.toLowerCase()}-${user.id}`,
         idempotency_key: `test-email-${user.id}-${Date.now()}`,
       },
       { apiKey: lovableApiKey }
