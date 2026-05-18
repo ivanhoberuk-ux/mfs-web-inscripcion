@@ -3,6 +3,10 @@
 // Maneja la baja de un usuario y promueve automáticamente al siguiente en lista de espera
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+
+const SENDER_DOMAIN = 'notify.mfspy.org.py'
+const FROM_DOMAIN = 'mfspy.org.py'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -141,19 +145,15 @@ Deno.serve(async (req) => {
           .eq('id', cancelResult.pueblo_id)
           .single()
         
-        // Enviar email de promoción (requiere RESEND_API_KEY)
-        const resendKey = Deno.env.get('RESEND_API_KEY')
-        if (resendKey) {
+        // Enviar email de promoción
+        const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
+        if (lovableApiKey) {
           try {
-            const emailResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${resendKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: 'MFS Inscripciones <onboarding@resend.dev>',
-                to: [promoverResult.email],
+            await sendLovableEmail(
+              {
+                from: `MFS Inscripciones <noreply@${FROM_DOMAIN}>`,
+                sender_domain: SENDER_DOMAIN,
+                to: promoverResult.email,
                 subject: '¡Has sido promovido de la lista de espera!',
                 html: `
                   <h2>¡Buenas noticias!</h2>
@@ -162,19 +162,18 @@ Deno.serve(async (req) => {
                   <p>Tu inscripción está ahora <strong>confirmada</strong>.</p>
                   <p>¡Nos vemos pronto!</p>
                 `,
-              }),
-            })
-            
-            if (emailResponse.ok) {
-              console.log('Email de promoción enviado a:', promoverResult.email)
-            } else {
-              console.error('Error al enviar email:', await emailResponse.text())
-            }
+                text: `Hola ${promoverResult.nombres}. Se liberó un lugar en ${pueblo?.nombre || 'tu pueblo'} y tu inscripción está ahora confirmada.`,
+                purpose: 'transactional',
+                idempotency_key: `promocion-${promoverResult.registro_id || promoverResult.email}-${Date.now()}`,
+              },
+              { apiKey: lovableApiKey }
+            )
+            console.log('Email de promoción enviado a:', promoverResult.email)
           } catch (emailError) {
             console.error('Error enviando email de promoción:', emailError)
           }
         } else {
-          console.log('RESEND_API_KEY no configurado. Email de promoción pendiente para:', promoverResult.email)
+          console.log('LOVABLE_API_KEY no configurado. Email de promoción pendiente para:', promoverResult.email)
         }
       } else {
         console.log('No había nadie en lista de espera')
@@ -201,8 +200,8 @@ Deno.serve(async (req) => {
     }
 
     // 4. Notificar a admins del pueblo (pueblo_admin y co_admin_pueblo)
-    const resendKey = Deno.env.get('RESEND_API_KEY')
-    if (resendKey && pueblo && registroCompleto) {
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
+    if (lovableApiKey && pueblo && registroCompleto) {
       try {
         const { data: adminProfiles } = await supabase
           .from('profiles')
@@ -227,14 +226,10 @@ Deno.serve(async (req) => {
               </p>`
             : ''
 
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'MFS Inscripciones <onboarding@resend.dev>',
+          await sendLovableEmail(
+            {
+              from: `MFS Inscripciones <noreply@${FROM_DOMAIN}>`,
+              sender_domain: SENDER_DOMAIN,
               to: adminEmails,
               subject: `📤 Baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}`,
               html: `
@@ -255,8 +250,12 @@ Deno.serve(async (req) => {
                   </p>
                 </div>
               `,
-            }),
-          })
+              text: `Aviso de baja en ${pueblo.nombre}: ${registroCompleto.nombres} ${registroCompleto.apellidos}. Estado anterior: ${estadoTxt}.`,
+              purpose: 'transactional',
+              idempotency_key: `baja-admin-${registro_id}-${Date.now()}`,
+            },
+            { apiKey: lovableApiKey }
+          )
           console.log('Email de baja enviado a admins:', adminEmails)
         }
       } catch (notifyError) {

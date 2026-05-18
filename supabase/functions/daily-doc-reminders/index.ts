@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendLovableEmail } from "npm:@lovable.dev/email-js";
+
+const SENDER_DOMAIN = "notify.mfspy.org.py";
+const FROM_DOMAIN = "mfspy.org.py";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,7 +51,7 @@ Deno.serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const today = new Date().toISOString().split("T")[0];
@@ -130,21 +134,20 @@ Deno.serve(async (req) => {
         </div>
       `;
 
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Misiones Familiares <onboarding@resend.dev>",
-          to: [r.email],
-          subject: "Misiones Familiares: te faltan documentos por completar ✅",
-          html: body,
-        }),
-      });
-
-      if (res.ok) {
+      try {
+        await sendLovableEmail(
+          {
+            from: `Misiones Familiares <noreply@${FROM_DOMAIN}>`,
+            sender_domain: SENDER_DOMAIN,
+            to: r.email,
+            subject: "Misiones Familiares: te faltan documentos por completar ✅",
+            html: body,
+            text: `Hola ${r.nombres}. Te recordamos que faltan estos documentos: ${r.pendientes.join(", ")}.`,
+            purpose: "transactional",
+            idempotency_key: `doc-reminder-${r.id}-${today}`,
+          },
+          { apiKey: LOVABLE_API_KEY }
+        );
         emailsSent++;
         logInserts.push({
           registro_id: r.id,
@@ -153,8 +156,8 @@ Deno.serve(async (req) => {
           pueblo_id: r.pueblo_id,
           fecha_envio: today,
         });
-      } else {
-        console.error(`Failed to send email to ${r.email}:`, await res.text());
+      } catch (emailError) {
+        console.error(`Failed to send email to ${r.email}:`, emailError);
       }
       // Rate limit: wait 600ms between emails
       await delay(600);
@@ -251,21 +254,20 @@ Deno.serve(async (req) => {
         ].filter(Boolean);
 
         if (recipientEmails.length > 0) {
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${RESEND_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "Misiones Familiares <onboarding@resend.dev>",
-              to: recipientEmails,
-              subject: `Resumen diario: documentos pendientes – ${puebloNombre}`,
-              html: summaryHtml,
-            }),
-          });
-
-          if (res.ok) {
+          try {
+            await sendLovableEmail(
+              {
+                from: `Misiones Familiares <noreply@${FROM_DOMAIN}>`,
+                sender_domain: SENDER_DOMAIN,
+                to: recipientEmails,
+                subject: `Resumen diario: documentos pendientes – ${puebloNombre}`,
+                html: summaryHtml,
+                text: `Resumen diario de documentos pendientes en ${puebloNombre}. Total pendientes: ${items.length}.`,
+                purpose: "transactional",
+                idempotency_key: `doc-summary-${puebloId}-${today}`,
+              },
+              { apiKey: LOVABLE_API_KEY }
+            );
             summariesSent++;
             // Log one entry per pueblo summary
             logInserts.push({
@@ -275,8 +277,8 @@ Deno.serve(async (req) => {
               pueblo_id: puebloId,
               fecha_envio: today,
             });
-          } else {
-            console.error(`Failed to send summary for ${puebloNombre}:`, await res.text());
+          } catch (emailError) {
+            console.error(`Failed to send summary for ${puebloNombre}:`, emailError);
           }
           await delay(600);
         }
