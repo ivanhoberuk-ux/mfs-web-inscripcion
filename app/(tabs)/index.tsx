@@ -205,10 +205,14 @@ export default function Home() {
 
         {/* Estado de documentos del usuario */}
         {user ? (
-          <View style={{ width: '100%' }}>
+          <View style={{ width: '100%', gap: 12 }}>
+            <MiInscripcionCard />
             <DocumentosEstadoCard />
           </View>
         ) : null}
+
+        {/* Asesores espirituales del año */}
+        <AsesoresAnioCard />
 
         {/* Accesos rápidos */}
         <View style={{ width: '100%' }}>
