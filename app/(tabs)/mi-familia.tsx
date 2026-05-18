@@ -133,19 +133,27 @@ export default function MiFamilia() {
             </Card>
           ))}
 
-          <Card style={{ backgroundColor: '#ECFEFF', borderWidth: 1, borderColor: colors.primary[300] }}>
-            <Text style={s.cardTitle}>➕ Agregar a un hijo/a</Text>
-            <Text style={[s.small, s.mt1]}>
-              Podés inscribir a tus hijos bajo tu mismo email. Cada hijo necesita su propio CI.
-            </Text>
-            <Button
-              variant="primary"
-              style={s.mt2}
-              onPress={() => router.push('/inscribir?nuevoHijo=1')}
-            >
-              👶 Inscribir un hijo/a
-            </Button>
-          </Card>
+          {registros.some(r => r.rol === 'Tio') ? (
+            <Card style={{ backgroundColor: '#ECFEFF', borderWidth: 1, borderColor: colors.primary[300] }}>
+              <Text style={s.cardTitle}>➕ Agregar a un hijo/a</Text>
+              <Text style={[s.small, s.mt1]}>
+                Podés inscribir a tus hijos bajo tu mismo email. Cada hijo necesita su propio CI.
+              </Text>
+              <Button
+                variant="primary"
+                style={s.mt2}
+                onPress={() => router.push('/inscribir?nuevoHijo=1')}
+              >
+                👶 Inscribir un hijo/a
+              </Button>
+            </Card>
+          ) : (
+            <Card>
+              <Text style={[s.small, { fontStyle: 'italic' }]}>
+                ℹ️ Solo los Tíos pueden inscribir a sus hijos/as bajo su cuenta.
+              </Text>
+            </Card>
+          )}
         </>
       )}
     </ScrollView>
