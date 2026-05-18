@@ -3,6 +3,10 @@
 // Envía un email de prueba usando Resend — solo super_admin
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+
+const SENDER_DOMAIN = 'notify.mfspy.org.py'
+const FROM_DOMAIN = 'mfspy.org.py'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,43 +59,35 @@ Deno.serve(async (req) => {
       )
     }
 
-    const resendKey = Deno.env.get('RESEND_API_KEY')
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
     
-    if (!resendKey) {
+    if (!lovableApiKey) {
       return new Response(
-        JSON.stringify({ error: 'RESEND_API_KEY no configurado' }),
+        JSON.stringify({ error: 'Servicio de email no configurado' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     console.log('Enviando email de prueba a:', email, 'por admin:', user.email)
 
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'MFS Inscripciones <onboarding@resend.dev>',
-        to: [email],
+    const result = await sendLovableEmail(
+      {
+        to: email,
+        from: `MFS Inscripciones <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
         subject: 'Email de Prueba - MFS',
         html: `
           <h2>¡Email de prueba exitoso!</h2>
           <p>Este es un email de prueba del sistema de inscripciones MFS.</p>
-          <p>La configuración de Resend está funcionando correctamente.</p>
+          <p>La configuración de correos está funcionando correctamente.</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
         `,
-      }),
-    })
-
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text()
-      console.error('Error al enviar email:', errorText)
-      throw new Error(errorText)
-    }
-
-    const result = await emailResponse.json()
+        text: `¡Email de prueba exitoso!\n\nEste es un email de prueba del sistema de inscripciones MFS.\nLa configuración de correos está funcionando correctamente.\nFecha: ${new Date().toLocaleString()}`,
+        purpose: 'transactional',
+        idempotency_key: `test-email-${user.id}-${Date.now()}`,
+      },
+      { apiKey: lovableApiKey }
+    )
     console.log('Email enviado exitosamente:', result)
 
     return new Response(
