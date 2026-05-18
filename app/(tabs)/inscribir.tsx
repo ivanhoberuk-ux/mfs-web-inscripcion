@@ -188,7 +188,11 @@ export default function Inscribir() {
 
   // Inicia una nueva inscripción de hijo/a bajo el mismo email del usuario
   function iniciarInscribirHijo() {
-    const titular = misRegistros.find((r: any) => r.rol !== 'Hijo') ?? misRegistros[0] ?? null
+    const titular = misRegistros.find((r: any) => r.rol === 'Tio') ?? null
+    if (!titular) {
+      Alert.alert('No disponible', 'Solo los Tíos pueden inscribir a sus hijos/as bajo su cuenta.')
+      return
+    }
     setRegistroExistente(null)
     setModoEdicion(false)
     // Preservar pueblo elegido por el padre como sugerencia
@@ -267,10 +271,10 @@ export default function Inscribir() {
 
         if (target) {
           cargarRegistroEnFormulario(target)
-        } else if (wantNuevoHijo && lista.length > 0) {
+        } else if (wantNuevoHijo && lista.some((r: any) => r.rol === 'Tio')) {
           // Diferimos para que misRegistros ya esté en state
           setTimeout(() => {
-            const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+            const titular = lista.find((r: any) => r.rol === 'Tio') ?? null
             setRegistroExistente(null)
             setModoEdicion(false)
             setPuebloId(titular?.pueblo_id || '')
@@ -990,20 +994,28 @@ export default function Inscribir() {
               </View>
             )
           })}
-          <Pressable
-            onPress={iniciarInscribirHijo}
-            style={[
-              s.button,
-              { marginTop: 12, backgroundColor: '#10B981', paddingVertical: 10 },
-            ]}
-          >
-            <Text style={[s.buttonText, { color: 'white' }]}>
-              ➕ Inscribir a un hijo/a
+          {misRegistros.some((r: any) => r.rol === 'Tio') ? (
+            <>
+              <Pressable
+                onPress={iniciarInscribirHijo}
+                style={[
+                  s.button,
+                  { marginTop: 12, backgroundColor: '#10B981', paddingVertical: 10 },
+                ]}
+              >
+                <Text style={[s.buttonText, { color: 'white' }]}>
+                  ➕ Inscribir a un hijo/a
+                </Text>
+              </Pressable>
+              <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 8 }]}>
+                Los niños chicos sin email se inscriben bajo tu cuenta. Cada hijo necesita su propia cédula.
+              </Text>
+            </>
+          ) : (
+            <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 12, fontStyle: 'italic' }]}>
+              ℹ️ Solo los Tíos pueden inscribir a sus hijos/as bajo su cuenta.
             </Text>
-          </Pressable>
-          <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 8 }]}>
-            Los niños chicos sin email se inscriben bajo tu cuenta. Cada hijo necesita su propia cédula.
-          </Text>
+          )}
         </Card>
       )}
 
