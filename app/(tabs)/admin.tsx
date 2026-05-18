@@ -677,7 +677,7 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -693,7 +693,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -708,7 +708,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -723,7 +723,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
