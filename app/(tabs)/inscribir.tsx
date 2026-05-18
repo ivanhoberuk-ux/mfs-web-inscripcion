@@ -82,9 +82,12 @@ export default function Inscribir() {
   const [direccion, setDireccion] = useState('')
   const [emNombre, setEmNombre] = useState('')
   const [emTelefono, setEmTelefono] = useState('')
-  const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo'>('Misionero')
+  const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo' | 'Asesor'>('Misionero')
   const [esJefe, setEsJefe] = useState(false)
   const [misionoAntes, setMisionoAntes] = useState<boolean | null>(null)
+  // Asesor
+  const [tipoAsesor, setTipoAsesor] = useState<'padre_schoenstatt' | 'diocesano' | 'hermana_maria' | ''>('')
+  const [pueblosAcompana, setPueblosAcompana] = useState<string[]>([])
 
   // Nuevos (obligatorios)
   const [tratamiento, setTratamiento] = useState<boolean | null>(false)
