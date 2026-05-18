@@ -271,10 +271,10 @@ export default function Inscribir() {
 
         if (target) {
           cargarRegistroEnFormulario(target)
-        } else if (wantNuevoHijo && lista.length > 0) {
+        } else if (wantNuevoHijo && lista.some((r: any) => r.rol === 'Tio')) {
           // Diferimos para que misRegistros ya esté en state
           setTimeout(() => {
-            const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
+            const titular = lista.find((r: any) => r.rol === 'Tio') ?? null
             setRegistroExistente(null)
             setModoEdicion(false)
             setPuebloId(titular?.pueblo_id || '')
