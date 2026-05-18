@@ -524,6 +524,16 @@ export default function Inscribir() {
         e.nacimiento = `¡Tu hijo/a ya es grande! 🌟 Es momento de que viva la misión como Misionero propiamente dicho. ¡Animate a inscribirlo/a como Misionero!`
       }
 
+      // Edad mínima para Tío: 30 años
+      if (rol === 'Tio' && computedAge !== null && computedAge < 30) {
+        e.nacimiento = `Para inscribirte como Tío necesitás tener al menos 30 años cumplidos.`
+      }
+
+      // Asesor: requiere tipo
+      if (rol === 'Asesor' && !tipoAsesor) {
+        e.tipoAsesor = 'Elegí: Padre de Schoenstatt, Diocesano o Hermana de María.'
+      }
+
       // Pertenencia a Schoenstatt
       if (perteneceSchoenstatt !== true && perteneceSchoenstatt !== false) {
         e.perteneceSchoenstatt = 'Elegí Sí o No.'
