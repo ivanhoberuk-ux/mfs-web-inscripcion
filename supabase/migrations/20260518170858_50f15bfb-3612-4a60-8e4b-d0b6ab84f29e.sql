@@ -1,0 +1,1 @@
+UPDATE public.registros SET rama_schoenstatt = 'Apóstoles de María' WHERE rama_schoenstatt = 'Apóstoles';
