@@ -188,7 +188,11 @@ export default function Inscribir() {
 
   // Inicia una nueva inscripción de hijo/a bajo el mismo email del usuario
   function iniciarInscribirHijo() {
-    const titular = misRegistros.find((r: any) => r.rol !== 'Hijo') ?? misRegistros[0] ?? null
+    const titular = misRegistros.find((r: any) => r.rol === 'Tio') ?? null
+    if (!titular) {
+      Alert.alert('No disponible', 'Solo los Tíos pueden inscribir a sus hijos/as bajo su cuenta.')
+      return
+    }
     setRegistroExistente(null)
     setModoEdicion(false)
     // Preservar pueblo elegido por el padre como sugerencia
