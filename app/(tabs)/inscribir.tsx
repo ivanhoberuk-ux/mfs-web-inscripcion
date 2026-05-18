@@ -764,7 +764,7 @@ export default function Inscribir() {
         const mensaje = result.estado === 'confirmado'
           ? `🎉 ¡Bienvenido/a a esta hermosa locura de amor!\n\nAhora te llevamos a cargar tus documentos.`
           : result.estado === 'pendiente_validacion'
-          ? `${result.mensaje}\n\nMientras tanto podés cargar tus documentos.`
+          ? `🙏 ¡Gracias por sumarte como Asesor espiritual!\n\nTu inscripción quedó pendiente de validación por un administrador. Te notificaremos cuando esté confirmada.\n\nMientras tanto podés cargar tus documentos.`
           : `${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
 
         Alert.alert(
