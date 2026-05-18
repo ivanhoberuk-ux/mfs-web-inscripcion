@@ -735,6 +735,8 @@ export default function Inscribir() {
           talle_remera: talleRemera || null,
           pertenece_schoenstatt: !!perteneceSchoenstatt,
           rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
+          tipo_asesor: rol === 'Asesor' ? (tipoAsesor || null) : null,
+          pueblos_acompana: rol === 'Asesor' ? pueblosAcompana : null,
         })
         
         // Actualizar el pueblo_id en el profile del usuario
