@@ -22,6 +22,7 @@ import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
+import { AsesoresValidacionPanel } from '../../src/components/AsesoresValidacionPanel';
 
 // ===== Tipos base =====
 type Registro = {
@@ -111,6 +112,7 @@ export default function Admin() {
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   const [showPlantillas, setShowPlantillas] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showAsesores, setShowAsesores] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -675,7 +677,7 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
               if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
             }}
           >
@@ -691,7 +693,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -706,7 +708,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowPlantillas(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -721,7 +723,7 @@ export default function Admin() {
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
-              setShowDashboard(false)
+              setShowDashboard(false); setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
@@ -737,15 +739,34 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
               {showDashboard ? 'Ver Exportes' : '📊 Dashboard'}
             </Text>
           </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showAsesores ? '#16a34a' : '#6b7280' }]}
+            onPress={() => {
+              setShowAsesores(!showAsesores)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
+              setShowPlantillas(false)
+              setShowDashboard(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showAsesores ? 'Ver Exportes' : '🙏 Validar Asesores'}
+            </Text>
+          </Pressable>
         </View>
         
-        {showDashboard ? (
+        {showAsesores ? (
+          <AsesoresValidacionPanel />
+        ) : showDashboard ? (
           <DashboardGeneralPanel />
         ) : showRolesPanel ? (
           // Panel de gestión de roles
