@@ -383,46 +383,30 @@ export default function Inscribir() {
   }
 
   function SegRol() {
-    const options: { key: 'Misionero' | 'Tio' | 'Hijo'; label: string }[] = [
+    const options: { key: 'Misionero' | 'Tio' | 'Hijo' | 'Asesor'; label: string }[] = [
       { key: 'Misionero', label: 'Misionero' },
       { key: 'Tio', label: 'Tío' },
       { key: 'Hijo', label: 'Hijo' },
+      { key: 'Asesor', label: 'Asesor' },
     ]
-    const isAnticipada = estadoInsc === 'fase_anticipada'
     return (
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {options.map((o) => {
-          // En fase anticipada permitimos Tío, Hijo (de Tío) y Misionero (jefe se valida aparte)
-          const disabled = false
-          return (
-            <Pressable
-              key={o.key}
-              disabled={disabled}
-              onPress={() => {
-                setRol(o.key)
-                if (o.key !== 'Misionero') {
-                  setEsJefe(false)
-                  setMisionoAntes(null)
-                }
-              }}
-              style={[
-                s.button,
-                {
-                  paddingVertical: 8,
-                  flex: 1,
-                  backgroundColor: disabled
-                    ? colors.neutral[200]
-                    : rol === o.key
-                    ? colors.primary[500]
-                    : colors.neutral[300],
-                  opacity: disabled ? 0.5 : 1,
-                },
-              ]}
-            >
-              <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
-            </Pressable>
-          )
-        })}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {options.map((o) => (
+          <Pressable
+            key={o.key}
+            onPress={() => {
+              setRol(o.key)
+              if (o.key !== 'Misionero') { setEsJefe(false); setMisionoAntes(null) }
+              if (o.key !== 'Asesor') { setTipoAsesor(''); setPueblosAcompana([]) }
+            }}
+            style={[ s.button, {
+              paddingVertical: 8, flexGrow: 1, minWidth: 80,
+              backgroundColor: rol === o.key ? colors.primary[500] : colors.neutral[300],
+            }]}
+          >
+            <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
+          </Pressable>
+        ))}
       </View>
     )
   }
