@@ -1213,6 +1213,48 @@ export default function Inscribir() {
             )}
           </View>
         )}
+        {rol === 'Asesor' && (
+          <View style={{ marginTop: 12, gap: 8 }}>
+            <Text style={s.label}>Tipo de Asesor</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { v: 'padre_schoenstatt', l: 'Padre de Schoenstatt' },
+                { v: 'diocesano', l: 'Diocesano' },
+                { v: 'hermana_maria', l: 'Hermana de María' },
+              ].map((o) => (
+                <Pressable key={o.v}
+                  onPress={() => { setTipoAsesor(o.v as any); setErrs((e) => ({ ...e, tipoAsesor: null })) }}
+                  style={[s.button, { paddingVertical: 8, paddingHorizontal: 12,
+                    backgroundColor: tipoAsesor === o.v ? colors.primary[500] : colors.neutral[300] }]}>
+                  <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>{o.l}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!!errs.tipoAsesor && <Text style={{ color: colors.error, fontSize: 12 }}>{errs.tipoAsesor}</Text>}
+
+            <Text style={[s.label, { marginTop: 8 }]}>Pueblos que acompañás (referencial)</Text>
+            <Text style={[s.small, { color: colors.text.tertiary.light }]}>Podés elegir varios. No ocupás cupo en ninguno.</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {pueblos.map((p) => {
+                const sel = pueblosAcompana.includes(p.id)
+                return (
+                  <Pressable key={p.id}
+                    onPress={() => setPueblosAcompana((arr) => sel ? arr.filter(x => x !== p.id) : [...arr, p.id])}
+                    style={[s.button, { paddingVertical: 6, paddingHorizontal: 10,
+                      backgroundColor: sel ? colors.primary[500] : colors.neutral[300] }]}>
+                    <Text style={[s.buttonText, { color: 'white', fontSize: 12 }]}>{sel ? '✓ ' : ''}{p.nombre}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+
+            <View style={{ marginTop: 10, padding: 10, backgroundColor: '#FEF3C7', borderRadius: radius.md, borderWidth: 1, borderColor: '#F59E0B' }}>
+              <Text style={{ color: '#78350F', fontSize: 12, fontWeight: '600' }}>
+                🕓 Tu inscripción como Asesor quedará <Text style={{ fontWeight: '800' }}>pendiente</Text> hasta que un administrador la valide.
+              </Text>
+            </View>
+          </View>
+        )}
       </Card>
 
       {/* Tratamiento / Medicación */}
