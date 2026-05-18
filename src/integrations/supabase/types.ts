@@ -447,11 +447,13 @@ export type Database = {
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
           pueblo_id: string
+          pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
           rol: string
           source: string | null
           talle_remera: string | null
           telefono: string
+          tipo_asesor: string | null
           tratamiento_detalle: string | null
           tratamiento_especial: boolean
         }
@@ -488,11 +490,13 @@ export type Database = {
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
           pueblo_id: string
+          pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
           rol: string
           source?: string | null
           talle_remera?: string | null
           telefono: string
+          tipo_asesor?: string | null
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
         }
@@ -529,11 +533,13 @@ export type Database = {
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
           pueblo_id?: string
+          pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
           rol?: string
           source?: string | null
           talle_remera?: string | null
           telefono?: string
+          tipo_asesor?: string | null
           tratamiento_detalle?: string | null
           tratamiento_especial?: boolean
         }
@@ -1129,11 +1135,13 @@ export type Database = {
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
           pueblo_id: string
+          pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
           rol: string
           source: string | null
           talle_remera: string | null
           telefono: string
+          tipo_asesor: string | null
           tratamiento_detalle: string | null
           tratamiento_especial: boolean
         }
@@ -1156,7 +1164,11 @@ export type Database = {
       }
     }
     Enums: {
-      estado_registro: "confirmado" | "lista_espera" | "cancelado"
+      estado_registro:
+        | "confirmado"
+        | "lista_espera"
+        | "cancelado"
+        | "pendiente_validacion"
       tipo_reunion: "general" | "comision" | "varias"
     }
     CompositeTypes: {
@@ -1285,7 +1297,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      estado_registro: ["confirmado", "lista_espera", "cancelado"],
+      estado_registro: [
+        "confirmado",
+        "lista_espera",
+        "cancelado",
+        "pendiente_validacion",
+      ],
       tipo_reunion: ["general", "comision", "varias"],
     },
   },
