@@ -739,6 +739,7 @@ export default function Admin() {
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
               setShowPlantillas(false)
+              setShowAsesores(false)
             }}
           >
             <Text style={s.buttonText}>
