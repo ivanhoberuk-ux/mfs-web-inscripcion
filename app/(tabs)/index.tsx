@@ -8,6 +8,8 @@ import { supabase } from '../../src/lib/supabase'
 import { Button } from '../../src/components/Button'
 import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard'
 import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
+import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
+import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
 // @ts-ignore
