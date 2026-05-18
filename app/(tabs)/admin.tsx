@@ -112,6 +112,7 @@ export default function Admin() {
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   const [showPlantillas, setShowPlantillas] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showAsesores, setShowAsesores] = useState(false);
   
   // Estado para test email
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
