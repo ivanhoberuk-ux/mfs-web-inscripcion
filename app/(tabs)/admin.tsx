@@ -22,6 +22,7 @@ import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
+import { AsesoresValidacionPanel } from '../../src/components/AsesoresValidacionPanel';
 
 // ===== Tipos base =====
 type Registro = {
