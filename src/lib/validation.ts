@@ -53,7 +53,7 @@ export const registrationSchema = z.object({
     .trim()
     .min(1, 'Completá teléfono de emergencia')
     .max(30, 'El teléfono no puede exceder 30 caracteres'),
-  rol: z.union([z.literal('Misionero'), z.literal('Tio'), z.literal('Hijo')]),
+  rol: z.union([z.literal('Misionero'), z.literal('Tio'), z.literal('Hijo'), z.literal('Asesor')]),
   esJefe: z.boolean(),
   tratamiento: z.boolean(),
   tratamientoDetalle: z.string()

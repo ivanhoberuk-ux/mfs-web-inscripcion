@@ -250,7 +250,7 @@ export async function registerIfCapacity(input: {
   ciudad?: string | null;
   emergencia_nombre: string;
   emergencia_telefono: string;
-  rol: 'Tio' | 'Misionero' | 'Hijo';
+  rol: 'Tio' | 'Misionero' | 'Hijo' | 'Asesor';
   es_jefe: boolean;
 
   // campos médicos / alimentación / tutores
@@ -274,6 +274,10 @@ export async function registerIfCapacity(input: {
 
   // Misionó antes en MFS
   misiono_antes?: boolean;
+
+  // Asesor
+  tipo_asesor?: 'padre_schoenstatt' | 'diocesano' | 'hermana_maria' | null;
+  pueblos_acompana?: string[] | null;
 }): Promise<{ id: string; estado: string; mensaje: string }> {
   const payload = {
     p_pueblo_id: input.pueblo_id,
@@ -304,11 +308,79 @@ export async function registerIfCapacity(input: {
     p_pertenece_schoenstatt: !!input.pertenece_schoenstatt,
     p_rama_schoenstatt: input.pertenece_schoenstatt ? (input.rama_schoenstatt ?? null) : null,
     p_misiono_antes: !!input.misiono_antes,
+    p_tipo_asesor: input.rol === 'Asesor' ? (input.tipo_asesor ?? null) : null,
+    p_pueblos_acompana: input.rol === 'Asesor' ? (input.pueblos_acompana ?? null) : null,
   };
 
-  const { data, error } = await supabase.rpc('register_if_capacity', payload);
+  const { data, error } = await supabase.rpc('register_if_capacity' as any, payload);
   if (error) throw error;
   return data as { id: string; estado: string; mensaje: string };
+}
+
+// --------- Asesores ---------
+export type AsesorRow = {
+  id: string;
+  nombres: string;
+  apellidos: string;
+  email: string;
+  telefono: string;
+  ci: string;
+  tipo_asesor: 'padre_schoenstatt' | 'diocesano' | 'hermana_maria' | null;
+  pueblos_acompana: string[] | null;
+  pueblo_id: string;
+  estado: string;
+  created_at: string;
+  año: number;
+};
+
+export async function fetchAsesoresPendientes(): Promise<AsesorRow[]> {
+  const { data, error } = await supabase
+    .from('registros')
+    .select('id, nombres, apellidos, email, telefono, ci, tipo_asesor, pueblos_acompana, pueblo_id, estado, created_at, año')
+    .eq('rol', 'Asesor')
+    .eq('estado', 'pendiente_validacion' as any)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+export async function fetchAsesoresConfirmados(año?: number): Promise<AsesorRow[]> {
+  let q = supabase
+    .from('registros')
+    .select('id, nombres, apellidos, email, telefono, ci, tipo_asesor, pueblos_acompana, pueblo_id, estado, created_at, año')
+    .eq('rol', 'Asesor')
+    .eq('estado', 'confirmado')
+    .is('deleted_at', null);
+  if (año) q = q.eq('año', año);
+  const { data, error } = await q.order('apellidos', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as any;
+}
+
+export async function validarAsesor(registroId: string): Promise<void> {
+  const { error } = await supabase.rpc('validar_asesor' as any, { p_registro_id: registroId });
+  if (error) throw error;
+}
+
+/** Inscripción del usuario actual (por email) para el año activo. */
+export async function fetchMiInscripcion(email: string): Promise<Array<{
+  id: string; nombres: string; apellidos: string; rol: string;
+  estado: string; pueblo_id: string; pueblo_nombre: string; año: number;
+  tipo_asesor: string | null;
+}>> {
+  const { data, error } = await supabase
+    .from('registros')
+    .select('id, nombres, apellidos, rol, estado, pueblo_id, año, tipo_asesor, pueblos(nombre)')
+    .eq('email', email)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id, nombres: r.nombres, apellidos: r.apellidos, rol: r.rol,
+    estado: r.estado, pueblo_id: r.pueblo_id, año: r.año, tipo_asesor: r.tipo_asesor,
+    pueblo_nombre: r.pueblos?.nombre ?? '—',
+  }));
 }
 
 // --------- Documentos de inscriptos ----------

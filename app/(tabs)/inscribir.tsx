@@ -82,9 +82,12 @@ export default function Inscribir() {
   const [direccion, setDireccion] = useState('')
   const [emNombre, setEmNombre] = useState('')
   const [emTelefono, setEmTelefono] = useState('')
-  const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo'>('Misionero')
+  const [rol, setRol] = useState<'Tio' | 'Misionero' | 'Hijo' | 'Asesor'>('Misionero')
   const [esJefe, setEsJefe] = useState(false)
   const [misionoAntes, setMisionoAntes] = useState<boolean | null>(null)
+  // Asesor
+  const [tipoAsesor, setTipoAsesor] = useState<'padre_schoenstatt' | 'diocesano' | 'hermana_maria' | ''>('')
+  const [pueblosAcompana, setPueblosAcompana] = useState<string[]>([])
 
   // Nuevos (obligatorios)
   const [tratamiento, setTratamiento] = useState<boolean | null>(false)
@@ -380,46 +383,30 @@ export default function Inscribir() {
   }
 
   function SegRol() {
-    const options: { key: 'Misionero' | 'Tio' | 'Hijo'; label: string }[] = [
+    const options: { key: 'Misionero' | 'Tio' | 'Hijo' | 'Asesor'; label: string }[] = [
       { key: 'Misionero', label: 'Misionero' },
       { key: 'Tio', label: 'Tío' },
       { key: 'Hijo', label: 'Hijo' },
+      { key: 'Asesor', label: 'Asesor' },
     ]
-    const isAnticipada = estadoInsc === 'fase_anticipada'
     return (
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {options.map((o) => {
-          // En fase anticipada permitimos Tío, Hijo (de Tío) y Misionero (jefe se valida aparte)
-          const disabled = false
-          return (
-            <Pressable
-              key={o.key}
-              disabled={disabled}
-              onPress={() => {
-                setRol(o.key)
-                if (o.key !== 'Misionero') {
-                  setEsJefe(false)
-                  setMisionoAntes(null)
-                }
-              }}
-              style={[
-                s.button,
-                {
-                  paddingVertical: 8,
-                  flex: 1,
-                  backgroundColor: disabled
-                    ? colors.neutral[200]
-                    : rol === o.key
-                    ? colors.primary[500]
-                    : colors.neutral[300],
-                  opacity: disabled ? 0.5 : 1,
-                },
-              ]}
-            >
-              <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
-            </Pressable>
-          )
-        })}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {options.map((o) => (
+          <Pressable
+            key={o.key}
+            onPress={() => {
+              setRol(o.key)
+              if (o.key !== 'Misionero') { setEsJefe(false); setMisionoAntes(null) }
+              if (o.key !== 'Asesor') { setTipoAsesor(''); setPueblosAcompana([]) }
+            }}
+            style={[ s.button, {
+              paddingVertical: 8, flexGrow: 1, minWidth: 80,
+              backgroundColor: rol === o.key ? colors.primary[500] : colors.neutral[300],
+            }]}
+          >
+            <Text style={[s.buttonText, { color: 'white' }]}>{o.label}</Text>
+          </Pressable>
+        ))}
       </View>
     )
   }
@@ -535,6 +522,16 @@ export default function Inscribir() {
       // Límite de edad para Hijos: máximo 14 años
       if (rol === 'Hijo' && computedAge !== null && computedAge > 14) {
         e.nacimiento = `¡Tu hijo/a ya es grande! 🌟 Es momento de que viva la misión como Misionero propiamente dicho. ¡Animate a inscribirlo/a como Misionero!`
+      }
+
+      // Edad mínima para Tío: 30 años
+      if (rol === 'Tio' && computedAge !== null && computedAge < 30) {
+        e.nacimiento = `Para inscribirte como Tío necesitás tener al menos 30 años cumplidos.`
+      }
+
+      // Asesor: requiere tipo
+      if (rol === 'Asesor' && !tipoAsesor) {
+        e.tipoAsesor = 'Elegí: Padre de Schoenstatt, Diocesano o Hermana de María.'
       }
 
       // Pertenencia a Schoenstatt
@@ -738,6 +735,8 @@ export default function Inscribir() {
           talle_remera: talleRemera || null,
           pertenece_schoenstatt: !!perteneceSchoenstatt,
           rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
+          tipo_asesor: rol === 'Asesor' ? (tipoAsesor || null) : null,
+          pueblos_acompana: rol === 'Asesor' ? pueblosAcompana : null,
         })
         
         // Actualizar el pueblo_id en el profile del usuario
@@ -752,12 +751,16 @@ export default function Inscribir() {
         } catch {}
 
         // Mostrar mensaje según el estado
-        const titulo = result.estado === 'confirmado' 
-          ? '¡Inscripción confirmada!' 
+        const titulo = result.estado === 'confirmado'
+          ? '¡Inscripción confirmada!'
+          : result.estado === 'pendiente_validacion'
+          ? '🕓 Pendiente de validación'
           : '📋 Lista de espera'
-        
+
         const mensaje = result.estado === 'confirmado'
           ? `🎉 ¡Bienvenido/a a esta hermosa locura de amor!\n\nAhora te llevamos a cargar tus documentos.`
+          : result.estado === 'pendiente_validacion'
+          ? `${result.mensaje}\n\nMientras tanto podés cargar tus documentos.`
           : `${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
 
         Alert.alert(
@@ -796,6 +799,7 @@ export default function Inscribir() {
         setMadreNombre(''); setMadreTelefono('')
         setAcepta(false); setTalleRemera('')
         setPerteneceSchoenstatt(null); setRamaSchoenstatt('')
+        setTipoAsesor(''); setPueblosAcompana([])
       }
     } catch (e: any) {
       Alert.alert('No se pudo inscribir', e?.message ?? String(e))
@@ -1208,6 +1212,48 @@ export default function Inscribir() {
                 ✨ Como ya misionaste antes, podés inscribirte en la fase anticipada.
               </Text>
             )}
+          </View>
+        )}
+        {rol === 'Asesor' && (
+          <View style={{ marginTop: 12, gap: 8 }}>
+            <Text style={s.label}>Tipo de Asesor</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { v: 'padre_schoenstatt', l: 'Padre de Schoenstatt' },
+                { v: 'diocesano', l: 'Diocesano' },
+                { v: 'hermana_maria', l: 'Hermana de María' },
+              ].map((o) => (
+                <Pressable key={o.v}
+                  onPress={() => { setTipoAsesor(o.v as any); setErrs((e) => ({ ...e, tipoAsesor: null })) }}
+                  style={[s.button, { paddingVertical: 8, paddingHorizontal: 12,
+                    backgroundColor: tipoAsesor === o.v ? colors.primary[500] : colors.neutral[300] }]}>
+                  <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>{o.l}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {!!errs.tipoAsesor && <Text style={{ color: colors.error, fontSize: 12 }}>{errs.tipoAsesor}</Text>}
+
+            <Text style={[s.label, { marginTop: 8 }]}>Pueblos que acompañás (referencial)</Text>
+            <Text style={[s.small, { color: colors.text.tertiary.light }]}>Podés elegir varios. No ocupás cupo en ninguno.</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {pueblos.map((p) => {
+                const sel = pueblosAcompana.includes(p.id)
+                return (
+                  <Pressable key={p.id}
+                    onPress={() => setPueblosAcompana((arr) => sel ? arr.filter(x => x !== p.id) : [...arr, p.id])}
+                    style={[s.button, { paddingVertical: 6, paddingHorizontal: 10,
+                      backgroundColor: sel ? colors.primary[500] : colors.neutral[300] }]}>
+                    <Text style={[s.buttonText, { color: 'white', fontSize: 12 }]}>{sel ? '✓ ' : ''}{p.nombre}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+
+            <View style={{ marginTop: 10, padding: 10, backgroundColor: '#FEF3C7', borderRadius: radius.md, borderWidth: 1, borderColor: '#F59E0B' }}>
+              <Text style={{ color: '#78350F', fontSize: 12, fontWeight: '600' }}>
+                🕓 Tu inscripción como Asesor quedará <Text style={{ fontWeight: '800' }}>pendiente</Text> hasta que un administrador la valide.
+              </Text>
+            </View>
           </View>
         )}
       </Card>
