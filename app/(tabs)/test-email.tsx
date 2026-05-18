@@ -38,7 +38,7 @@ export default function TestEmailScreen() {
         <Text style={styles.title}>Prueba de Email</Text>
         
         <Text style={styles.description}>
-          Envía un email de prueba usando Resend para verificar que la configuración está correcta.
+          Envía un email de prueba para verificar que la configuración está correcta.
         </Text>
 
         <Button
@@ -61,7 +61,7 @@ export default function TestEmailScreen() {
             <Text style={styles.bold}>Destinatario:</Text> ivanhoberuk@gmail.com
           </Text>
           <Text style={styles.infoText}>
-            <Text style={styles.bold}>Remitente:</Text> onboarding@resend.dev
+            <Text style={styles.bold}>Remitente:</Text> noreply@mfspy.org.py
           </Text>
         </View>
       </Card>
