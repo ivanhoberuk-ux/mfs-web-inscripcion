@@ -745,9 +745,27 @@ export default function Admin() {
               {showDashboard ? 'Ver Exportes' : '📊 Dashboard'}
             </Text>
           </Pressable>
+
+          <Pressable
+            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showAsesores ? '#16a34a' : '#6b7280' }]}
+            onPress={() => {
+              setShowAsesores(!showAsesores)
+              setShowRolesPanel(false)
+              setShowCreatePueblo(false)
+              setShowInscripcionConfig(false)
+              setShowPlantillas(false)
+              setShowDashboard(false)
+            }}
+          >
+            <Text style={s.buttonText}>
+              {showAsesores ? 'Ver Exportes' : '🙏 Validar Asesores'}
+            </Text>
+          </Pressable>
         </View>
         
-        {showDashboard ? (
+        {showAsesores ? (
+          <AsesoresValidacionPanel />
+        ) : showDashboard ? (
           <DashboardGeneralPanel />
         ) : showRolesPanel ? (
           // Panel de gestión de roles
