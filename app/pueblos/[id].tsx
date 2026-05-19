@@ -116,7 +116,7 @@ export default function PuebloInscriptosScreen() {
       const { data, error } = await supabase
         .from('registros')
         .select(`
-          id, created_at, pueblo_id,
+          id, created_at, pueblo_id, estado, año,
           nombres, apellidos, ci, nacimiento, email, telefono,
           direccion, ciudad,
           emergencia_nombre, emergencia_telefono,
@@ -129,6 +129,7 @@ export default function PuebloInscriptosScreen() {
           cedula_frente_url, cedula_dorso_url
         `)
         .eq('pueblo_id', puebloId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
       if (error) throw error
 
@@ -259,6 +260,62 @@ export default function PuebloInscriptosScreen() {
     }
   }
 
+  // ---------- Export lista de espera ----------
+  async function exportWaitlist() {
+    try {
+      const espera = inscriptos
+        .filter((r: any) => r.estado === 'lista_espera')
+        .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
+
+      if (!espera.length) {
+        Alert.alert('Lista de espera', 'No hay personas en lista de espera para este pueblo.');
+        return;
+      }
+
+      const header = [
+        'posicion', 'nombres', 'apellidos',
+        ...(hideCi ? [] : ['ci']),
+        'edad', 'email', 'telefono', 'rol',
+        'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
+        'fecha_inscripcion',
+      ];
+      const rows: any[] = [header];
+      espera.forEach((r: any, idx: number) => {
+        const d = parseNacimientoToDate(r.nacimiento);
+        const age = getAge(d);
+        const base = [
+          String(idx + 1),
+          r.nombres ?? '',
+          r.apellidos ?? '',
+          ...(hideCi ? [] : [r.ci ?? '']),
+          age == null ? '' : String(age),
+          r.email ?? '',
+          r.telefono ?? '',
+          r.rol ?? '',
+          r.padre_nombre ?? '',
+          r.padre_telefono ?? '',
+          r.madre_nombre ?? '',
+          r.madre_telefono ?? '',
+          r.created_at ?? '',
+        ];
+        rows.push(base);
+      });
+
+      const nombrePueblo = puebloNombre || 'pueblo';
+      const titulo = `MFS — Lista de espera de ${nombrePueblo}`;
+      const subtitulo = `Pueblo: ${nombrePueblo} · ${espera.length} en espera · Generado el ${humanDate()}`;
+      const fileName = `MFS_lista_espera_${safeFileName(nombrePueblo)}_${fileStamp()}.xlsx`;
+      const blob = generateExcelBlob(rows, {
+        title: titulo,
+        subtitle: subtitulo,
+        sheetName: `Espera_${safeFileName(nombrePueblo).slice(0, 24)}`,
+      });
+      await shareOrDownload(blob, fileName);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
+    }
+  }
+
   // ---------- Render ----------
   const total = inscriptos.length
   const totalFiltrado = filtered.length
@@ -339,12 +396,20 @@ export default function PuebloInscriptosScreen() {
           {totalFiltrado} de {total} inscriptos
         </Text>
 
-        <Pressable
-          onPress={exportCsv}
-          style={[s.button, { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 8 }]}
-        >
-          <Text style={s.buttonText}>Exportar Excel</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+          <Pressable
+            onPress={exportCsv}
+            style={[s.button, { paddingVertical: 8 }]}
+          >
+            <Text style={s.buttonText}>📊 Exportar inscriptos</Text>
+          </Pressable>
+          <Pressable
+            onPress={exportWaitlist}
+            style={[s.button, { paddingVertical: 8, backgroundColor: '#d97706' }]}
+          >
+            <Text style={s.buttonText}>⏳ Descargar lista de espera</Text>
+          </Pressable>
+        </View>
       </View>
     ),
     [puebloNombre, query, total, totalFiltrado, hideCi, docFilter]
