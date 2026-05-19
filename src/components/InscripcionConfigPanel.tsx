@@ -296,6 +296,7 @@ type DraftRow = {
   apertura_anticipada: DateTimeParts | null;
   apertura_general: DateTimeParts | null;
   cierre: DateTimeParts | null;
+  lista_espera_vence_at: DateTimeParts | null;
   activo: boolean;
 };
 
@@ -308,6 +309,7 @@ const emptyDraft = (año: number): DraftRow => ({
   apertura_anticipada: null,
   apertura_general: null,
   cierre: null,
+  lista_espera_vence_at: null,
   activo: false,
 });
 
