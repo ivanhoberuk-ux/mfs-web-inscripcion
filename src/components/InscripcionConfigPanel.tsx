@@ -421,6 +421,7 @@ export function InscripcionConfigPanel() {
         apertura_anticipada: partsToIso(newDraft.apertura_anticipada),
         apertura_general: partsToIso(newDraft.apertura_general),
         cierre: partsToIso(newDraft.cierre),
+        lista_espera_vence_at: newDraft.lista_espera_vence_at ? partsToIso(newDraft.lista_espera_vence_at) : null,
         activo: newDraft.activo,
       });
       setNewDraft(emptyDraft(año + 1));
