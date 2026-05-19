@@ -296,6 +296,7 @@ type DraftRow = {
   apertura_anticipada: DateTimeParts | null;
   apertura_general: DateTimeParts | null;
   cierre: DateTimeParts | null;
+  lista_espera_vence_at: DateTimeParts | null;
   activo: boolean;
 };
 
@@ -308,6 +309,7 @@ const emptyDraft = (año: number): DraftRow => ({
   apertura_anticipada: null,
   apertura_general: null,
   cierre: null,
+  lista_espera_vence_at: null,
   activo: false,
 });
 
@@ -332,6 +334,7 @@ export function InscripcionConfigPanel() {
           apertura_anticipada: isoToParts(c.apertura_anticipada),
           apertura_general: isoToParts(c.apertura_general),
           cierre: isoToParts(c.cierre),
+          lista_espera_vence_at: isoToParts(c.lista_espera_vence_at ?? null),
           activo: c.activo,
         };
       });
@@ -372,6 +375,7 @@ export function InscripcionConfigPanel() {
         apertura_anticipada: ant,
         apertura_general: gen,
         cierre: cie,
+        lista_espera_vence_at: d.lista_espera_vence_at ? partsToIso(d.lista_espera_vence_at) : null,
         activo: d.activo,
       });
       await load();
@@ -417,6 +421,7 @@ export function InscripcionConfigPanel() {
         apertura_anticipada: partsToIso(newDraft.apertura_anticipada),
         apertura_general: partsToIso(newDraft.apertura_general),
         cierre: partsToIso(newDraft.cierre),
+        lista_espera_vence_at: newDraft.lista_espera_vence_at ? partsToIso(newDraft.lista_espera_vence_at) : null,
         activo: newDraft.activo,
       });
       setNewDraft(emptyDraft(año + 1));
@@ -441,6 +446,7 @@ export function InscripcionConfigPanel() {
       apertura_anticipada: defaultPartsForYear(año - 1, 12, 1, 8, 0),
       apertura_general: defaultPartsForYear(año, 1, 15, 8, 0),
       cierre: defaultPartsForYear(año, 6, 30, 23, 59),
+      lista_espera_vence_at: drafts[año]?.lista_espera_vence_at ?? null,
       activo: drafts[año]?.activo ?? false,
     };
     setDrafts((prev) => ({ ...prev, [año]: d }));
@@ -565,6 +571,22 @@ export function InscripcionConfigPanel() {
               defaultValue={defaultPartsForYear(año, 6, 30, 23, 59)}
               onChange={(p) => setDraftField(año, 'cierre', p)}
             />
+            <DateTimeField
+              label="Vencimiento de lista de espera (opcional)"
+              emoji="⏳"
+              helpText="Al cumplirse, los inscriptos en lista de espera quedan dados de baja automáticamente y reciben un email avisándoles que pueden inscribirse en otro pueblo con cupo."
+              value={d.lista_espera_vence_at}
+              defaultValue={defaultPartsForYear(año, 3, 1, 23, 59)}
+              onChange={(p) => setDraftField(año, 'lista_espera_vence_at', p)}
+            />
+            {d.lista_espera_vence_at && (
+              <Pressable
+                onPress={() => setDraftField(año, 'lista_espera_vence_at', null as any)}
+                style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEE2E2', alignSelf: 'flex-start' }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>🗑️ Quitar fecha de vencimiento</Text>
+              </Pressable>
+            )}
 
             <Pressable
               onPress={() => onSave(año)}
@@ -655,6 +677,14 @@ export function InscripcionConfigPanel() {
             value={newDraft.cierre}
             defaultValue={defaultPartsForYear(newDraft.año, 6, 30, 23, 59)}
             onChange={(p) => setNewDraft((prev) => ({ ...prev, cierre: p }))}
+          />
+          <DateTimeField
+            label="Vencimiento de lista de espera (opcional)"
+            emoji="⏳"
+            helpText="Al cumplirse, las listas de espera se vacían automáticamente y se avisa por email."
+            value={newDraft.lista_espera_vence_at}
+            defaultValue={defaultPartsForYear(newDraft.año, 3, 1, 23, 59)}
+            onChange={(p) => setNewDraft((prev) => ({ ...prev, lista_espera_vence_at: p }))}
           />
 
           <Pressable

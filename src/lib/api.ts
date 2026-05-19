@@ -87,6 +87,7 @@ export type ConfiguracionInscripcion = {
   apertura_general: string;    // ISO
   cierre: string;              // ISO
   activo: boolean;
+  lista_espera_vence_at?: string | null; // ISO o null
 };
 
 /** Obtiene la configuración del año activo + el estado actual evaluado por la BD. */
@@ -96,7 +97,7 @@ export async function fetchEstadoInscripcionActivo(): Promise<{
 }> {
   const { data: cfg, error: e1 } = await supabase
     .from('configuracion_inscripcion' as any)
-    .select('año, apertura_anticipada, apertura_general, cierre, activo')
+    .select('año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at')
     .eq('activo', true)
     .maybeSingle();
   if (e1) throw e1;
@@ -113,7 +114,7 @@ export async function fetchEstadoInscripcionActivo(): Promise<{
 export async function fetchConfiguracionesInscripcion(): Promise<ConfiguracionInscripcion[]> {
   const { data, error } = await supabase
     .from('configuracion_inscripcion' as any)
-    .select('año, apertura_anticipada, apertura_general, cierre, activo')
+    .select('año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at')
     .order('año', { ascending: false });
   if (error) throw error;
   return (data ?? []) as any;
