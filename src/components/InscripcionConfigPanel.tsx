@@ -446,6 +446,7 @@ export function InscripcionConfigPanel() {
       apertura_anticipada: defaultPartsForYear(año - 1, 12, 1, 8, 0),
       apertura_general: defaultPartsForYear(año, 1, 15, 8, 0),
       cierre: defaultPartsForYear(año, 6, 30, 23, 59),
+      lista_espera_vence_at: drafts[año]?.lista_espera_vence_at ?? null,
       activo: drafts[año]?.activo ?? false,
     };
     setDrafts((prev) => ({ ...prev, [año]: d }));
