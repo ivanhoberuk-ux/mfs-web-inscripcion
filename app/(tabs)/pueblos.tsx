@@ -241,6 +241,10 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
           {menores > 0 && (
             <Stat label="Menores" value={String(menores)} emoji="🧒" />
           )}
+          {enEspera > 0 && (
+            <Stat label="En espera" value={String(enEspera)} emoji="⏳" />
+          )}
+
         </View>
 
         {menores > 0 && (
