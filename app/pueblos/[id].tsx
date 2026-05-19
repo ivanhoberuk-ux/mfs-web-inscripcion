@@ -260,6 +260,62 @@ export default function PuebloInscriptosScreen() {
     }
   }
 
+  // ---------- Export lista de espera ----------
+  async function exportWaitlist() {
+    try {
+      const espera = inscriptos
+        .filter((r: any) => r.estado === 'lista_espera')
+        .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
+
+      if (!espera.length) {
+        Alert.alert('Lista de espera', 'No hay personas en lista de espera para este pueblo.');
+        return;
+      }
+
+      const header = [
+        'posicion', 'nombres', 'apellidos',
+        ...(hideCi ? [] : ['ci']),
+        'edad', 'email', 'telefono', 'rol',
+        'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
+        'fecha_inscripcion',
+      ];
+      const rows: any[] = [header];
+      espera.forEach((r: any, idx: number) => {
+        const d = parseNacimientoToDate(r.nacimiento);
+        const age = getAge(d);
+        const base = [
+          String(idx + 1),
+          r.nombres ?? '',
+          r.apellidos ?? '',
+          ...(hideCi ? [] : [r.ci ?? '']),
+          age == null ? '' : String(age),
+          r.email ?? '',
+          r.telefono ?? '',
+          r.rol ?? '',
+          r.padre_nombre ?? '',
+          r.padre_telefono ?? '',
+          r.madre_nombre ?? '',
+          r.madre_telefono ?? '',
+          r.created_at ?? '',
+        ];
+        rows.push(base);
+      });
+
+      const nombrePueblo = puebloNombre || 'pueblo';
+      const titulo = `MFS — Lista de espera de ${nombrePueblo}`;
+      const subtitulo = `Pueblo: ${nombrePueblo} · ${espera.length} en espera · Generado el ${humanDate()}`;
+      const fileName = `MFS_lista_espera_${safeFileName(nombrePueblo)}_${fileStamp()}.xlsx`;
+      const blob = generateExcelBlob(rows, {
+        title: titulo,
+        subtitle: subtitulo,
+        sheetName: `Espera_${safeFileName(nombrePueblo).slice(0, 24)}`,
+      });
+      await shareOrDownload(blob, fileName);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar Excel', e?.message ?? String(e));
+    }
+  }
+
   // ---------- Render ----------
   const total = inscriptos.length
   const totalFiltrado = filtered.length
