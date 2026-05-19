@@ -25,8 +25,10 @@ export type Ocupacion = {
   menores: number;       // hijos menores de 12 (no ocupan cupo)
   total_personas: number; // total confirmados (usados + menores)
   libres: number;
+  en_espera: number;     // inscriptos en lista de espera
   activo: boolean;
 };
+
 
 export type Registro = {
   id: string;
