@@ -223,7 +223,7 @@ export async function fetchOcupacion(): Promise<Ocupacion[]> {
   // Requiere la vista vw_ocupacion creada en SQL
   const { data, error } = await supabase
     .from('vw_ocupacion')
-    .select('id, nombre, cupo_max, usados, menores, total_personas, libres, activo')
+    .select('id, nombre, cupo_max, usados, menores, total_personas, libres, en_espera, activo')
     .order('nombre', { ascending: true });
 
   if (error) throw error;
