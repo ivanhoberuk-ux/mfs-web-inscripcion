@@ -51,8 +51,10 @@ type OcItem = {
   cupo_max: number;
   usados: number;
   libres: number;
+  en_espera?: number;
   activo: boolean;
 };
+
 
 type UserRoleRow = { role: 'admin' | 'user' };
 
