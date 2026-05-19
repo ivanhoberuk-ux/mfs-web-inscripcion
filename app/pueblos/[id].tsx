@@ -116,7 +116,7 @@ export default function PuebloInscriptosScreen() {
       const { data, error } = await supabase
         .from('registros')
         .select(`
-          id, created_at, pueblo_id,
+          id, created_at, pueblo_id, estado, año,
           nombres, apellidos, ci, nacimiento, email, telefono,
           direccion, ciudad,
           emergencia_nombre, emergencia_telefono,
@@ -129,6 +129,7 @@ export default function PuebloInscriptosScreen() {
           cedula_frente_url, cedula_dorso_url
         `)
         .eq('pueblo_id', puebloId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
       if (error) throw error
 
