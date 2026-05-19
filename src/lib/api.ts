@@ -371,6 +371,7 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
   id: string; nombres: string; apellidos: string; rol: string;
   estado: string; pueblo_id: string; pueblo_nombre: string; año: number;
   tipo_asesor: string | null;
+  lista_espera_pos: number | null;
 }>> {
   const { data, error } = await supabase
     .from('registros')
@@ -379,11 +380,18 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
     .is('deleted_at', null)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({
+  const rows = (data ?? []).map((r: any) => ({
     id: r.id, nombres: r.nombres, apellidos: r.apellidos, rol: r.rol,
     estado: r.estado, pueblo_id: r.pueblo_id, año: r.año, tipo_asesor: r.tipo_asesor,
     pueblo_nombre: r.pueblos?.nombre ?? '—',
+    lista_espera_pos: null as number | null,
   }));
+  await Promise.all(rows.map(async (row) => {
+    if (row.estado !== 'lista_espera') return;
+    const { data: pos } = await supabase.rpc('get_lista_espera_position' as any, { p_registro_id: row.id });
+    if (typeof pos === 'number') row.lista_espera_pos = pos;
+  }));
+  return rows;
 }
 
 // --------- Documentos de inscriptos ----------
