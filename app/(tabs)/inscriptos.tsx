@@ -471,15 +471,24 @@ export default function VerInscriptosAdmin() {
     if (!confirmed) return
 
     try {
-      const { error } = await supabase.from('registros').delete().eq('id', id)
+      // Usar edge function para que se promueva automáticamente
+      // al siguiente en lista de espera (y enviar emails)
+      const { data, error } = await supabase.functions.invoke('gestionar-baja', {
+        body: { registro_id: id, motivo: 'Eliminado por administrador' },
+      })
       if (error) throw error
-      
+
+      const promovido = data?.promovido
+      const msg = promovido
+        ? `El inscripto fue dado de baja. Se promovió automáticamente a ${promovido.nombres} ${promovido.apellidos} de la lista de espera. ✅`
+        : 'El inscripto fue dado de baja correctamente.'
+
       if (typeof window !== 'undefined') {
-        window.alert('El inscripto fue eliminado correctamente.')
+        window.alert(msg)
       } else {
-        Alert.alert('Eliminado', 'El inscripto fue eliminado correctamente.')
+        Alert.alert('Baja realizada', msg)
       }
-      
+
       runSearch(true) // Recargar lista
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e))
