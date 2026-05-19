@@ -334,6 +334,7 @@ export function InscripcionConfigPanel() {
           apertura_anticipada: isoToParts(c.apertura_anticipada),
           apertura_general: isoToParts(c.apertura_general),
           cierre: isoToParts(c.cierre),
+          lista_espera_vence_at: isoToParts(c.lista_espera_vence_at ?? null),
           activo: c.activo,
         };
       });
