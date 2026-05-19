@@ -582,7 +582,7 @@ export function InscripcionConfigPanel() {
             {d.lista_espera_vence_at && (
               <Pressable
                 onPress={() => setDraftField(año, 'lista_espera_vence_at', null as any)}
-                style={{ alignالسف: 'flex-start' as any, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEE2E2', alignSelf: 'flex-start' }}
+                style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEE2E2', alignSelf: 'flex-start' }}
               >
                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>🗑️ Quitar fecha de vencimiento</Text>
               </Pressable>
