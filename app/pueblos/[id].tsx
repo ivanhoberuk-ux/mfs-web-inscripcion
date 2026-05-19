@@ -396,12 +396,20 @@ export default function PuebloInscriptosScreen() {
           {totalFiltrado} de {total} inscriptos
         </Text>
 
-        <Pressable
-          onPress={exportCsv}
-          style={[s.button, { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 8 }]}
-        >
-          <Text style={s.buttonText}>Exportar Excel</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+          <Pressable
+            onPress={exportCsv}
+            style={[s.button, { paddingVertical: 8 }]}
+          >
+            <Text style={s.buttonText}>📊 Exportar inscriptos</Text>
+          </Pressable>
+          <Pressable
+            onPress={exportWaitlist}
+            style={[s.button, { paddingVertical: 8, backgroundColor: '#d97706' }]}
+          >
+            <Text style={s.buttonText}>⏳ Descargar lista de espera</Text>
+          </Pressable>
+        </View>
       </View>
     ),
     [puebloNombre, query, total, totalFiltrado, hideCi, docFilter]
