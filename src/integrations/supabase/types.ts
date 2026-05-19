@@ -87,6 +87,7 @@ export type Database = {
           apertura_general: string
           cierre: string
           created_at: string
+          lista_espera_vence_at: string | null
           updated_at: string
         }
         Insert: {
@@ -96,6 +97,7 @@ export type Database = {
           apertura_general: string
           cierre: string
           created_at?: string
+          lista_espera_vence_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -105,6 +107,7 @@ export type Database = {
           apertura_general?: string
           cierre?: string
           created_at?: string
+          lista_espera_vence_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1197,6 +1200,18 @@ export type Database = {
         Returns: string
       }
       validar_asesor: { Args: { p_registro_id: string }; Returns: Json }
+      vencer_listas_espera: {
+        Args: never
+        Returns: {
+          año: number
+          apellidos: string
+          email: string
+          id: string
+          nombres: string
+          pueblo_id: string
+          pueblo_nombre: string
+        }[]
+      }
     }
     Enums: {
       estado_registro:
