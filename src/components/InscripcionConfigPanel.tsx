@@ -678,6 +678,14 @@ export function InscripcionConfigPanel() {
             defaultValue={defaultPartsForYear(newDraft.año, 6, 30, 23, 59)}
             onChange={(p) => setNewDraft((prev) => ({ ...prev, cierre: p }))}
           />
+          <DateTimeField
+            label="Vencimiento de lista de espera (opcional)"
+            emoji="⏳"
+            helpText="Al cumplirse, las listas de espera se vacían automáticamente y se avisa por email."
+            value={newDraft.lista_espera_vence_at}
+            defaultValue={defaultPartsForYear(newDraft.año, 3, 1, 23, 59)}
+            onChange={(p) => setNewDraft((prev) => ({ ...prev, lista_espera_vence_at: p }))}
+          />
 
           <Pressable
             onPress={() => setNewDraft((p) => ({ ...p, activo: !p.activo }))}
