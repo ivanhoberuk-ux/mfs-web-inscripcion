@@ -89,6 +89,7 @@ export function MiInscripcionCard() {
         {rows.map((r) => {
           const info = estadoInfo(r.estado)
           const confirmado = r.estado === 'confirmado'
+          const enEspera = r.estado === 'lista_espera'
           return (
             <View key={r.id} style={{ paddingVertical: 6, borderTopWidth: rows.length > 1 ? 1 : 0, borderTopColor: '#eee' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text.primary.light }}>
@@ -100,6 +101,19 @@ export function MiInscripcionCard() {
               <Text style={{ fontSize: 14, fontWeight: '700', color: info.color, marginTop: 4 }}>
                 {info.emoji} {info.label}
               </Text>
+              {enEspera && r.lista_espera_pos != null && (
+                <View style={{
+                  marginTop: 8, padding: 10, backgroundColor: '#fef3c7', borderRadius: radius.sm,
+                  borderLeftWidth: 4, borderLeftColor: '#d97706',
+                }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400e' }}>
+                    ⏳ Estás en la posición #{r.lista_espera_pos} de la lista de espera
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+                    Si alguien se da de baja, subirás automáticamente.
+                  </Text>
+                </View>
+              )}
               {confirmado && (
                 <View style={{
                   marginTop: 8, padding: 10, backgroundColor: '#dcfce7', borderRadius: radius.sm,

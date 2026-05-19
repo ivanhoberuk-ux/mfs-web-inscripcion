@@ -897,6 +897,10 @@ export type Database = {
           total_reuniones: number
         }[]
       }
+      get_lista_espera_position: {
+        Args: { p_registro_id: string }
+        Returns: number
+      }
       get_pueblos_with_cupos: {
         Args: never
         Returns: {
