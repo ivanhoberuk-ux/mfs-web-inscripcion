@@ -736,6 +736,7 @@ export type Database = {
         Row: {
           activo: boolean | null
           cupo_max: number | null
+          en_espera: number | null
           id: string | null
           libres: number | null
           menores: number | null

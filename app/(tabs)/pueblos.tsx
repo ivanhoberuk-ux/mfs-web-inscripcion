@@ -169,7 +169,9 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
   const menores = p.menores ?? 0
   const totalPersonas = p.total_personas ?? (usados + menores)
   const libres = Math.max(p.libres ?? 0, 0)
+  const enEspera = p.en_espera ?? 0
   const pct = total > 0 ? Math.min(100, Math.round((usados / total) * 100)) : 0
+
 
   const completo = libres <= 0
   const inactivo = !p.activo
@@ -239,6 +241,10 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
           {menores > 0 && (
             <Stat label="Menores" value={String(menores)} emoji="🧒" />
           )}
+          {enEspera > 0 && (
+            <Stat label="En espera" value={String(enEspera)} emoji="⏳" />
+          )}
+
         </View>
 
         {menores > 0 && (
