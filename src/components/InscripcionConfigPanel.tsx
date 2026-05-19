@@ -571,6 +571,22 @@ export function InscripcionConfigPanel() {
               defaultValue={defaultPartsForYear(año, 6, 30, 23, 59)}
               onChange={(p) => setDraftField(año, 'cierre', p)}
             />
+            <DateTimeField
+              label="Vencimiento de lista de espera (opcional)"
+              emoji="⏳"
+              helpText="Al cumplirse, los inscriptos en lista de espera quedan dados de baja automáticamente y reciben un email avisándoles que pueden inscribirse en otro pueblo con cupo."
+              value={d.lista_espera_vence_at}
+              defaultValue={defaultPartsForYear(año, 3, 1, 23, 59)}
+              onChange={(p) => setDraftField(año, 'lista_espera_vence_at', p)}
+            />
+            {d.lista_espera_vence_at && (
+              <Pressable
+                onPress={() => setDraftField(año, 'lista_espera_vence_at', null as any)}
+                style={{ alignالسف: 'flex-start' as any, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#FEE2E2', alignSelf: 'flex-start' }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>🗑️ Quitar fecha de vencimiento</Text>
+              </Pressable>
+            )}
 
             <Pressable
               onPress={() => onSave(año)}
