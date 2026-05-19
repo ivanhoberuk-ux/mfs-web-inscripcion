@@ -1086,7 +1086,7 @@ export default function Admin() {
               <View style={{ height: 12, backgroundColor: '#eee', borderRadius: 6, marginTop: 8, overflow: 'hidden' }}>
                 <View style={{ width: `${pct}%`, height: '100%', backgroundColor: completo ? '#d94646' : '#0a7ea4' }} />
               </View>
-              <Text style={[s.small, { marginTop: 6 }]}>Usados: {usados} / Máximo: {max} · Libres: {libres}</Text>
+              <Text style={[s.small, { marginTop: 6 }]}>Usados: {usados} / Máximo: {max} · Libres: {libres}{(p.en_espera ?? 0) > 0 ? ` · ⏳ En espera: ${p.en_espera}` : ''}</Text>
 
               {/* Editor */}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8, flexWrap: 'wrap' }}>
