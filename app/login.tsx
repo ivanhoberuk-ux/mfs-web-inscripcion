@@ -151,17 +151,20 @@ export default function Login() {
     }
     setBusy(true)
     try {
-      const redirectUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: redirectUrl,
+      const redirectTo = `${typeof window !== 'undefined' ? window.location.origin : 'https://mfspy.org.py'}/reset-password`
+      const { data, error } = await supabase.functions.invoke('request-password-reset', {
+        body: { email: email.trim(), redirectTo },
       })
       if (error) {
-        setErr(error.message)
+        setErr('No se pudo enviar el link. Intentá de nuevo en unos minutos.')
         return
       }
-      setMsg('¡Revisá tu email! Te enviamos un link para restablecer tu contraseña.')
+      const waitSeconds = (data as any)?.waitSeconds
+      setMsg(waitSeconds
+        ? `Ya enviamos un link hace poco. Esperá ${waitSeconds} segundos antes de pedir otro.`
+        : '¡Revisá tu email! Te enviamos un link para restablecer tu contraseña.')
     } catch (e: any) {
-      setErr(e?.message ?? String(e))
+      setErr('No se pudo enviar el link. Intentá de nuevo en unos minutos.')
     } finally {
       setBusy(false)
     }
