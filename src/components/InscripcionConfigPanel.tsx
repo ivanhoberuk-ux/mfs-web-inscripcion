@@ -375,6 +375,7 @@ export function InscripcionConfigPanel() {
         apertura_anticipada: ant,
         apertura_general: gen,
         cierre: cie,
+        lista_espera_vence_at: d.lista_espera_vence_at ? partsToIso(d.lista_espera_vence_at) : null,
         activo: d.activo,
       });
       await load();
