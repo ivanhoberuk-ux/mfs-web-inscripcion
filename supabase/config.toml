@@ -9,5 +9,7 @@ project_id = "npekpdkywsneylddzzuu"
     verify_jwt = false
   [functions.gestionar-baja]
     verify_jwt = false
+  [functions.request-password-reset]
+    verify_jwt = false
   [functions.test-email]
     verify_jwt = false

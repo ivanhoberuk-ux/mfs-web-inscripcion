@@ -317,6 +317,24 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_rate_limits: {
+        Row: {
+          email_hash: string
+          last_requested_at: string
+          request_count: number
+        }
+        Insert: {
+          email_hash: string
+          last_requested_at?: string
+          request_count?: number
+        }
+        Update: {
+          email_hash?: string
+          last_requested_at?: string
+          request_count?: number
+        }
+        Relationships: []
+      }
       plantillas_documentos: {
         Row: {
           activo: boolean
