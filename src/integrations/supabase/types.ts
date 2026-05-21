@@ -901,6 +901,16 @@ export type Database = {
         Args: { p_registro_id: string }
         Returns: number
       }
+      get_pueblo_contacts: {
+        Args: { p_pueblo_id: string }
+        Returns: {
+          apellidos: string
+          email: string
+          nombres: string
+          rol: string
+          telefono: string
+        }[]
+      }
       get_pueblos_with_cupos: {
         Args: never
         Returns: {

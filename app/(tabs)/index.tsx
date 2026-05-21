@@ -10,6 +10,7 @@ import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard'
 import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
+import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
 // @ts-ignore
@@ -207,6 +208,7 @@ export default function Home() {
         {user ? (
           <View style={{ width: '100%', gap: 12 }}>
             <MiInscripcionCard />
+            <ContactosPuebloCard />
             <DocumentosEstadoCard />
           </View>
         ) : null}
