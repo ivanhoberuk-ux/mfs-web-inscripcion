@@ -1,6 +1,7 @@
 // FILE: src/components/DashboardGeneralPanel.tsx
 // Dashboard general para super administradores: métricas completas de inscripciones.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Modal } from 'react-native';
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { s } from '../lib/theme';
