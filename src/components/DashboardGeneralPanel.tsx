@@ -622,68 +622,74 @@ function DrillModal({ drill, onClose, puebloMap, refDate }: {
   };
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '90%', paddingBottom: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: '#111827' }} numberOfLines={2}>{drill.title}</Text>
-              <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{rows.length} {rows.length === 1 ? 'persona' : 'personas'}</Text>
-            </View>
-            {rows.length > 0 && (
-              <Pressable onPress={exportDrill} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#1E40AF' }}>
-                <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>📥 Excel</Text>
-              </Pressable>
-            )}
-            <Pressable onPress={onClose} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f3f4f6' }}>
-              <Text style={{ color: '#374151', fontWeight: '700' }}>✕</Text>
-            </Pressable>
+    <View
+      style={[
+        { justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 },
+        Platform.OS === 'web'
+          ? ({ position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0 } as any)
+          : { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+      ]}
+    >
+      <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+      <View style={{ backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '90%', paddingBottom: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: '#111827' }} numberOfLines={2}>{drill.title}</Text>
+            <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{rows.length} {rows.length === 1 ? 'persona' : 'personas'}</Text>
           </View>
-          <ScrollView style={{ paddingHorizontal: 12 }} contentContainerStyle={{ paddingVertical: 8 }}>
-            {rows.length === 0 && <Text style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: 20 }}>No hay personas en esta categoría</Text>}
-            {rows.map(r => {
-              const edad = ageOn(r.nacimiento, refDate);
-              const pueblo = puebloMap[r.pueblo_id]?.nombre || '—';
-              return (
-                <View key={r.id} style={{ padding: 12, marginBottom: 8, backgroundColor: '#f9fafb', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: estadoColor[r.estado] || '#9ca3af' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', flex: 1 }}>
-                      {r.apellidos}, {r.nombres}
-                    </Text>
-                    {r.es_jefe && <Text style={{ fontSize: 11 }}>⭐</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                    🏘️ {pueblo} · 🎭 {r.rol}{edad != null ? ` · 🎂 ${edad} años` : ''}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
-                    📧 {(r as any).email || '—'}  ·  📱 {(r as any).telefono || '—'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                    <Text style={{ fontSize: 10, color: 'white', backgroundColor: estadoColor[r.estado] || '#9ca3af', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
-                      {r.estado}
-                    </Text>
-                    {r.pertenece_schoenstatt && (
-                      <Text style={{ fontSize: 10, color: '#ec4899', backgroundColor: '#fce7f3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
-                        💗 {r.rama_schoenstatt || 'Schoenstatt'}
-                      </Text>
-                    )}
-                    {r.talle_remera && (
-                      <Text style={{ fontSize: 10, color: '#374151', backgroundColor: '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
-                        👕 {r.talle_remera}
-                      </Text>
-                    )}
-                    {r.misiono_antes && (
-                      <Text style={{ fontSize: 10, color: '#0b9850', backgroundColor: '#d1fae5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
-                        🎖️ Veterano
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
+          {rows.length > 0 && (
+            <Pressable onPress={exportDrill} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#1E40AF' }}>
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>📥 Excel</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={onClose} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f3f4f6' }}>
+            <Text style={{ color: '#374151', fontWeight: '700' }}>✕</Text>
+          </Pressable>
         </View>
+        <ScrollView style={{ paddingHorizontal: 12 }} contentContainerStyle={{ paddingVertical: 8 }}>
+          {rows.length === 0 && <Text style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: 20 }}>No hay personas en esta categoría</Text>}
+          {rows.map(r => {
+            const edad = ageOn(r.nacimiento, refDate);
+            const pueblo = puebloMap[r.pueblo_id]?.nombre || '—';
+            return (
+              <View key={r.id} style={{ padding: 12, marginBottom: 8, backgroundColor: '#f9fafb', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: estadoColor[r.estado] || '#9ca3af' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', flex: 1 }}>
+                    {r.apellidos}, {r.nombres}
+                  </Text>
+                  {r.es_jefe && <Text style={{ fontSize: 11 }}>⭐</Text>}
+                </View>
+                <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                  🏘️ {pueblo} · 🎭 {r.rol}{edad != null ? ` · 🎂 ${edad} años` : ''}
+                </Text>
+                <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                  📧 {(r as any).email || '—'}  ·  📱 {(r as any).telefono || '—'}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                  <Text style={{ fontSize: 10, color: 'white', backgroundColor: estadoColor[r.estado] || '#9ca3af', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                    {r.estado}
+                  </Text>
+                  {r.pertenece_schoenstatt && (
+                    <Text style={{ fontSize: 10, color: '#ec4899', backgroundColor: '#fce7f3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                      💗 {r.rama_schoenstatt || 'Schoenstatt'}
+                    </Text>
+                  )}
+                  {r.talle_remera && (
+                    <Text style={{ fontSize: 10, color: '#374151', backgroundColor: '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                      👕 {r.talle_remera}
+                    </Text>
+                  )}
+                  {r.misiono_antes && (
+                    <Text style={{ fontSize: 10, color: '#0b9850', backgroundColor: '#d1fae5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                      🎖️ Veterano
+                    </Text>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
-    </Modal>
+    </View>
   );
 }
