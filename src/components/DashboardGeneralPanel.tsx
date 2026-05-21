@@ -110,7 +110,7 @@ export function DashboardGeneralPanel() {
       for (let i = 0; i < 20; i++) {
         const { data: chunk, error: e1 } = await supabase
           .from('registros')
-          .select('id, pueblo_id, nombres, apellidos, nacimiento, rol, es_jefe, pertenece_schoenstatt, rama_schoenstatt, misiono_antes, talle_remera, estado, created_at, año')
+          .select('id, pueblo_id, nombres, apellidos, nacimiento, rol, es_jefe, pertenece_schoenstatt, rama_schoenstatt, misiono_antes, talle_remera, estado, created_at, año, ci, email, telefono')
           .is('deleted_at', null)
           .eq('año', year)
           .order('created_at', { ascending: true })
