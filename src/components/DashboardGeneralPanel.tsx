@@ -621,7 +621,7 @@ function DrillModal({ drill, onClose, puebloMap, refDate }: {
     cancelado: '#dc2626',
   };
 
-  return (
+  const overlay = (
     <View
       style={[
         { justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 },
