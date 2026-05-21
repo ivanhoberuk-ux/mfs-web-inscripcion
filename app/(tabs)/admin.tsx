@@ -136,8 +136,7 @@ export default function Admin() {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
-          .single();
+          .eq('user_id', user.id);
         
         if (!mounted) return;
         
@@ -145,7 +144,8 @@ export default function Admin() {
           console.error('Error fetching role:', error);
           setRole('user');
         } else {
-          setRole((data as UserRoleRow)?.role ?? 'user');
+          const roles = (data || []).map((r: any) => r.role);
+          setRole(roles.includes('admin') ? 'admin' : 'user');
         }
       } catch (err) {
         console.error('Exception checking role:', err);
