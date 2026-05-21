@@ -207,13 +207,10 @@ export default function Home() {
         {/* Estado de documentos del usuario */}
         {user ? (
           <View style={{ width: '100%', gap: 12 }}>
-        {user ? (
-          <View style={{ width: '100%', gap: 12 }}>
             <MiInscripcionCard />
             <ContactosPuebloCard />
             <DocumentosEstadoCard />
           </View>
-        ) : null}
         ) : null}
 
         {/* Asesores espirituales del año */}
