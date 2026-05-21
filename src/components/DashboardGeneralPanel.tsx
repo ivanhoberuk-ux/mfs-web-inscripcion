@@ -40,9 +40,9 @@ function ageOn(nac: string | null, refDate: Date): number | null {
   return age;
 }
 
-function BarRow({ label, value, max, color, suffix }: { label: string; value: number; max: number; color: string; suffix?: string }) {
+function BarRow({ label, value, max, color, suffix, onPress }: { label: string; value: number; max: number; color: string; suffix?: string; onPress?: () => void }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
-  return (
+  const content = (
     <View style={{ marginBottom: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
         <Text style={{ fontSize: 13, color: '#374151', flex: 1 }} numberOfLines={1}>{label}</Text>
@@ -53,10 +53,12 @@ function BarRow({ label, value, max, color, suffix }: { label: string; value: nu
       </View>
     </View>
   );
+  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>{content}</Pressable>;
+  return content;
 }
 
-function StatCard({ label, value, color, emoji }: { label: string; value: number | string; color: string; emoji: string }) {
-  return (
+function StatCard({ label, value, color, emoji, onPress }: { label: string; value: number | string; color: string; emoji: string; onPress?: () => void }) {
+  const content = (
     <View style={{
       flex: 1, minWidth: 130, padding: 14, borderRadius: 12,
       backgroundColor: 'white', borderLeftWidth: 4, borderLeftColor: color,
@@ -67,6 +69,8 @@ function StatCard({ label, value, color, emoji }: { label: string; value: number
       <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</Text>
     </View>
   );
+  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, minWidth: 130, opacity: pressed ? 0.7 : 1 })}>{content}</Pressable>;
+  return content;
 }
 
 function Section({ title, emoji, children }: any) {
