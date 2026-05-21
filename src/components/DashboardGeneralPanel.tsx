@@ -1,6 +1,7 @@
 // FILE: src/components/DashboardGeneralPanel.tsx
 // Dashboard general para super administradores: métricas completas de inscripciones.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Modal } from 'react-native';
 import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { s } from '../lib/theme';
@@ -20,6 +21,9 @@ type RegistroDash = {
   pertenece_schoenstatt: boolean;
   rama_schoenstatt: string | null;
   misiono_antes: boolean;
+  ci: string | null;
+  email: string | null;
+  telefono: string | null;
   talle_remera: string | null;
   estado: string;
   created_at: string;
@@ -39,9 +43,9 @@ function ageOn(nac: string | null, refDate: Date): number | null {
   return age;
 }
 
-function BarRow({ label, value, max, color, suffix }: { label: string; value: number; max: number; color: string; suffix?: string }) {
+function BarRow({ label, value, max, color, suffix, onPress }: { label: string; value: number; max: number; color: string; suffix?: string; onPress?: () => void }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
-  return (
+  const content = (
     <View style={{ marginBottom: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
         <Text style={{ fontSize: 13, color: '#374151', flex: 1 }} numberOfLines={1}>{label}</Text>
@@ -52,10 +56,12 @@ function BarRow({ label, value, max, color, suffix }: { label: string; value: nu
       </View>
     </View>
   );
+  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>{content}</Pressable>;
+  return content;
 }
 
-function StatCard({ label, value, color, emoji }: { label: string; value: number | string; color: string; emoji: string }) {
-  return (
+function StatCard({ label, value, color, emoji, onPress }: { label: string; value: number | string; color: string; emoji: string; onPress?: () => void }) {
+  const content = (
     <View style={{
       flex: 1, minWidth: 130, padding: 14, borderRadius: 12,
       backgroundColor: 'white', borderLeftWidth: 4, borderLeftColor: color,
@@ -66,6 +72,8 @@ function StatCard({ label, value, color, emoji }: { label: string; value: number
       <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</Text>
     </View>
   );
+  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, minWidth: 130, opacity: pressed ? 0.7 : 1 })}>{content}</Pressable>;
+  return content;
 }
 
 function Section({ title, emoji, children }: any) {
@@ -83,6 +91,7 @@ export function DashboardGeneralPanel() {
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [puebloFiltro, setPuebloFiltro] = useState<string>('all');
   const [year, setYear] = useState<number>(new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear());
+  const [drill, setDrill] = useState<{ title: string; rows: RegistroDash[] } | null>(null);
 
   async function load() {
     try {
@@ -101,7 +110,7 @@ export function DashboardGeneralPanel() {
       for (let i = 0; i < 20; i++) {
         const { data: chunk, error: e1 } = await supabase
           .from('registros')
-          .select('id, pueblo_id, nombres, apellidos, nacimiento, rol, es_jefe, pertenece_schoenstatt, rama_schoenstatt, misiono_antes, talle_remera, estado, created_at, año')
+          .select('id, pueblo_id, nombres, apellidos, nacimiento, rol, es_jefe, pertenece_schoenstatt, rama_schoenstatt, misiono_antes, talle_remera, estado, created_at, año, ci, email, telefono')
           .is('deleted_at', null)
           .eq('año', year)
           .order('created_at', { ascending: true })
@@ -380,6 +389,11 @@ export function DashboardGeneralPanel() {
     }
   }
 
+  const refDate = new Date(year, 0, 1);
+  const openDrill = (title: string, predicate: (r: RegistroDash) => boolean) => {
+    setDrill({ title, rows: filtered.filter(predicate) });
+  };
+
   return (
     <View style={{ gap: 8 }}>
       {/* Filtros */}
@@ -412,18 +426,19 @@ export function DashboardGeneralPanel() {
             </Pressable>
           ))}
         </ScrollView>
+        <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, fontStyle: 'italic' }}>💡 Tip: hacé clic en cualquier métrica para ver el detalle</Text>
       </View>
 
       {/* KPIs principales */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
-        <StatCard label="Total inscriptos" value={totales.total} color="#0a7ea4" emoji="👥" />
-        <StatCard label="Confirmados" value={totales.confirmados} color="#0b9850" emoji="✅" />
-        <StatCard label="Lista de espera" value={totales.espera} color="#f59e0b" emoji="⏳" />
-        <StatCard label="Cancelados" value={totales.cancelados} color="#dc2626" emoji="❌" />
-        <StatCard label="Hijos" value={totales.hijos} color="#06b6d4" emoji="👶" />
-        <StatCard label="Jefes" value={totales.jefes} color="#7c3aed" emoji="⭐" />
-        <StatCard label="De Schoenstatt" value={totales.schoenstatt} color="#ec4899" emoji="💗" />
-        <StatCard label="Misionaron antes" value={totales.veteranos} color="#10b981" emoji="🎖️" />
+        <StatCard label="Total inscriptos" value={totales.total} color="#0a7ea4" emoji="👥" onPress={() => openDrill('Todos los inscriptos', () => true)} />
+        <StatCard label="Confirmados" value={totales.confirmados} color="#0b9850" emoji="✅" onPress={() => openDrill('Confirmados', r => r.estado === 'confirmado')} />
+        <StatCard label="Lista de espera" value={totales.espera} color="#f59e0b" emoji="⏳" onPress={() => openDrill('En lista de espera', r => r.estado === 'lista_espera')} />
+        <StatCard label="Cancelados" value={totales.cancelados} color="#dc2626" emoji="❌" onPress={() => openDrill('Cancelados', r => r.estado === 'cancelado')} />
+        <StatCard label="Hijos" value={totales.hijos} color="#06b6d4" emoji="👶" onPress={() => openDrill('Hijos', r => r.rol === 'Hijo')} />
+        <StatCard label="Jefes" value={totales.jefes} color="#7c3aed" emoji="⭐" onPress={() => openDrill('Jefes', r => r.es_jefe)} />
+        <StatCard label="De Schoenstatt" value={totales.schoenstatt} color="#ec4899" emoji="💗" onPress={() => openDrill('Pertenecen al Movimiento de Schoenstatt', r => r.pertenece_schoenstatt)} />
+        <StatCard label="Misionaron antes" value={totales.veteranos} color="#10b981" emoji="🎖️" onPress={() => openDrill('Misionaron antes', r => r.misiono_antes)} />
       </View>
 
       {/* Por pueblo */}
@@ -431,6 +446,7 @@ export function DashboardGeneralPanel() {
         <Section title="Inscriptos por pueblo" emoji="🏘️">
           {porPueblo.map((p, i) => {
             const ocupacionPct = p.cupo_max > 0 ? Math.round((p.confirmados / p.cupo_max) * 100) : 0;
+            const puebloId = pueblos.find(pp => pp.nombre === p.nombre)?.id;
             return (
               <BarRow
                 key={p.nombre}
@@ -438,6 +454,7 @@ export function DashboardGeneralPanel() {
                 value={p.total}
                 max={maxPueblo}
                 color={ocupacionPct >= 100 ? '#dc2626' : ocupacionPct >= 70 ? '#f59e0b' : COLORS[i % COLORS.length]}
+                onPress={() => openDrill(`Inscriptos de ${p.nombre}`, r => r.pueblo_id === puebloId)}
               />
             );
           })}
@@ -446,9 +463,13 @@ export function DashboardGeneralPanel() {
 
       {/* Rol */}
       <Section title="Distribución por rol" emoji="🎭">
-        {porRol.map(r => (
-          <BarRow key={r.label} label={r.label} value={r.value} max={maxRol} color={r.color} />
-        ))}
+        {porRol.map(r => {
+          const rolKey = r.label.includes('Tíos') ? 'Tio' : r.label.includes('Misioneros') ? 'Misionero' : 'Hijo';
+          return (
+            <BarRow key={r.label} label={r.label} value={r.value} max={maxRol} color={r.color}
+              onPress={() => openDrill(r.label, x => x.rol === rolKey)} />
+          );
+        })}
       </Section>
 
       {/* Edades exactas por rol */}
@@ -460,10 +481,12 @@ export function DashboardGeneralPanel() {
         return (
           <Section key={rol} title={`Edades — ${titulo} (al 1° de enero del año) · ${data.total} en total`} emoji={emoji}>
             {data.entries.map((e, i) => (
-              <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxE} color={COLORS[i % COLORS.length]} />
+              <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxE} color={COLORS[i % COLORS.length]}
+                onPress={() => openDrill(`${titulo} de ${e.edad} años`, r => r.rol === rol && ageOn(r.nacimiento, refDate) === e.edad)} />
             ))}
             {data.sinFecha > 0 && (
-              <BarRow label="Sin fecha de nacimiento" value={data.sinFecha} max={maxE} color="#9ca3af" />
+              <BarRow label="Sin fecha de nacimiento" value={data.sinFecha} max={maxE} color="#9ca3af"
+                onPress={() => openDrill(`${titulo} sin fecha de nacimiento`, r => r.rol === rol && ageOn(r.nacimiento, refDate) == null)} />
             )}
             {data.entries.length === 0 && data.sinFecha === 0 && (
               <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin {titulo.toLowerCase()} inscriptos</Text>
@@ -479,7 +502,14 @@ export function DashboardGeneralPanel() {
         </Text>
         {porRama.length === 0
           ? <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin datos de ramas</Text>
-          : porRama.map((r, i) => <BarRow key={r.label} label={r.label} value={r.value} max={maxRama} color={COLORS[i % COLORS.length]} />)}
+          : porRama.map((r, i) => (
+            <BarRow key={r.label} label={r.label} value={r.value} max={maxRama} color={COLORS[i % COLORS.length]}
+              onPress={() => openDrill(`Rama: ${r.label}`, x => {
+                if (!x.pertenece_schoenstatt) return false;
+                const k = (x.rama_schoenstatt || 'Sin especificar').trim();
+                return k === r.label;
+              })} />
+          ))}
       </Section>
 
       {/* Inscripciones por día */}
@@ -491,11 +521,12 @@ export function DashboardGeneralPanel() {
               const day = d.fecha.slice(8, 10);
               const month = d.fecha.slice(5, 7);
               return (
-                <View key={d.fecha} style={{ alignItems: 'center', width: 28 }}>
+                <Pressable key={d.fecha} onPress={() => openDrill(`Inscriptos el ${d.fecha}`, r => r.created_at.slice(0, 10) === d.fecha)}
+                  style={({ pressed }) => ({ alignItems: 'center', width: 28, opacity: pressed ? 0.6 : 1 })}>
                   <Text style={{ fontSize: 9, color: '#374151', fontWeight: '700' }}>{d.count || ''}</Text>
                   <View style={{ width: 18, height: Math.max(2, h), backgroundColor: d.count > 0 ? '#0a7ea4' : '#e5e7eb', borderRadius: 3, marginTop: 2 }} />
                   <Text style={{ fontSize: 9, color: '#6b7280', marginTop: 2 }}>{day}/{month}</Text>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -508,9 +539,13 @@ export function DashboardGeneralPanel() {
       {/* Hijos por pueblo */}
       {puebloFiltro === 'all' && (
         <Section title="Hijos por pueblo" emoji="👶">
-          {porPueblo.filter(p => p.hijos > 0).map((p, i) => (
-            <BarRow key={p.nombre} label={p.nombre} value={p.hijos} max={Math.max(1, ...porPueblo.map(x => x.hijos))} color={COLORS[i % COLORS.length]} />
-          ))}
+          {porPueblo.filter(p => p.hijos > 0).map((p, i) => {
+            const puebloId = pueblos.find(pp => pp.nombre === p.nombre)?.id;
+            return (
+              <BarRow key={p.nombre} label={p.nombre} value={p.hijos} max={Math.max(1, ...porPueblo.map(x => x.hijos))} color={COLORS[i % COLORS.length]}
+                onPress={() => openDrill(`Hijos de ${p.nombre}`, r => r.pueblo_id === puebloId && r.rol === 'Hijo')} />
+            );
+          })}
           {porPueblo.every(p => p.hijos === 0) && <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin hijos inscriptos</Text>}
         </Section>
       )}
@@ -518,16 +553,138 @@ export function DashboardGeneralPanel() {
       {/* Talles remera */}
       <Section title="Talles de remera" emoji="👕">
         {porTalle.map((t, i) => (
-          <BarRow key={t.label} label={t.label} value={t.value} max={maxTalle} color={COLORS[i % COLORS.length]} />
+          <BarRow key={t.label} label={t.label} value={t.value} max={maxTalle} color={COLORS[i % COLORS.length]}
+            onPress={() => openDrill(`Talle ${t.label}`, r => {
+              const k = (r.talle_remera || 'Sin definir').trim();
+              return k === t.label;
+            })} />
         ))}
       </Section>
 
       {/* Experiencia */}
       <Section title="Experiencia previa en MFS" emoji="🎖️">
         {porExperiencia.map(r => (
-          <BarRow key={r.label} label={r.label} value={r.value} max={maxExp} color={r.color} />
+          <BarRow key={r.label} label={r.label} value={r.value} max={maxExp} color={r.color}
+            onPress={() => openDrill(r.label, x => r.label.includes('Misionó') ? x.misiono_antes : !x.misiono_antes)} />
         ))}
       </Section>
+
+      {/* Drill-down modal */}
+      <DrillModal drill={drill} onClose={() => setDrill(null)} puebloMap={puebloMap} refDate={refDate} />
     </View>
+  );
+}
+
+function DrillModal({ drill, onClose, puebloMap, refDate }: {
+  drill: { title: string; rows: RegistroDash[] } | null;
+  onClose: () => void;
+  puebloMap: Record<string, Pueblo>;
+  refDate: Date;
+}) {
+  if (!drill) return null;
+  const rows = [...drill.rows].sort((a, b) => `${a.apellidos} ${a.nombres}`.localeCompare(`${b.apellidos} ${b.nombres}`));
+
+  async function exportDrill() {
+    try {
+      const wb = XLSX.utils.book_new();
+      const data: any[][] = [
+        ['Apellidos', 'Nombres', 'Pueblo', 'Rol', 'Edad', 'Estado', 'CI', 'Email', 'Teléfono', 'Schoenstatt', 'Rama', 'Talle', 'Jefe', 'Misionó antes'],
+        ...rows.map(r => [
+          r.apellidos, r.nombres,
+          puebloMap[r.pueblo_id]?.nombre || '—',
+          r.rol,
+          ageOn(r.nacimiento, refDate) ?? '',
+          r.estado,
+          (r as any).ci || '',
+          (r as any).email || '',
+          (r as any).telefono || '',
+          r.pertenece_schoenstatt ? 'Sí' : 'No',
+          r.rama_schoenstatt || '',
+          r.talle_remera || '',
+          r.es_jefe ? 'Sí' : 'No',
+          r.misiono_antes ? 'Sí' : 'No',
+        ]),
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = data[0].map((_, i) => ({ wch: Math.min(40, Math.max(...data.map(r => String(r[i] ?? '').length)) + 2) }));
+      XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
+      const out = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await shareOrDownload(blob, `MFS_detalle_${fileStamp()}.xlsx`);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar', e?.message ?? String(e));
+    }
+  }
+
+  const estadoColor: Record<string, string> = {
+    confirmado: '#0b9850',
+    lista_espera: '#f59e0b',
+    cancelado: '#dc2626',
+  };
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '90%', paddingBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#111827' }} numberOfLines={2}>{drill.title}</Text>
+              <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{rows.length} {rows.length === 1 ? 'persona' : 'personas'}</Text>
+            </View>
+            {rows.length > 0 && (
+              <Pressable onPress={exportDrill} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#1E40AF' }}>
+                <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>📥 Excel</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={onClose} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f3f4f6' }}>
+              <Text style={{ color: '#374151', fontWeight: '700' }}>✕</Text>
+            </Pressable>
+          </View>
+          <ScrollView style={{ paddingHorizontal: 12 }} contentContainerStyle={{ paddingVertical: 8 }}>
+            {rows.length === 0 && <Text style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: 20 }}>No hay personas en esta categoría</Text>}
+            {rows.map(r => {
+              const edad = ageOn(r.nacimiento, refDate);
+              const pueblo = puebloMap[r.pueblo_id]?.nombre || '—';
+              return (
+                <View key={r.id} style={{ padding: 12, marginBottom: 8, backgroundColor: '#f9fafb', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: estadoColor[r.estado] || '#9ca3af' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', flex: 1 }}>
+                      {r.apellidos}, {r.nombres}
+                    </Text>
+                    {r.es_jefe && <Text style={{ fontSize: 11 }}>⭐</Text>}
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                    🏘️ {pueblo} · 🎭 {r.rol}{edad != null ? ` · 🎂 ${edad} años` : ''}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                    📧 {(r as any).email || '—'}  ·  📱 {(r as any).telefono || '—'}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                    <Text style={{ fontSize: 10, color: 'white', backgroundColor: estadoColor[r.estado] || '#9ca3af', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                      {r.estado}
+                    </Text>
+                    {r.pertenece_schoenstatt && (
+                      <Text style={{ fontSize: 10, color: '#ec4899', backgroundColor: '#fce7f3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                        💗 {r.rama_schoenstatt || 'Schoenstatt'}
+                      </Text>
+                    )}
+                    {r.talle_remera && (
+                      <Text style={{ fontSize: 10, color: '#374151', backgroundColor: '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                        👕 {r.talle_remera}
+                      </Text>
+                    )}
+                    {r.misiono_antes && (
+                      <Text style={{ fontSize: 10, color: '#0b9850', backgroundColor: '#d1fae5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontWeight: '700' }}>
+                        🎖️ Veterano
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
