@@ -621,7 +621,7 @@ function DrillModal({ drill, onClose, puebloMap, refDate }: {
     cancelado: '#dc2626',
   };
 
-  return (
+  const overlay = (
     <View
       style={[
         { justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 },
@@ -692,4 +692,11 @@ function DrillModal({ drill, onClose, puebloMap, refDate }: {
       </View>
     </View>
   );
+
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    // Render at document body to escape any parent stacking context / overflow
+    const ReactDOM = require('react-dom');
+    return ReactDOM.createPortal(overlay, document.body);
+  }
+  return overlay;
 }
