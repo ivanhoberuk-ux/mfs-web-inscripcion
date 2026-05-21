@@ -271,7 +271,11 @@ export function DashboardGeneralPanel() {
   }
 
   const maxPueblo = Math.max(1, ...porPueblo.map(p => p.total));
-  const maxEdad = Math.max(1, ...edadesExactas.entries.map(e => e.count));
+  const maxEdadPorRol: Record<string, number> = {
+    Hijo: Math.max(1, ...edadesPorRol.Hijo.entries.map(e => e.count)),
+    Misionero: Math.max(1, ...edadesPorRol.Misionero.entries.map(e => e.count)),
+    Tio: Math.max(1, ...edadesPorRol.Tio.entries.map(e => e.count)),
+  };
   const maxRol = Math.max(1, ...porRol.map(r => r.value));
   const maxRama = Math.max(1, ...porRama.map(r => r.value));
   const maxTalle = Math.max(1, ...porTalle.map(r => r.value));
