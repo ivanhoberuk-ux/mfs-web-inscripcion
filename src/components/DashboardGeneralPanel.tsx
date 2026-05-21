@@ -88,6 +88,7 @@ export function DashboardGeneralPanel() {
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [puebloFiltro, setPuebloFiltro] = useState<string>('all');
   const [year, setYear] = useState<number>(new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear());
+  const [drill, setDrill] = useState<{ title: string; rows: RegistroDash[] } | null>(null);
 
   async function load() {
     try {
