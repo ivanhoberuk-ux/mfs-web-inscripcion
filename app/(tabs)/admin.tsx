@@ -128,10 +128,17 @@ export default function Admin() {
     let mounted = true;
     (async () => {
       try {
+        if (authLoading) return;
+
         if (!user) {
-          if (mounted) setCheckingRole(false);
+          if (mounted) {
+            setRole(null);
+            setCheckingRole(false);
+          }
           return;
         }
+
+        if (mounted) setCheckingRole(true);
         
         const { data, error } = await supabase
           .from('user_roles')
@@ -157,7 +164,7 @@ export default function Admin() {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [authLoading, user]);
 
   // ===== Cargar datos =====
   async function load() {
@@ -635,7 +642,7 @@ export default function Admin() {
       </View>
     );
   }
-  if (!user) return null;
+  if (!user || role === null) return null;
   if (role !== 'admin') {
     Alert.alert('Acceso restringido', 'No tenés permisos de administrador.');
     router.replace('/pueblos');
