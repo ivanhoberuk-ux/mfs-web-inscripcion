@@ -161,20 +161,27 @@ export function DashboardGeneralPanel() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [registros, pueblos]);
 
-  // ===== Edades exactas =====
-  const edadesExactas = useMemo(() => {
+  // ===== Edades exactas por rol =====
+  const edadesPorRol = useMemo(() => {
     const refDate = new Date(year, 0, 1);
-    const counts: Record<number, number> = {};
-    let sinFecha = 0;
-    filtered.forEach(r => {
-      const a = ageOn(r.nacimiento, refDate);
-      if (a == null) { sinFecha++; return; }
-      counts[a] = (counts[a] || 0) + 1;
+    const roles: Array<'Hijo' | 'Misionero' | 'Tio'> = ['Hijo', 'Misionero', 'Tio'];
+    const result: Record<string, { entries: { edad: number; count: number }[]; sinFecha: number; total: number }> = {};
+    roles.forEach(rol => {
+      const counts: Record<number, number> = {};
+      let sinFecha = 0;
+      let total = 0;
+      filtered.filter(r => r.rol === rol).forEach(r => {
+        total++;
+        const a = ageOn(r.nacimiento, refDate);
+        if (a == null) { sinFecha++; return; }
+        counts[a] = (counts[a] || 0) + 1;
+      });
+      const entries = Object.entries(counts)
+        .map(([edad, count]) => ({ edad: Number(edad), count }))
+        .sort((a, b) => a.edad - b.edad);
+      result[rol] = { entries, sinFecha, total };
     });
-    const entries = Object.entries(counts)
-      .map(([edad, count]) => ({ edad: Number(edad), count }))
-      .sort((a, b) => a.edad - b.edad);
-    return { entries, sinFecha };
+    return result;
   }, [filtered, year]);
 
   // ===== Por rol =====
