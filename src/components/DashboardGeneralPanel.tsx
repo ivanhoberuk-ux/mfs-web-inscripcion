@@ -161,20 +161,27 @@ export function DashboardGeneralPanel() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [registros, pueblos]);
 
-  // ===== Edades exactas =====
-  const edadesExactas = useMemo(() => {
+  // ===== Edades exactas por rol =====
+  const edadesPorRol = useMemo(() => {
     const refDate = new Date(year, 0, 1);
-    const counts: Record<number, number> = {};
-    let sinFecha = 0;
-    filtered.forEach(r => {
-      const a = ageOn(r.nacimiento, refDate);
-      if (a == null) { sinFecha++; return; }
-      counts[a] = (counts[a] || 0) + 1;
+    const roles: Array<'Hijo' | 'Misionero' | 'Tio'> = ['Hijo', 'Misionero', 'Tio'];
+    const result: Record<string, { entries: { edad: number; count: number }[]; sinFecha: number; total: number }> = {};
+    roles.forEach(rol => {
+      const counts: Record<number, number> = {};
+      let sinFecha = 0;
+      let total = 0;
+      filtered.filter(r => r.rol === rol).forEach(r => {
+        total++;
+        const a = ageOn(r.nacimiento, refDate);
+        if (a == null) { sinFecha++; return; }
+        counts[a] = (counts[a] || 0) + 1;
+      });
+      const entries = Object.entries(counts)
+        .map(([edad, count]) => ({ edad: Number(edad), count }))
+        .sort((a, b) => a.edad - b.edad);
+      result[rol] = { entries, sinFecha, total };
     });
-    const entries = Object.entries(counts)
-      .map(([edad, count]) => ({ edad: Number(edad), count }))
-      .sort((a, b) => a.edad - b.edad);
-    return { entries, sinFecha };
+    return result;
   }, [filtered, year]);
 
   // ===== Por rol =====
@@ -264,7 +271,11 @@ export function DashboardGeneralPanel() {
   }
 
   const maxPueblo = Math.max(1, ...porPueblo.map(p => p.total));
-  const maxEdad = Math.max(1, ...edadesExactas.entries.map(e => e.count));
+  const maxEdadPorRol: Record<string, number> = {
+    Hijo: Math.max(1, ...edadesPorRol.Hijo.entries.map(e => e.count)),
+    Misionero: Math.max(1, ...edadesPorRol.Misionero.entries.map(e => e.count)),
+    Tio: Math.max(1, ...edadesPorRol.Tio.entries.map(e => e.count)),
+  };
   const maxRol = Math.max(1, ...porRol.map(r => r.value));
   const maxRama = Math.max(1, ...porRama.map(r => r.value));
   const maxTalle = Math.max(1, ...porTalle.map(r => r.value));
@@ -326,10 +337,13 @@ export function DashboardGeneralPanel() {
         ]),
       ]);
 
-      // Edades exactas
-      const edadesRows: any[][] = [['Edad', 'Cantidad'], ...edadesExactas.entries.map(e => [e.edad, e.count])];
-      if (edadesExactas.sinFecha > 0) edadesRows.push(['Sin fecha', edadesExactas.sinFecha]);
-      addSheet('Edades', edadesRows);
+      // Edades por rol
+      (['Hijo', 'Misionero', 'Tio'] as const).forEach(rol => {
+        const data = edadesPorRol[rol];
+        const rows: any[][] = [['Edad', 'Cantidad'], ...data.entries.map(e => [e.edad, e.count])];
+        if (data.sinFecha > 0) rows.push(['Sin fecha', data.sinFecha]);
+        addSheet(`Edades ${rol}s`, rows);
+      });
 
       // Por rol
       addSheet('Por rol', [['Rol', 'Cantidad'], ...porRol.map(r => [r.label.replace(/^\S+\s/, ''), r.value])]);
@@ -437,18 +451,26 @@ export function DashboardGeneralPanel() {
         ))}
       </Section>
 
-      {/* Edades exactas */}
-      <Section title="Edades exactas (al 1° de enero del año)" emoji="🎂">
-        {edadesExactas.entries.map((e, i) => (
-          <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxEdad} color={COLORS[i % COLORS.length]} />
-        ))}
-        {edadesExactas.sinFecha > 0 && (
-          <BarRow label="Sin fecha de nacimiento" value={edadesExactas.sinFecha} max={maxEdad} color="#9ca3af" />
-        )}
-        {edadesExactas.entries.length === 0 && edadesExactas.sinFecha === 0 && (
-          <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin datos de edad</Text>
-        )}
-      </Section>
+      {/* Edades exactas por rol */}
+      {(['Hijo', 'Misionero', 'Tio'] as const).map(rol => {
+        const data = edadesPorRol[rol];
+        const maxE = maxEdadPorRol[rol];
+        const emoji = rol === 'Hijo' ? '👶' : rol === 'Misionero' ? '✨' : '👨‍🏫';
+        const titulo = rol === 'Hijo' ? 'Hijos' : rol === 'Misionero' ? 'Misioneros' : 'Tíos';
+        return (
+          <Section key={rol} title={`Edades — ${titulo} (al 1° de enero del año) · ${data.total} en total`} emoji={emoji}>
+            {data.entries.map((e, i) => (
+              <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxE} color={COLORS[i % COLORS.length]} />
+            ))}
+            {data.sinFecha > 0 && (
+              <BarRow label="Sin fecha de nacimiento" value={data.sinFecha} max={maxE} color="#9ca3af" />
+            )}
+            {data.entries.length === 0 && data.sinFecha === 0 && (
+              <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin {titulo.toLowerCase()} inscriptos</Text>
+            )}
+          </Section>
+        );
+      })}
 
       {/* Pertenencia al movimiento */}
       <Section title="Pertenencia al Movimiento de Schoenstatt" emoji="💗">

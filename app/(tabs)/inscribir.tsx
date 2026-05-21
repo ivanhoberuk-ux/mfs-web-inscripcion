@@ -1439,6 +1439,8 @@ export default function Inscribir() {
                 { value: '10', label: 'Niño 10' },
                 { value: '12', label: 'Niño 12' },
                 { value: '14', label: 'Niño 14' },
+                { value: 'XS', label: 'XS (PP)' },
+                { value: 'S', label: 'S (P)' },
               ]
             : [
                 { value: 'XS', label: 'XS (PP)' },
