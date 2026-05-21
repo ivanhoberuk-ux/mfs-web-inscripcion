@@ -692,4 +692,11 @@ function DrillModal({ drill, onClose, puebloMap, refDate }: {
       </View>
     </View>
   );
+
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    // Render at document body to escape any parent stacking context / overflow
+    const ReactDOM = require('react-dom');
+    return ReactDOM.createPortal(overlay, document.body);
+  }
+  return overlay;
 }
