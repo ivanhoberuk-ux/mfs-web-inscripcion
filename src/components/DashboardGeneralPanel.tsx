@@ -451,18 +451,26 @@ export function DashboardGeneralPanel() {
         ))}
       </Section>
 
-      {/* Edades exactas */}
-      <Section title="Edades exactas (al 1° de enero del año)" emoji="🎂">
-        {edadesExactas.entries.map((e, i) => (
-          <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxEdad} color={COLORS[i % COLORS.length]} />
-        ))}
-        {edadesExactas.sinFecha > 0 && (
-          <BarRow label="Sin fecha de nacimiento" value={edadesExactas.sinFecha} max={maxEdad} color="#9ca3af" />
-        )}
-        {edadesExactas.entries.length === 0 && edadesExactas.sinFecha === 0 && (
-          <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin datos de edad</Text>
-        )}
-      </Section>
+      {/* Edades exactas por rol */}
+      {(['Hijo', 'Misionero', 'Tio'] as const).map(rol => {
+        const data = edadesPorRol[rol];
+        const maxE = maxEdadPorRol[rol];
+        const emoji = rol === 'Hijo' ? '👶' : rol === 'Misionero' ? '✨' : '👨‍🏫';
+        const titulo = rol === 'Hijo' ? 'Hijos' : rol === 'Misionero' ? 'Misioneros' : 'Tíos';
+        return (
+          <Section key={rol} title={`Edades — ${titulo} (al 1° de enero del año) · ${data.total} en total`} emoji={emoji}>
+            {data.entries.map((e, i) => (
+              <BarRow key={e.edad} label={`${e.edad} años`} value={e.count} max={maxE} color={COLORS[i % COLORS.length]} />
+            ))}
+            {data.sinFecha > 0 && (
+              <BarRow label="Sin fecha de nacimiento" value={data.sinFecha} max={maxE} color="#9ca3af" />
+            )}
+            {data.entries.length === 0 && data.sinFecha === 0 && (
+              <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Sin {titulo.toLowerCase()} inscriptos</Text>
+            )}
+          </Section>
+        );
+      })}
 
       {/* Pertenencia al movimiento */}
       <Section title="Pertenencia al Movimiento de Schoenstatt" emoji="💗">
