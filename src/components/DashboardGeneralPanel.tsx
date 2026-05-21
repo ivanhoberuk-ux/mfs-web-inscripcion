@@ -337,10 +337,13 @@ export function DashboardGeneralPanel() {
         ]),
       ]);
 
-      // Edades exactas
-      const edadesRows: any[][] = [['Edad', 'Cantidad'], ...edadesExactas.entries.map(e => [e.edad, e.count])];
-      if (edadesExactas.sinFecha > 0) edadesRows.push(['Sin fecha', edadesExactas.sinFecha]);
-      addSheet('Edades', edadesRows);
+      // Edades por rol
+      (['Hijo', 'Misionero', 'Tio'] as const).forEach(rol => {
+        const data = edadesPorRol[rol];
+        const rows: any[][] = [['Edad', 'Cantidad'], ...data.entries.map(e => [e.edad, e.count])];
+        if (data.sinFecha > 0) rows.push(['Sin fecha', data.sinFecha]);
+        addSheet(`Edades ${rol}s`, rows);
+      });
 
       // Por rol
       addSheet('Por rol', [['Rol', 'Cantidad'], ...porRol.map(r => [r.label.replace(/^\S+\s/, ''), r.value])]);
