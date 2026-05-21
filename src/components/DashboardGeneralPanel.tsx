@@ -21,6 +21,9 @@ type RegistroDash = {
   pertenece_schoenstatt: boolean;
   rama_schoenstatt: string | null;
   misiono_antes: boolean;
+  ci: string | null;
+  email: string | null;
+  telefono: string | null;
   talle_remera: string | null;
   estado: string;
   created_at: string;
