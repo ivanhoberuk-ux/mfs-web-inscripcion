@@ -471,27 +471,52 @@ export default function VerInscriptosAdmin() {
     if (!confirmed) return
 
     try {
-      // Usar edge function para que se promueva automáticamente
-      // al siguiente en lista de espera (y enviar emails)
-      const { data, error } = await supabase.functions.invoke('gestionar-baja', {
-        body: { registro_id: id, motivo: 'Eliminado por administrador' },
-      })
-      if (error) throw error
+      // 1) Intentar baja vía edge function (promueve lista de espera + emails).
+      //    Si el registro ya estaba cancelado (soft-deleted), el edge function
+      //    devuelve "Registro no encontrado" — lo toleramos y seguimos al hard delete.
+      let promovido: any = null
+      try {
+        const { data, error } = await supabase.functions.invoke('gestionar-baja', {
+          body: { registro_id: id, motivo: 'Eliminado por administrador' },
+        })
+        if (error) {
+          const errMsg = (error as any)?.message || ''
+          if (!/no encontrado|not found|404/i.test(errMsg)) {
+            console.warn('gestionar-baja error (continúo con hard delete):', errMsg)
+          }
+        } else {
+          promovido = data?.promovido
+        }
+      } catch (innerErr) {
+        console.warn('gestionar-baja excepción (continúo con hard delete):', innerErr)
+      }
 
-      const promovido = data?.promovido
+      // 2) Hard delete: eliminar definitivamente el registro.
+      const { error: delError } = await supabase
+        .from('registros')
+        .delete()
+        .eq('id', id)
+      if (delError) throw delError
+
       const msg = promovido
-        ? `El inscripto fue dado de baja. Se promovió automáticamente a ${promovido.nombres} ${promovido.apellidos} de la lista de espera. ✅`
-        : 'El inscripto fue dado de baja correctamente.'
+        ? `El inscripto fue eliminado. Se promovió automáticamente a ${promovido.nombres} ${promovido.apellidos} de la lista de espera. ✅`
+        : 'El inscripto fue eliminado correctamente.'
 
       if (typeof window !== 'undefined') {
         window.alert(msg)
       } else {
-        Alert.alert('Baja realizada', msg)
+        Alert.alert('Eliminado', msg)
       }
 
       runSearch(true) // Recargar lista
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? String(e))
+      const errorMsg = e?.message ?? String(e)
+      console.error('Error al eliminar inscripto:', e)
+      if (typeof window !== 'undefined') {
+        window.alert(`Error al eliminar: ${errorMsg}`)
+      } else {
+        Alert.alert('Error', errorMsg)
+      }
     }
   }
 
