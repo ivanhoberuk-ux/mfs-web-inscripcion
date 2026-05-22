@@ -267,6 +267,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 5. Hard delete: eliminar definitivamente el registro de la base de datos.
+    //    Ya promovimos lista de espera y notificamos por email, no hace falta
+    //    dejar la fila como "cancelado" — así el admin no la sigue viendo.
+    try {
+      const { error: hardDelError } = await supabase
+        .from('registros')
+        .delete()
+        .eq('id', registro_id)
+      if (hardDelError) {
+        console.error('Error en hard delete del registro:', hardDelError)
+      } else {
+        console.log('Registro eliminado definitivamente:', registro_id)
+        resultado.eliminado = true
+      }
+    } catch (delErr) {
+      console.error('Excepción en hard delete:', delErr)
+    }
+
+
     return new Response(
       JSON.stringify({
         success: true,
