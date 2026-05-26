@@ -813,6 +813,7 @@ export type Database = {
           msg: string
         }[]
       }
+      current_user_email_confirmed: { Args: never; Returns: boolean }
       desmarcar_asistencia: {
         Args: { p_misionero_id: string; p_reunion_id: string }
         Returns: boolean
