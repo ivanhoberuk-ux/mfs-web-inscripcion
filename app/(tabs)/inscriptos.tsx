@@ -555,6 +555,7 @@ export default function VerInscriptosAdmin() {
         r.nacimiento || '',
         st.age === null ? '' : String(st.age),
         r.talle_remera || '',
+        (r as any).misiono_antes ? 'SI' : 'NO',
         r.emergencia_nombre || '',
         r.emergencia_telefono || '',
         r.tratamiento_especial ? 'SI' : 'NO',
