@@ -171,7 +171,7 @@ export default function VerInscriptosAdmin() {
       let q = supabase
         .from('registros')
         .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
         )
         .order('created_at', { ascending: false })
 
@@ -524,7 +524,7 @@ export default function VerInscriptosAdmin() {
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
       'email', 'telefono', 'direccion', 'ciudad',
-      'rol', 'es_jefe', 'nacimiento', 'edad', 'talle_remera',
+      'rol', 'es_jefe', 'nacimiento', 'edad', 'talle_remera', 'misiono_antes',
       'emergencia_nombre', 'emergencia_telefono',
       'tratamiento_especial', 'tratamiento_detalle',
       'alimentacion_especial', 'alimentacion_detalle',
@@ -555,6 +555,7 @@ export default function VerInscriptosAdmin() {
         r.nacimiento || '',
         st.age === null ? '' : String(st.age),
         r.talle_remera || '',
+        (r as any).misiono_antes ? 'SI' : 'NO',
         r.emergencia_nombre || '',
         r.emergencia_telefono || '',
         r.tratamiento_especial ? 'SI' : 'NO',

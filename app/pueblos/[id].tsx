@@ -124,7 +124,7 @@ export default function PuebloInscriptosScreen() {
           tratamiento_especial, tratamiento_detalle,
           alimentacion_especial, alimentacion_detalle,
           padre_nombre, padre_telefono, madre_nombre, madre_telefono,
-          talle_remera,
+          talle_remera, misiono_antes,
           autorizacion_url, ficha_medica_url, firma_url,
           cedula_frente_url, cedula_dorso_url
         `)
@@ -189,14 +189,14 @@ export default function PuebloInscriptosScreen() {
       const headerBase = ['id', 'nombres', 'apellidos']
       const headerExtra = hideCi
         ? ['edad', 'email', 'telefono', 'direccion', 'ciudad', 'emergencia_nombre', 'emergencia_telefono',
-           'rol', 'es_jefe', 'talle_remera',
+           'rol', 'es_jefe', 'talle_remera', 'misiono_antes',
            'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
            'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
            'doc_requerido', 'estado_doc',
            'autorizacion_url', 'ficha_medica_url', 'firma_url', 'cedula_frente_url', 'cedula_dorso_url',
            'created_at']
         : ['ci', 'edad', 'email', 'telefono', 'direccion', 'ciudad', 'emergencia_nombre', 'emergencia_telefono',
-           'rol', 'es_jefe', 'talle_remera',
+           'rol', 'es_jefe', 'talle_remera', 'misiono_antes',
            'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
            'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
            'doc_requerido', 'estado_doc',
@@ -223,6 +223,7 @@ export default function PuebloInscriptosScreen() {
           r.rol ?? '',
           r.es_jefe ? 'SI' : 'NO',
           r.talle_remera ?? '',
+          r.misiono_antes ? 'SI' : 'NO',
           r.tratamiento_especial ? 'SI' : 'NO',
           r.tratamiento_detalle ?? '',
           r.alimentacion_especial ? 'SI' : 'NO',
