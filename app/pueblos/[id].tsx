@@ -223,6 +223,7 @@ export default function PuebloInscriptosScreen() {
           r.rol ?? '',
           r.es_jefe ? 'SI' : 'NO',
           r.talle_remera ?? '',
+          r.misiono_antes ? 'SI' : 'NO',
           r.tratamiento_especial ? 'SI' : 'NO',
           r.tratamiento_detalle ?? '',
           r.alimentacion_especial ? 'SI' : 'NO',
