@@ -524,7 +524,7 @@ export default function VerInscriptosAdmin() {
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
       'email', 'telefono', 'direccion', 'ciudad',
-      'rol', 'es_jefe', 'nacimiento', 'edad', 'talle_remera',
+      'rol', 'es_jefe', 'nacimiento', 'edad', 'talle_remera', 'misiono_antes',
       'emergencia_nombre', 'emergencia_telefono',
       'tratamiento_especial', 'tratamiento_detalle',
       'alimentacion_especial', 'alimentacion_detalle',
