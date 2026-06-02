@@ -124,7 +124,7 @@ export default function PuebloInscriptosScreen() {
           tratamiento_especial, tratamiento_detalle,
           alimentacion_especial, alimentacion_detalle,
           padre_nombre, padre_telefono, madre_nombre, madre_telefono,
-          talle_remera,
+          talle_remera, misiono_antes,
           autorizacion_url, ficha_medica_url, firma_url,
           cedula_frente_url, cedula_dorso_url
         `)
