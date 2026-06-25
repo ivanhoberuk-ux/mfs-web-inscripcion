@@ -832,7 +832,31 @@ export default function VerInscriptosAdmin() {
                     </View>
                   )}
                   {(currentUserIsSuperAdmin || isPuebloAdmin) && (
-                    <View style={{ marginLeft: 8 }}>
+                    <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                      {venceListaEspera && !r.no_clasifico && (
+                        <Pressable
+                          onPress={() => marcarNoClasifico(r.id, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: '#b45309',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>No{'\n'}clasificó</Text>
+                        </Pressable>
+                      )}
+                      {r.no_clasifico && (
+                        <Pressable
+                          onPress={() => revertirNoClasifico(r.id, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: '#16a34a',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Revertir{'\n'}clasificación</Text>
+                        </Pressable>
+                      )}
                       <Pressable
                         onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
                         style={{
