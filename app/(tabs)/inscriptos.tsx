@@ -42,6 +42,10 @@ type Row = {
   firma_url: string | null
   cedula_frente_url: string | null
   cedula_dorso_url: string | null
+  estado?: string | null
+  no_clasifico?: boolean | null
+  no_clasificado_at?: string | null
+  no_clasificado_motivo?: string | null
   user_roles?: { role: string }[]
   profile_pueblo_id?: string | null
 }
