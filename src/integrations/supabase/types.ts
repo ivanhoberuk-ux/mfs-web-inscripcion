@@ -463,6 +463,10 @@ export type Database = {
           madre_telefono: string | null
           misiono_antes: boolean
           nacimiento: string
+          no_clasificado_at: string | null
+          no_clasificado_motivo: string | null
+          no_clasificado_por: string | null
+          no_clasifico: boolean
           nombres: string
           padre_nombre: string | null
           padre_telefono: string | null
@@ -506,6 +510,10 @@ export type Database = {
           madre_telefono?: string | null
           misiono_antes?: boolean
           nacimiento: string
+          no_clasificado_at?: string | null
+          no_clasificado_motivo?: string | null
+          no_clasificado_por?: string | null
+          no_clasifico?: boolean
           nombres: string
           padre_nombre?: string | null
           padre_telefono?: string | null
@@ -549,6 +557,10 @@ export type Database = {
           madre_telefono?: string | null
           misiono_antes?: boolean
           nacimiento?: string
+          no_clasificado_at?: string | null
+          no_clasificado_motivo?: string | null
+          no_clasificado_por?: string | null
+          no_clasifico?: boolean
           nombres?: string
           padre_nombre?: string | null
           padre_telefono?: string | null
@@ -993,6 +1005,10 @@ export type Database = {
         Args: { p_misionero_id: string; p_reunion_id: string }
         Returns: boolean
       }
+      marcar_no_clasificado: {
+        Args: { p_motivo?: string; p_registro_id: string }
+        Returns: Json
+      }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
@@ -1071,6 +1087,10 @@ export type Database = {
         Returns: undefined
       }
       remove_pueblo_admin: { Args: { p_user_id: string }; Returns: undefined }
+      revertir_no_clasificado: {
+        Args: { p_registro_id: string }
+        Returns: Json
+      }
       search_misioneros: {
         Args: { p_limit?: number; p_q?: string }
         Returns: {
@@ -1138,6 +1158,10 @@ export type Database = {
           madre_telefono: string | null
           misiono_antes: boolean
           nacimiento: string
+          no_clasificado_at: string | null
+          no_clasificado_motivo: string | null
+          no_clasificado_por: string | null
+          no_clasifico: boolean
           nombres: string
           padre_nombre: string | null
           padre_telefono: string | null

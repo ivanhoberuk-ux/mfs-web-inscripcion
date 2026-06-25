@@ -42,6 +42,10 @@ type Row = {
   firma_url: string | null
   cedula_frente_url: string | null
   cedula_dorso_url: string | null
+  estado?: string | null
+  no_clasifico?: boolean | null
+  no_clasificado_at?: string | null
+  no_clasificado_motivo?: string | null
   user_roles?: { role: string }[]
   profile_pueblo_id?: string | null
 }
@@ -86,6 +90,11 @@ export default function VerInscriptosAdmin() {
   const [searchTerm, setSearchTerm] = useState('')
   const offRef = useRef(0)
   const [userRolesMap, setUserRolesMap] = useState<Record<string, UserWithRoles>>({})
+  const [listaEsperaVenceAt, setListaEsperaVenceAt] = useState<string | null>(null)
+  const venceListaEspera = useMemo(() => {
+    if (!listaEsperaVenceAt) return false
+    return new Date(listaEsperaVenceAt).getTime() <= Date.now()
+  }, [listaEsperaVenceAt])
 
   const pueblosMap = useMemo(() => {
     const m: Record<string, string> = {}
@@ -118,6 +127,22 @@ export default function VerInscriptosAdmin() {
       }
     })()
   }, [accessChecked, isPuebloAdmin, isCoAdmin, currentUserIsSuperAdmin, userPuebloId])
+
+  // Cargar fecha de vencimiento de lista de espera para habilitar acción "No clasificó"
+  useEffect(() => {
+    if (!accessChecked) return
+    ;(async () => {
+      const año = new Date().getFullYear()
+      const { data } = await supabase
+        .from('configuracion_inscripcion')
+        .select('lista_espera_vence_at')
+        .eq('año', año)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      setListaEsperaVenceAt((data as any)?.lista_espera_vence_at ?? null)
+    })()
+  }, [accessChecked])
 
   function calcAge(iso?: string | null): number | null {
     if (!iso) return null
@@ -171,7 +196,7 @@ export default function VerInscriptosAdmin() {
       let q = supabase
         .from('registros')
         .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url,estado,no_clasifico,no_clasificado_at,no_clasificado_motivo'
         )
         .order('created_at', { ascending: false })
 
@@ -520,6 +545,57 @@ export default function VerInscriptosAdmin() {
     }
   }
 
+  async function marcarNoClasifico(id: string, nombre: string) {
+    const motivo = typeof window !== 'undefined'
+      ? window.prompt(`Marcar a ${nombre} como NO CLASIFICÓ.\n\nEsta persona será dada de baja del pueblo (libera el cupo) pero quedará registrada en el sistema.\n\nMotivo (opcional):`, '')
+      : ''
+    if (motivo === null) return // cancelado
+    try {
+      const { error } = await supabase.rpc('marcar_no_clasificado', {
+        p_registro_id: id,
+        p_motivo: motivo || null,
+      })
+      if (error) throw error
+      const msg = `${nombre} fue marcado/a como "No clasificó". El cupo fue liberado.`
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Listo', msg)
+      runSearch(true)
+    } catch (e: any) {
+      const errorMsg = e?.message ?? String(e)
+      if (typeof window !== 'undefined') window.alert(`Error: ${errorMsg}`)
+      else Alert.alert('Error', errorMsg)
+    }
+  }
+
+  async function revertirNoClasifico(id: string, nombre: string) {
+    const confirmRevert = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Revertir "No clasificó" para ${nombre}?\n\nSi hay cupo será confirmado/a; si no, irá a lista de espera.`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert('Revertir', `¿Revertir "No clasificó" para ${nombre}?`, [
+          { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Revertir', onPress: () => resolve(true) },
+        ])
+      })
+    }
+    const ok = await confirmRevert()
+    if (!ok) return
+    try {
+      const { data, error } = await supabase.rpc('revertir_no_clasificado', { p_registro_id: id })
+      if (error) throw error
+      const estado = (data as any)?.estado || 'actualizado'
+      const msg = `Reversión completada. Nuevo estado: ${estado}.`
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Listo', msg)
+      runSearch(true)
+    } catch (e: any) {
+      const errorMsg = e?.message ?? String(e)
+      if (typeof window !== 'undefined') window.alert(`Error: ${errorMsg}`)
+      else Alert.alert('Error', errorMsg)
+    }
+  }
+
   async function exportCSV() {
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
@@ -666,6 +742,13 @@ export default function VerInscriptosAdmin() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
+                    {r.no_clasifico && (
+                      <View style={{ backgroundColor: '#b45309', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, alignSelf: 'flex-start', marginTop: 4 }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
+                          ⛔ NO CLASIFICÓ{r.no_clasificado_motivo ? ` · ${r.no_clasificado_motivo}` : ''}
+                        </Text>
+                      </View>
+                    )}
                     {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
                     <Text style={s.small}>CI: {r.ci || '-'}</Text>
                     <Text style={s.small}>Email: {r.email || '-'}</Text>
@@ -756,7 +839,31 @@ export default function VerInscriptosAdmin() {
                     </View>
                   )}
                   {(currentUserIsSuperAdmin || isPuebloAdmin) && (
-                    <View style={{ marginLeft: 8 }}>
+                    <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                      {venceListaEspera && !r.no_clasifico && (
+                        <Pressable
+                          onPress={() => marcarNoClasifico(r.id, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: '#b45309',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>No{'\n'}clasificó</Text>
+                        </Pressable>
+                      )}
+                      {r.no_clasifico && (
+                        <Pressable
+                          onPress={() => revertirNoClasifico(r.id, `${r.nombres} ${r.apellidos}`)}
+                          style={{
+                            padding: 8,
+                            backgroundColor: '#16a34a',
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>Revertir{'\n'}clasificación</Text>
+                        </Pressable>
+                      )}
                       <Pressable
                         onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
                         style={{
