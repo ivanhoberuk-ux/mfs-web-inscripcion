@@ -709,13 +709,18 @@ export default function VerInscriptosAdmin() {
           placeholder="Nombre, apellido, CI o email..."
         />
 
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
           <Button variant="secondary" onPress={() => runSearch(true)}>
             Actualizar
           </Button>
           <Button variant="secondary" onPress={exportCSV} disabled={!rows.length}>
             Exportar Excel
           </Button>
+          {(currentUserIsSuperAdmin || isPuebloAdmin) && (
+            <Button onPress={() => router.push('/inscribir')}>
+              ➕ Agregar inscripto
+            </Button>
+          )}
         </View>
       </Card>
 
