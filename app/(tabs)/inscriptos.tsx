@@ -596,6 +596,7 @@ export default function VerInscriptosAdmin() {
     }
   }
 
+  async function exportCSV() {
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
       'email', 'telefono', 'direccion', 'ciudad',
