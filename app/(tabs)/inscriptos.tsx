@@ -90,6 +90,11 @@ export default function VerInscriptosAdmin() {
   const [searchTerm, setSearchTerm] = useState('')
   const offRef = useRef(0)
   const [userRolesMap, setUserRolesMap] = useState<Record<string, UserWithRoles>>({})
+  const [listaEsperaVenceAt, setListaEsperaVenceAt] = useState<string | null>(null)
+  const venceListaEspera = useMemo(() => {
+    if (!listaEsperaVenceAt) return false
+    return new Date(listaEsperaVenceAt).getTime() <= Date.now()
+  }, [listaEsperaVenceAt])
 
   const pueblosMap = useMemo(() => {
     const m: Record<string, string> = {}
