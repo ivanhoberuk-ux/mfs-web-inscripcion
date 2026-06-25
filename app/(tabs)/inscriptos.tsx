@@ -128,6 +128,22 @@ export default function VerInscriptosAdmin() {
     })()
   }, [accessChecked, isPuebloAdmin, isCoAdmin, currentUserIsSuperAdmin, userPuebloId])
 
+  // Cargar fecha de vencimiento de lista de espera para habilitar acción "No clasificó"
+  useEffect(() => {
+    if (!accessChecked) return
+    ;(async () => {
+      const año = new Date().getFullYear()
+      const { data } = await supabase
+        .from('configuracion_inscripcion')
+        .select('lista_espera_vence_at')
+        .eq('año', año)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      setListaEsperaVenceAt((data as any)?.lista_espera_vence_at ?? null)
+    })()
+  }, [accessChecked])
+
   function calcAge(iso?: string | null): number | null {
     if (!iso) return null
     const d = new Date(iso)
