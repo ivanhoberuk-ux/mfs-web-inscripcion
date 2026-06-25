@@ -545,7 +545,57 @@ export default function VerInscriptosAdmin() {
     }
   }
 
-  async function exportCSV() {
+  async function marcarNoClasifico(id: string, nombre: string) {
+    const motivo = typeof window !== 'undefined'
+      ? window.prompt(`Marcar a ${nombre} como NO CLASIFICÓ.\n\nEsta persona será dada de baja del pueblo (libera el cupo) pero quedará registrada en el sistema.\n\nMotivo (opcional):`, '')
+      : ''
+    if (motivo === null) return // cancelado
+    try {
+      const { error } = await supabase.rpc('marcar_no_clasificado', {
+        p_registro_id: id,
+        p_motivo: motivo || null,
+      })
+      if (error) throw error
+      const msg = `${nombre} fue marcado/a como "No clasificó". El cupo fue liberado.`
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Listo', msg)
+      runSearch(true)
+    } catch (e: any) {
+      const errorMsg = e?.message ?? String(e)
+      if (typeof window !== 'undefined') window.alert(`Error: ${errorMsg}`)
+      else Alert.alert('Error', errorMsg)
+    }
+  }
+
+  async function revertirNoClasifico(id: string, nombre: string) {
+    const confirmRevert = () => {
+      if (typeof window !== 'undefined') {
+        return window.confirm(`¿Revertir "No clasificó" para ${nombre}?\n\nSi hay cupo será confirmado/a; si no, irá a lista de espera.`)
+      }
+      return new Promise<boolean>((resolve) => {
+        Alert.alert('Revertir', `¿Revertir "No clasificó" para ${nombre}?`, [
+          { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Revertir', onPress: () => resolve(true) },
+        ])
+      })
+    }
+    const ok = await confirmRevert()
+    if (!ok) return
+    try {
+      const { data, error } = await supabase.rpc('revertir_no_clasificado', { p_registro_id: id })
+      if (error) throw error
+      const estado = (data as any)?.estado || 'actualizado'
+      const msg = `Reversión completada. Nuevo estado: ${estado}.`
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Listo', msg)
+      runSearch(true)
+    } catch (e: any) {
+      const errorMsg = e?.message ?? String(e)
+      if (typeof window !== 'undefined') window.alert(`Error: ${errorMsg}`)
+      else Alert.alert('Error', errorMsg)
+    }
+  }
+
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
       'email', 'telefono', 'direccion', 'ciudad',
