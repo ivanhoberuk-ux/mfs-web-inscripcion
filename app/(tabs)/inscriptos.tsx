@@ -180,7 +180,7 @@ export default function VerInscriptosAdmin() {
       let q = supabase
         .from('registros')
         .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url,estado,no_clasifico,no_clasificado_at,no_clasificado_motivo'
         )
         .order('created_at', { ascending: false })
 
