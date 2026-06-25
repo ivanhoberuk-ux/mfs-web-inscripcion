@@ -742,6 +742,13 @@ export default function VerInscriptosAdmin() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
+                    {r.no_clasifico && (
+                      <View style={{ backgroundColor: '#b45309', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, alignSelf: 'flex-start', marginTop: 4 }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
+                          ⛔ NO CLASIFICÓ{r.no_clasificado_motivo ? ` · ${r.no_clasificado_motivo}` : ''}
+                        </Text>
+                      </View>
+                    )}
                     {/* Aquí SÍ mostramos la cédula (solo admin tiene acceso a esta vista) */}
                     <Text style={s.small}>CI: {r.ci || '-'}</Text>
                     <Text style={s.small}>Email: {r.email || '-'}</Text>
