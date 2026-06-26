@@ -596,6 +596,44 @@ export default function VerInscriptosAdmin() {
     }
   }
 
+  async function enviarAcceso(id: string, nombre: string, email: string | null) {
+    if (!email) {
+      const msg = 'Este inscripto no tiene email registrado.'
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Sin email', msg)
+      return
+    }
+    const confirmar = typeof window !== 'undefined'
+      ? window.confirm(`¿Enviar email de acceso a ${nombre} (${email})?\n\nSi no tiene cuenta, se la crearemos; si ya tiene, recibirá un link para restablecer su contraseña.`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'Enviar acceso',
+            `¿Enviar email de acceso a ${nombre} (${email})?`,
+            [
+              { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Enviar', onPress: () => resolve(true) },
+            ]
+          )
+        })
+    if (!confirmar) return
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-send-access', {
+        body: { registro_id: id },
+      })
+      if (error) throw error
+      const msg = data?.created
+        ? `✅ Cuenta creada y email enviado a ${email}.`
+        : `✅ Email de acceso reenviado a ${email}.`
+      if (typeof window !== 'undefined') window.alert(msg)
+      else Alert.alert('Listo', msg)
+    } catch (e: any) {
+      const errorMsg = e?.message ?? String(e)
+      if (typeof window !== 'undefined') window.alert(`No se pudo enviar el acceso: ${errorMsg}`)
+      else Alert.alert('Error', errorMsg)
+    }
+  }
+
   async function exportCSV() {
     const header = [
       'id', 'fecha', 'pueblo', 'nombres', 'apellidos', 'ci',
