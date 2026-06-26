@@ -55,6 +55,7 @@ import * as Clipboard from 'expo-clipboard'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
 import { registrationSchema, normalizeEmail, normalizePhone, normalizeCi } from '../../src/lib/validation'
+import { useUserRoles } from '../../src/hooks/useUserRoles'
 import { z } from 'zod'
 
 type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean }
