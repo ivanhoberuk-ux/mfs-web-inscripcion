@@ -908,6 +908,16 @@ export default function VerInscriptosAdmin() {
                         </Pressable>
                       )}
                       <Pressable
+                        onPress={() => enviarAcceso(r.id, `${r.nombres} ${r.apellidos}`, r.email)}
+                        style={{
+                          padding: 8,
+                          backgroundColor: '#0ea5e9',
+                          borderRadius: 8,
+                        }}
+                      >
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center' }}>📧 Enviar{'\n'}acceso</Text>
+                      </Pressable>
+                      <Pressable
                         onPress={() => deleteInscripto(r.id, `${r.nombres} ${r.apellidos}`)}
                         style={{
                           padding: 8,
