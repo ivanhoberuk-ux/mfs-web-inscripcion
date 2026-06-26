@@ -692,7 +692,7 @@ export default function Inscribir() {
         }
 
         // Verificar duplicado por nombre+apellido+email (cubre tipeos de cédula)
-        const emailCheck = (user?.email || normEmail(email)).toLowerCase()
+        const emailCheck = (inscribiendoOtro ? normEmail(email) : (user?.email || normEmail(email))).toLowerCase()
         const { data: existePersona } = await supabase
           .from('registros')
           .select('id, ci, nombres, apellidos')
