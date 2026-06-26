@@ -71,6 +71,10 @@ export default function Inscribir() {
   const [saving, setSaving] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const { isSuperAdmin, isPuebloAdmin } = useUserRoles()
+  const esAdmin = isSuperAdmin || isPuebloAdmin
+  // Modo: admin inscribiendo a otra persona (no a sí mismo)
+  const [inscribiendoOtro, setInscribiendoOtro] = useState(false)
 
   // Campos base (obligatorios)
   const [puebloId, setPuebloId] = useState('')
