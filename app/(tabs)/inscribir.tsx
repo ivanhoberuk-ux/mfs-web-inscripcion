@@ -985,6 +985,34 @@ export default function Inscribir() {
         </Text>
       </Card>
 
+      {esAdmin && !modoEdicion && (
+        <Card style={{ backgroundColor: inscribiendoOtro ? '#fef3c7' : '#f1f5f9', borderLeftWidth: 4, borderLeftColor: inscribiendoOtro ? '#f59e0b' : colors.neutral[400] }}>
+          <Pressable
+            onPress={() => setInscribiendoOtro((v) => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+          >
+            <View style={{
+              width: 22, height: 22, borderRadius: 6,
+              borderWidth: 2, borderColor: inscribiendoOtro ? '#b45309' : colors.neutral[500],
+              backgroundColor: inscribiendoOtro ? '#f59e0b' : '#fff',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              {inscribiendoOtro && <Text style={{ color: '#fff', fontWeight: '900' }}>✓</Text>}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.text, { fontWeight: '700', color: inscribiendoOtro ? '#92400e' : colors.text.primary.light }]}>
+                👥 Estoy inscribiendo a otra persona (modo administrador)
+              </Text>
+              <Text style={[s.small, { color: inscribiendoOtro ? '#92400e' : colors.text.tertiary.light, marginTop: 2 }]}>
+                {inscribiendoOtro
+                  ? 'Se usará el email del formulario y le crearemos una cuenta automáticamente (le mandamos un email para que configure su contraseña).'
+                  : 'Marcá esta casilla si vas a cargar la inscripción de otra persona.'}
+              </Text>
+            </View>
+          </Pressable>
+        </Card>
+      )}
+
       {/* Mis inscripciones (titular + hijos) */}
       {misRegistros.length > 0 && (
         <Card style={{ backgroundColor: '#ECFEFF', borderLeftWidth: 4, borderLeftColor: colors.primary[500] }}>
