@@ -55,6 +55,7 @@ import * as Clipboard from 'expo-clipboard'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
 import { registrationSchema, normalizeEmail, normalizePhone, normalizeCi } from '../../src/lib/validation'
+import { useUserRoles } from '../../src/hooks/useUserRoles'
 import { z } from 'zod'
 
 type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean }
@@ -70,6 +71,10 @@ export default function Inscribir() {
   const [saving, setSaving] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const { isSuperAdmin, isPuebloAdmin } = useUserRoles()
+  const esAdmin = isSuperAdmin || isPuebloAdmin
+  // Modo: admin inscribiendo a otra persona (no a sí mismo)
+  const [inscribiendoOtro, setInscribiendoOtro] = useState(false)
 
   // Campos base (obligatorios)
   const [puebloId, setPuebloId] = useState('')
@@ -687,7 +692,7 @@ export default function Inscribir() {
         }
 
         // Verificar duplicado por nombre+apellido+email (cubre tipeos de cédula)
-        const emailCheck = (user?.email || normEmail(email)).toLowerCase()
+        const emailCheck = (inscribiendoOtro ? normEmail(email) : (user?.email || normEmail(email))).toLowerCase()
         const { data: existePersona } = await supabase
           .from('registros')
           .select('id, ci, nombres, apellidos')
@@ -714,7 +719,7 @@ export default function Inscribir() {
           apellidos: apellidos.trim(),
           ci: ciNormalizado,
           nacimiento: nacimientoISO,
-          email: user?.email || normEmail(email),
+          email: inscribiendoOtro ? normEmail(email) : (user?.email || normEmail(email)),
           telefono: normPhone(telefono),
           direccion: direccion.trim(),
           ciudad: ciudad.trim() || null,
@@ -743,11 +748,33 @@ export default function Inscribir() {
           pueblos_acompana: rol === 'Asesor' ? pueblosAcompana : null,
         })
         
-        // Actualizar el pueblo_id en el profile del usuario
-        await supabase
-          .from('profiles')
-          .update({ pueblo_id: puebloId })
-          .eq('id', user.id)
+        // Si es admin inscribiendo a otra persona: NO sobrescribir su propio pueblo_id
+        // y disparar creación de cuenta + email de acceso para el inscripto.
+        let accesoMsg = ''
+        if (inscribiendoOtro) {
+          try {
+            const { data: accData, error: accErr } = await supabase.functions.invoke('admin-send-access', {
+              body: {
+                registro_id: result.id,
+                email: normEmail(email),
+                nombres: `${nombres.trim()} ${apellidos.trim()}`,
+              },
+            })
+            if (accErr) throw accErr
+            accesoMsg = accData?.created
+              ? `\n\n📧 Le enviamos un email a ${normEmail(email)} con un link para que configure su contraseña.`
+              : `\n\n📧 Le reenviamos a ${normEmail(email)} un link de acceso (la cuenta ya existía).`
+          } catch (e: any) {
+            console.warn('admin-send-access falló', e)
+            accesoMsg = `\n\n⚠️ La inscripción se creó, pero no se pudo enviar el email de acceso (${e?.message ?? 'error'}). Podés reenviarlo desde la lista de inscriptos.`
+          }
+        } else {
+          // Flujo normal: actualizar pueblo_id del perfil del usuario
+          await supabase
+            .from('profiles')
+            .update({ pueblo_id: puebloId })
+            .eq('id', user.id)
+        }
 
         // Copiar código al portapapeles
         try {
@@ -755,38 +782,45 @@ export default function Inscribir() {
         } catch {}
 
         // Mostrar mensaje según el estado
-        const titulo = result.estado === 'confirmado'
+        const titulo = inscribiendoOtro
+          ? '✅ Inscripción creada'
+          : result.estado === 'confirmado'
           ? '¡Inscripción confirmada!'
           : result.estado === 'pendiente_validacion'
           ? '🕓 Pendiente de validación'
           : '📋 Lista de espera'
 
-        const mensaje = result.estado === 'confirmado'
+        const mensajeBase = inscribiendoOtro
+          ? `Se registró a ${nombres.trim()} ${apellidos.trim()} en el pueblo seleccionado.${accesoMsg}`
+          : result.estado === 'confirmado'
           ? `🎉 ¡Bienvenido/a a esta hermosa locura de amor!\n\nAhora te llevamos a cargar tus documentos.`
           : result.estado === 'pendiente_validacion'
           ? `🙏 ¡Gracias por sumarte como Asesor espiritual!\n\nTu inscripción quedó pendiente de validación por un administrador. Te notificaremos cuando esté confirmada.\n\nMientras tanto podés cargar tus documentos.`
           : `${result.mensaje}\n\nEstás en lista de espera. Te notificaremos por email si un cupo se libera.\n\nAhora te llevamos a cargar tus documentos.`
 
+        const destino = inscribiendoOtro ? '/(tabs)/inscriptos' : '/(tabs)/documentos'
+        const params = inscribiendoOtro ? undefined : { code: result.id }
+
         Alert.alert(
           titulo,
-          mensaje,
+          mensajeBase,
           [
             {
               text: 'OK',
               onPress: () => {
-                router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
+                router.push(params ? { pathname: destino, params } as any : destino as any)
               },
             },
           ],
           { onDismiss: () => {
-            router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
+            router.push(params ? { pathname: destino, params } as any : destino as any)
           }}
         )
         
-        // Redirigir automáticamente después de 1 segundo como fallback
+        // Redirigir automáticamente como fallback
         setTimeout(() => {
-          router.push({ pathname: '/(tabs)/documentos', params: { code: result.id } })
-        }, 1000)
+          router.push(params ? { pathname: destino, params } as any : destino as any)
+        }, 1500)
       }
 
       // Reset form solo si no estamos en modo edición
@@ -950,6 +984,34 @@ export default function Inscribir() {
           {modoEdicion ? 'Actualizá tus datos según sea necesario' : 'Completá el formulario para inscribirte a un pueblo'}
         </Text>
       </Card>
+
+      {esAdmin && !modoEdicion && (
+        <Card style={{ backgroundColor: inscribiendoOtro ? '#fef3c7' : '#f1f5f9', borderLeftWidth: 4, borderLeftColor: inscribiendoOtro ? '#f59e0b' : colors.neutral[400] }}>
+          <Pressable
+            onPress={() => setInscribiendoOtro((v) => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+          >
+            <View style={{
+              width: 22, height: 22, borderRadius: 6,
+              borderWidth: 2, borderColor: inscribiendoOtro ? '#b45309' : colors.neutral[500],
+              backgroundColor: inscribiendoOtro ? '#f59e0b' : '#fff',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              {inscribiendoOtro && <Text style={{ color: '#fff', fontWeight: '900' }}>✓</Text>}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.text, { fontWeight: '700', color: inscribiendoOtro ? '#92400e' : colors.text.primary.light }]}>
+                👥 Estoy inscribiendo a otra persona (modo administrador)
+              </Text>
+              <Text style={[s.small, { color: inscribiendoOtro ? '#92400e' : colors.text.tertiary.light, marginTop: 2 }]}>
+                {inscribiendoOtro
+                  ? 'Se usará el email del formulario y le crearemos una cuenta automáticamente (le mandamos un email para que configure su contraseña).'
+                  : 'Marcá esta casilla si vas a cargar la inscripción de otra persona.'}
+              </Text>
+            </View>
+          </Pressable>
+        </Card>
+      )}
 
       {/* Mis inscripciones (titular + hijos) */}
       {misRegistros.length > 0 && (
