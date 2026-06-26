@@ -719,7 +719,7 @@ export default function Inscribir() {
           apellidos: apellidos.trim(),
           ci: ciNormalizado,
           nacimiento: nacimientoISO,
-          email: user?.email || normEmail(email),
+          email: inscribiendoOtro ? normEmail(email) : (user?.email || normEmail(email)),
           telefono: normPhone(telefono),
           direccion: direccion.trim(),
           ciudad: ciudad.trim() || null,
