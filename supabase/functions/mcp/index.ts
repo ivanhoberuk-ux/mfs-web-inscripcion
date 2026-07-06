@@ -3,7 +3,8 @@
 // so external assistants (ChatGPT/Claude/Cursor/etc.) can query pueblo
 // availability and inscription info.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { createSupabaseHandler, defineMcp, defineTool } from "npm:@lovable.dev/mcp-js";
+import { defineMcp, defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.20.0/stacks/supabase";
 import { z } from "npm:zod@3.23.8";
 
 function sb() {
