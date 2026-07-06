@@ -825,8 +825,10 @@ export default function VerInscriptosAdmin() {
                       Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
                     </Text>
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                      <Chip ok={st.isAdult ? st.okAcept : st.okPerm} label={st.requiredName} />
+                      <Chip ok={st.okCedulaFrente} label="Céd. frente" />
+                      <Chip ok={st.okCedulaDorso} label="Céd. dorso" />
                       <Chip ok={st.okFirma} label="Firma" />
+                      {st.necesitaPermiso && <Chip ok={st.okPermiso} label="Permiso menor" />}
                       <Chip ok={st.okRequeridos} label="Completos" />
                     </View>
                     <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
