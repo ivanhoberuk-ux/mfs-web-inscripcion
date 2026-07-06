@@ -158,31 +158,31 @@ export default function VerInscriptosAdmin() {
   function requiredDocsOk(r: Row) {
     const age = calcAge(r.nacimiento)
     const isAdult = age === null ? true : age >= 18 // sin fecha => asumimos adulto
+    // Docs SIEMPRE requeridos: cédula frente + dorso + firma
+    const okCedulaFrente = !!r.cedula_frente_url
+    const okCedulaDorso = !!r.cedula_dorso_url
     const okFirma = !!r.firma_url
-    if (isAdult) {
-      const okAcept = !!r.autorizacion_url
-      return {
-        age,
-        isAdult,
-        requiredName: 'Aceptación',
-        okRequeridos: okAcept && okFirma,
-        okAcept,
-        okPerm: !!r.ficha_medica_url,
-        okFirma,
-      }
-    } else {
-      const okPerm = !!r.ficha_medica_url
-      return {
-        age,
-        isAdult,
-        requiredName: 'Permiso',
-        okRequeridos: okPerm && okFirma,
-        okAcept: !!r.autorizacion_url,
-        okPerm,
-        okFirma,
-      }
+    // Permiso del menor: solo si es menor de 18 Y rol != 'Hijo'
+    const necesitaPermiso = !isAdult && r.rol !== 'Hijo'
+    const okPermiso = !!r.autorizacion_url
+    const okRequeridos =
+      okCedulaFrente && okCedulaDorso && okFirma && (!necesitaPermiso || okPermiso)
+    return {
+      age,
+      isAdult,
+      necesitaPermiso,
+      okCedulaFrente,
+      okCedulaDorso,
+      okFirma,
+      okPermiso,
+      // compat con export CSV existente
+      requiredName: necesitaPermiso ? 'Permiso del menor' : 'Cédulas + Firma',
+      okRequeridos,
+      okAcept: okPermiso,
+      okPerm: okPermiso,
     }
   }
+
 
   async function runSearch(reset: boolean) {
     if (!accessChecked) return
