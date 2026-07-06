@@ -22,8 +22,8 @@ const listPueblos = defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async () => {
     const { data, error } = await sb()
-      .from("vw_ocupacion_completa")
-      .select("id,nombre,cupo_max,activo,confirmados,en_espera,libres")
+      .from("vw_ocupacion")
+      .select("id,nombre,cupo_max,activo,usados,en_espera,libres,menores,total_personas")
       .order("nombre");
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
     return {
@@ -44,8 +44,8 @@ const getPueblo = defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ nombre }) => {
     const { data, error } = await sb()
-      .from("vw_ocupacion_completa")
-      .select("id,nombre,cupo_max,activo,confirmados,en_espera,libres")
+      .from("vw_ocupacion")
+      .select("id,nombre,cupo_max,activo,usados,en_espera,libres,menores,total_personas")
       .ilike("nombre", `%${nombre}%`);
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
     if (!data || data.length === 0)
@@ -66,18 +66,18 @@ const getInscripcionEstado = defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async () => {
     const { data, error } = await sb()
-      .from("vw_ocupacion_completa")
-      .select("cupo_max,confirmados,en_espera,libres,activo")
+      .from("vw_ocupacion")
+      .select("cupo_max,usados,en_espera,libres,activo")
       .eq("activo", true);
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
     const totals = (data ?? []).reduce(
       (acc, r: any) => ({
         cupo_max: acc.cupo_max + (r.cupo_max ?? 0),
-        confirmados: acc.confirmados + (r.confirmados ?? 0),
+        usados: acc.usados + (r.usados ?? 0),
         en_espera: acc.en_espera + (r.en_espera ?? 0),
         libres: acc.libres + (r.libres ?? 0),
       }),
-      { cupo_max: 0, confirmados: 0, en_espera: 0, libres: 0 },
+      { cupo_max: 0, usados: 0, en_espera: 0, libres: 0 },
     );
     return {
       content: [{ type: "text", text: JSON.stringify(totals, null, 2) }],
