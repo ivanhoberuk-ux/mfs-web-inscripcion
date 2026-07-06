@@ -23,7 +23,7 @@ type Row = {
   direccion: string | null
   ciudad: string | null
   pueblo_id: string
-  rol: 'Tio' | 'Misionero'
+  rol: 'Tio' | 'Misionero' | 'Hijo' | 'Asesor' | string
   nacimiento: string | null
   es_jefe: boolean
   emergencia_nombre: string | null
