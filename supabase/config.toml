@@ -13,3 +13,5 @@ project_id = "npekpdkywsneylddzzuu"
     verify_jwt = false
   [functions.test-email]
     verify_jwt = false
+  [functions.mcp]
+    verify_jwt = false
