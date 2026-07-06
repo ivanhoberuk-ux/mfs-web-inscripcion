@@ -23,7 +23,7 @@ type Row = {
   direccion: string | null
   ciudad: string | null
   pueblo_id: string
-  rol: 'Tio' | 'Misionero'
+  rol: 'Tio' | 'Misionero' | 'Hijo' | 'Asesor' | string
   nacimiento: string | null
   es_jefe: boolean
   emergencia_nombre: string | null
@@ -158,31 +158,31 @@ export default function VerInscriptosAdmin() {
   function requiredDocsOk(r: Row) {
     const age = calcAge(r.nacimiento)
     const isAdult = age === null ? true : age >= 18 // sin fecha => asumimos adulto
+    // Docs SIEMPRE requeridos: cédula frente + dorso + firma
+    const okCedulaFrente = !!r.cedula_frente_url
+    const okCedulaDorso = !!r.cedula_dorso_url
     const okFirma = !!r.firma_url
-    if (isAdult) {
-      const okAcept = !!r.autorizacion_url
-      return {
-        age,
-        isAdult,
-        requiredName: 'Aceptación',
-        okRequeridos: okAcept && okFirma,
-        okAcept,
-        okPerm: !!r.ficha_medica_url,
-        okFirma,
-      }
-    } else {
-      const okPerm = !!r.ficha_medica_url
-      return {
-        age,
-        isAdult,
-        requiredName: 'Permiso',
-        okRequeridos: okPerm && okFirma,
-        okAcept: !!r.autorizacion_url,
-        okPerm,
-        okFirma,
-      }
+    // Permiso del menor: solo si es menor de 18 Y rol != 'Hijo'
+    const necesitaPermiso = !isAdult && r.rol !== 'Hijo'
+    const okPermiso = !!r.autorizacion_url
+    const okRequeridos =
+      okCedulaFrente && okCedulaDorso && okFirma && (!necesitaPermiso || okPermiso)
+    return {
+      age,
+      isAdult,
+      necesitaPermiso,
+      okCedulaFrente,
+      okCedulaDorso,
+      okFirma,
+      okPermiso,
+      // compat con export CSV existente
+      requiredName: necesitaPermiso ? 'Permiso del menor' : 'Cédulas + Firma',
+      okRequeridos,
+      okAcept: okPermiso,
+      okPerm: okPermiso,
     }
   }
+
 
   async function runSearch(reset: boolean) {
     if (!accessChecked) return
@@ -825,8 +825,10 @@ export default function VerInscriptosAdmin() {
                       Nacimiento: {r.nacimiento || '—'} · Edad: {st.age === null ? '—' : st.age} {st.isAdult ? '(Mayor)' : '(Menor)'}
                     </Text>
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                      <Chip ok={st.isAdult ? st.okAcept : st.okPerm} label={st.requiredName} />
+                      <Chip ok={st.okCedulaFrente} label="Céd. frente" />
+                      <Chip ok={st.okCedulaDorso} label="Céd. dorso" />
                       <Chip ok={st.okFirma} label="Firma" />
+                      {st.necesitaPermiso && <Chip ok={st.okPermiso} label="Permiso menor" />}
                       <Chip ok={st.okRequeridos} label="Completos" />
                     </View>
                     <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
