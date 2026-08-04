@@ -436,7 +436,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               ))}
               {(ultimoProg.pendientes ?? []).map((p: any) => (
                 <Text key={p.partido_id} style={[s.small, { marginBottom: 2 }]}>
-                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}
+                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}{p.motivo ? ` — ${p.motivo}` : ''}
                 </Text>
               ))}
             </SectionCard>
