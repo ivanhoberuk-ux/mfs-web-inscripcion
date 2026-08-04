@@ -10,14 +10,15 @@ import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src
 import { shareOrDownload } from '../../src/lib/sharing';
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla, type TorneoGoleador,
-  fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchTabla, fetchGoleadores,
+  type TorneoEquipo,
+  fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchTabla, fetchGoleadores, fetchEquipos,
   nombreEquipo, fmtDia, fmtHora, claveDia, FASE_LABEL, ESTADO_LABEL,
 } from '../../src/lib/torneo';
 
-type Vista = 'fixture' | 'posiciones' | 'goleadores' | 'admin';
+type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'goleadores' | 'admin';
 
 export default function Torneo() {
-  const { isSuperAdmin } = useUserRoles();
+  const { isSuperAdmin, puebloId } = useUserRoles();
   const [vista, setVista] = useState<Vista>('fixture');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
