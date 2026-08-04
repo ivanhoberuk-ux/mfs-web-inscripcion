@@ -336,8 +336,23 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 onPress={() => programar(false)} disabled={busy} />
             </View>
           </SectionCard>
+
+          <SectionCard title="Reprogramar por atrasos" emoji="⏰">
+            <Text style={[s.small, { marginBottom: spacing.md }]}>
+              Si un partido se atrasa, elegí desde qué partido corregir y cuántos minutos correr.
+              Se desplaza ese partido y todos los que vienen después (los finalizados no se tocan).
+            </Text>
+            <CorrerHorarios
+              partidos={partidos.filter((p) => p.inicio && p.estado !== 'finalizado')}
+              disciplinas={disciplinas}
+              onRun={(pid, mins, soloCancha) =>
+                run(() => correrHorarios(pid, mins, soloCancha), 'Horarios actualizados')}
+              disabled={busy}
+            />
+          </SectionCard>
         </>
       )}
+
 
       {seccion === 'resultados' && disc && (
         <SectionCard title={`Resultados — ${disc.nombre}`} emoji="📝">
