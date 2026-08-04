@@ -76,7 +76,7 @@ function actionMessage(result: any, fallback: string): string {
       .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${Math.round(Number(r.minutos_necesarios || 0))} min en total, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
       .join('\n');
     const causa = porReglas > 0
-      ? `\n\n${porReglas} de esos partidos SÍ entraban en los bloques, pero los bloquearon las reglas: máximo ${result.max_dia_pueblo} partidos por pueblo por día y ${result.descanso_min} min de descanso mínimo entre partidos de un mismo pueblo. Podés aflojar esas reglas arriba del botón “Programar todo”.`
+      ? `\n\n${porReglas} de esos partidos SÍ entraban en los bloques, pero los bloquearon las reglas: ${result.descanso_min} min de descanso mínimo entre partidos de un mismo pueblo. Podés aflojar esas reglas arriba del botón “Programar todo”.`
       : '';
     return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}${causa}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
   }
@@ -97,7 +97,6 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
   const [ultimoProg, setUltimoProg] = useState<any>(null);
-  const [maxDiaPueblo, setMaxDiaPueblo] = useState('4');
   const [descansoMin, setDescansoMin] = useState('30');
 
 
@@ -180,7 +179,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       return;
     }
     run(async () => {
-      const r = await programarTorneo(edicion.id, reprogramarTodo, Number(maxDiaPueblo) || 4, Number(descansoMin) || 0);
+      const r = await programarTorneo(edicion.id, reprogramarTodo, 9999, Number(descansoMin) || 0);
       setUltimoProg(r);
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
