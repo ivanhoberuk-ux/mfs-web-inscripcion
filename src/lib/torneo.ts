@@ -325,6 +325,17 @@ export async function resolverAvances(disciplinaId: string) {
   return data as any;
 }
 
+export async function correrHorarios(partidoId: string, minutos: number, soloCancha = true) {
+  const { data, error } = await supabase.rpc('torneo_correr_horarios' as any, {
+    p_partido_id: partidoId,
+    p_minutos: minutos,
+    p_solo_cancha: soloCancha,
+  });
+  if (error) throw error;
+  return data as any;
+}
+
+
 // ---------- Helpers de formato ----------
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
