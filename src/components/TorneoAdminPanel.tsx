@@ -171,7 +171,12 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       notify('Faltan canchas', `Agregá una cancha para: ${sinCancha.map((d) => d.nombre).join(', ')}.`);
       return;
     }
-    run(() => programarTorneo(edicion.id, reprogramarTodo), reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+    run(async () => {
+      const r = await programarTorneo(edicion.id, reprogramarTodo);
+      setUltimoProg(r);
+      return r;
+    }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+
   }
 
   return (
