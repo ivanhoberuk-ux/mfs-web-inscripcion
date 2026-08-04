@@ -1,7 +1,7 @@
 // FILE: src/components/TorneoAdminPanel.tsx
 // Panel de administración del Torneo Interpueblos (solo super_admin)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, TextInput, ActivityIndicator, Alert, Switch, ScrollView } from 'react-native';
+import { View, Text, Pressable, TextInput, ActivityIndicator, Alert, Switch, ScrollView, Platform } from 'react-native';
 import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
 import { fetchPueblos, type Pueblo } from '../lib/api';
@@ -42,6 +42,38 @@ function MiniBtn({ label, onPress, color = colors.primary[600], disabled }: any)
   );
 }
 
+function notify(title: string, message: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.alert(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
+}
+
+function confirmAction(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Continuar', onPress: onConfirm },
+  ]);
+}
+
+function actionMessage(result: any, fallback: string): string {
+  if (!result || typeof result !== 'object') return fallback;
+  if (result.ok === false) return result.msg || 'La operación no pudo completarse.';
+  if (typeof result.partidos === 'number') return `${result.partidos} partidos generados.`;
+  if (typeof result.programados === 'number') {
+    const pending = Number(result.sin_horario || 0);
+    return pending > 0
+      ? `${result.programados} partidos programados. ${pending} quedaron sin horario por falta de espacio disponible.`
+      : `${result.programados} partidos programados correctamente.`;
+  }
+  return fallback;
+}
+
 export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicion; onChanged?: () => void }) {
   const [seccion, setSeccion] = useState<Seccion>('disciplinas');
   const [loading, setLoading] = useState(true);
@@ -80,9 +112,9 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       const r = await fn();
       await load();
       onChanged?.();
-      if (okMsg) Alert.alert('Listo', typeof r === 'object' && r ? `${okMsg}\n${JSON.stringify(r)}` : okMsg);
+      if (okMsg) notify('Listo', actionMessage(r, okMsg));
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? String(e));
+      notify('Error', e?.message ?? String(e));
     } finally {
       setBusy(false);
     }
@@ -94,6 +126,45 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const equiposDisc = equipos.filter((e) => e.disciplina_id === selDisc);
   const canchasDisc = canchas.filter((c) => c.disciplina_id === selDisc);
   const partidosDisc = partidos.filter((p) => p.disciplina_id === selDisc);
+  const partidosProgramados = partidos.filter((p) => p.inicio != null).length;
+
+  async function generarTodosLosFixtures() {
+    const activas = disciplinas.filter((d) => d.activa);
+    const incompletas = activas.filter((d) => equipos.filter((e) => e.disciplina_id === d.id && e.activo).some((e) => !e.zona));
+    if (incompletas.length > 0) {
+      notify('Faltan zonas', `Asigná una zona a todos los equipos de: ${incompletas.map((d) => d.nombre).join(', ')}.`);
+      return;
+    }
+    confirmAction(
+      'Generar todos los fixtures',
+      'Se reemplazarán los partidos actuales de todas las disciplinas activas. ¿Continuar?',
+      () => run(async () => {
+        let total = 0;
+        for (const d of activas) {
+          const result = await generarFixture(d.id);
+          total += Number(result?.partidos || 0);
+        }
+        return { ok: true, partidos: total };
+      }, 'Fixtures generados'),
+    );
+  }
+
+  function programar(reprogramarTodo: boolean) {
+    if (partidos.length === 0) {
+      notify('Primero generá el fixture', 'No hay partidos para programar. Entrá en “Equipos y zonas” y generá el fixture de cada disciplina, o usá “Generar todos los fixtures”.');
+      return;
+    }
+    if (bloques.length === 0) {
+      notify('Faltan horarios', 'Agregá por lo menos un bloque con fecha, hora de inicio y hora de fin.');
+      return;
+    }
+    const sinCancha = disciplinas.filter((d) => d.activa && !canchas.some((c) => c.disciplina_id === d.id));
+    if (sinCancha.length > 0) {
+      notify('Faltan canchas', `Agregá una cancha para: ${sinCancha.map((d) => d.nombre).join(', ')}.`);
+      return;
+    }
+    run(() => programarTorneo(edicion.id, reprogramarTodo), reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+  }
 
   return (
     <View>
@@ -188,10 +259,22 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
             <MiniBtn label={`🎲 Sortear ${disc.num_zonas} zonas`} color={colors.info}
               onPress={() => run(() => sortearZonas(disc.id, disc.num_zonas), 'Zonas sorteadas')} />
             <MiniBtn label="📋 Generar fixture" color={colors.success}
-              onPress={() => Alert.alert('Generar fixture', 'Se borran los partidos actuales de esta disciplina. ¿Continuar?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Generar', onPress: () => run(() => generarFixture(disc.id), 'Fixture generado') },
-              ])} />
+              onPress={() => {
+                const sinZona = equiposDisc.some((e) => !e.zona);
+                if (equiposDisc.length < 2) {
+                  notify('Faltan equipos', 'Esta disciplina necesita por lo menos dos equipos.');
+                  return;
+                }
+                if (sinZona) {
+                  notify('Faltan zonas', 'Todos los equipos deben tener una zona antes de generar el fixture.');
+                  return;
+                }
+                confirmAction(
+                  'Generar fixture',
+                  `Se reemplazarán los ${partidosDisc.length} partidos actuales de ${disc.nombre}. ¿Continuar?`,
+                  () => run(() => generarFixture(disc.id), 'Fixture generado'),
+                );
+              }} />
           </View>
         </SectionCard>
       )}
@@ -236,11 +319,20 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               Asigna día, hora y cancha a todos los partidos de las disciplinas activas, evitando que un pueblo
               juegue dos partidos a la vez y que se solapen las canchas. Los partidos ya finalizados no se tocan.
             </Text>
+            <View style={{ backgroundColor: colors.primary[50], padding: spacing.md, borderRadius: radius.sm, marginBottom: spacing.md }}>
+              <Text style={{ fontWeight: '800', color: colors.primary[800], marginBottom: 4 }}>Orden para organizar el torneo</Text>
+              <Text style={s.small}>1. Equipos con zonas → 2. Generar fixtures → 3. Revisar bloques y canchas → 4. Programar todo</Text>
+              <Text style={[s.small, { marginTop: 6 }]}>
+                Estado: {partidos.length} partidos creados · {partidosProgramados} con horario · {bloques.length} bloques · {canchas.length} canchas
+              </Text>
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <MiniBtn label="📋 Generar todos los fixtures" color={colors.success}
+                onPress={generarTodosLosFixtures} disabled={busy} />
               <MiniBtn label="🤖 Programar todo" color={colors.primary[600]}
-                onPress={() => run(() => programarTorneo(edicion.id, true), 'Torneo programado')} />
+                onPress={() => programar(true)} disabled={busy} />
               <MiniBtn label="➕ Programar solo los pendientes" color={colors.info}
-                onPress={() => run(() => programarTorneo(edicion.id, false), 'Pendientes programados')} />
+                onPress={() => programar(false)} disabled={busy} />
             </View>
           </SectionCard>
         </>
