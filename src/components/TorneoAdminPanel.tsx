@@ -650,7 +650,7 @@ function CanchaRow({ cancha, onRename, onDelete }: { cancha: TorneoCancha; onRen
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4 }}>
         <TextInput value={n} onChangeText={setN} style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
         <MiniBtn label="💾" color={colors.success} onPress={() => { if (n.trim()) { onRename(n.trim()); setEdit(false); } }} />
-        <MiniBtn label="✖" color={colors.gray?.[500] ?? colors.error} onPress={() => { setN(cancha.nombre); setEdit(false); }} />
+        <MiniBtn label="✖" color={colors.text.secondary} onPress={() => { setN(cancha.nombre); setEdit(false); }} />
       </View>
     );
   }
