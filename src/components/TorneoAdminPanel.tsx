@@ -531,7 +531,7 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
       <Text style={[s.small, { marginBottom: 4 }]}>⏸️ Entretiempo (descanso dentro del partido)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
         <Picker selectedValue={String(form.entretiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, entretiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
-          {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
+          {Array.from({ length: 61 }, (_, i) => i).map((v) => (
             <Picker.Item key={v} label={v === 0 ? 'Sin entretiempo' : `${v} min`} value={String(v)} />
           ))}
         </Picker>
@@ -540,7 +540,7 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
       <Text style={[s.small, { marginBottom: 4 }]}>😮‍💨 Descanso entre partidos (cambio de equipos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
         <Picker selectedValue={String(form.buffer_min ?? 0)} onValueChange={(v) => setForm({ ...form, buffer_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
-          {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
+          {Array.from({ length: 61 }, (_, i) => i).map((v) => (
             <Picker.Item key={v} label={v === 0 ? 'Sin descanso' : `${v} min`} value={String(v)} />
           ))}
         </Picker>
