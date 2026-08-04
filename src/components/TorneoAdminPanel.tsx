@@ -69,12 +69,16 @@ function actionMessage(result: any, fallback: string): string {
   if (typeof result.programados === 'number') {
     const pending = Number(result.sin_horario || 0);
     if (pending === 0) return `${result.programados} partidos programados correctamente.`;
+    const porReglas = Number(result.bloqueados_por_reglas || 0);
     const resumen = Array.isArray(result.resumen) ? result.resumen : [];
     const detalle = resumen
       .filter((r: any) => Number(r.sin_horario) > 0)
-      .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${r.minutos_por_partido} min por partido, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
+      .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${Math.round(Number(r.minutos_necesarios || 0))} min en total, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
       .join('\n');
-    return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
+    const causa = porReglas > 0
+      ? `\n\n${porReglas} de esos partidos SÍ entraban en los bloques, pero los bloquearon las reglas: máximo ${result.max_dia_pueblo} partidos por pueblo por día y ${result.descanso_min} min de descanso mínimo entre partidos de un mismo pueblo. Podés aflojar esas reglas arriba del botón “Programar todo”.`
+      : '';
+    return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}${causa}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
   }
   return fallback;
 }
@@ -93,6 +97,9 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
   const [ultimoProg, setUltimoProg] = useState<any>(null);
+  const [maxDiaPueblo, setMaxDiaPueblo] = useState('4');
+  const [descansoMin, setDescansoMin] = useState('30');
+
 
 
   const load = useCallback(async () => {
@@ -173,7 +180,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       return;
     }
     run(async () => {
-      const r = await programarTorneo(edicion.id, reprogramarTodo);
+      const r = await programarTorneo(edicion.id, reprogramarTodo, Number(maxDiaPueblo) || 4, Number(descansoMin) || 0);
       setUltimoProg(r);
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
@@ -371,6 +378,30 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 Estado: {partidos.length} partidos creados · {partidosProgramados} con horario · {bloques.length} bloques · {canchas.length} canchas
               </Text>
             </View>
+
+            <View style={{ backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md }}>
+              <Text style={{ fontWeight: '800', color: colors.neutral[800], marginBottom: 4 }}>⚙️ Reglas de descanso</Text>
+              <Text style={[s.small, { marginBottom: spacing.sm }]}>
+                Si te quedan partidos sin horario aunque sobre tiempo, suele ser por estas reglas. Aflojalas y volvé a programar.
+              </Text>
+              <Text style={s.small}>Máximo de partidos por pueblo por día</Text>
+              <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
+                <Picker selectedValue={maxDiaPueblo} onValueChange={(v) => setMaxDiaPueblo(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
+                  {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((v) => (
+                    <Picker.Item key={v} label={`${v} partidos por día`} value={v} />
+                  ))}
+                </Picker>
+              </View>
+              <Text style={s.small}>Descanso mínimo entre partidos del mismo pueblo</Text>
+              <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden' }}>
+                <Picker selectedValue={descansoMin} onValueChange={(v) => setDescansoMin(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
+                  {Array.from({ length: 13 }, (_, i) => String(i * 5)).map((v) => (
+                    <Picker.Item key={v} label={v === '0' ? 'Sin descanso mínimo' : `${v} minutos`} value={v} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               <MiniBtn label="📋 Generar todos los fixtures" color={colors.success}
                 onPress={generarTodosLosFixtures} disabled={busy} />
@@ -399,13 +430,13 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                   <Text style={{ fontWeight: '800', color: colors.primary[800] }}>{r.disciplina}</Text>
                   <Text style={s.small}>
                     {r.sin_horario} sin horario · {r.programados} programados · {r.minutos_por_partido} min por partido ·
-                    {' '}{r.canchas} cancha/s · {Math.round(Number(r.minutos_disponibles || 0))} min disponibles en total
+                    {' '}{r.canchas} cancha/s · necesita {Math.round(Number(r.minutos_necesarios || 0))} min y hay {Math.round(Number(r.minutos_disponibles || 0))} min disponibles
                   </Text>
                 </View>
               ))}
               {(ultimoProg.pendientes ?? []).map((p: any) => (
                 <Text key={p.partido_id} style={[s.small, { marginBottom: 2 }]}>
-                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}
+                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}{p.motivo ? ` — ${p.motivo}` : ''}
                 </Text>
               ))}
             </SectionCard>

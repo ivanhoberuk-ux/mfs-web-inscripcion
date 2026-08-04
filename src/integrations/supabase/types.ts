@@ -1579,10 +1579,20 @@ export type Database = {
         Args: { p_edicion_id: string; p_incluir_finalizados?: boolean }
         Returns: Json
       }
-      torneo_programar: {
-        Args: { p_edicion_id: string; p_reprogramar_todo?: boolean }
-        Returns: Json
-      }
+      torneo_programar:
+        | {
+            Args: { p_edicion_id: string; p_reprogramar_todo?: boolean }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_descanso_min?: number
+              p_edicion_id: string
+              p_max_dia_pueblo?: number
+              p_reprogramar_todo?: boolean
+            }
+            Returns: Json
+          }
       torneo_resolver_avances: {
         Args: { p_disciplina_id: string }
         Returns: Json

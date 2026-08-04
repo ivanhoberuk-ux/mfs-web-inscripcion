@@ -310,10 +310,17 @@ export async function generarFixture(disciplinaId: string) {
   return data as any;
 }
 
-export async function programarTorneo(edicionId: string, reprogramarTodo = true) {
+export async function programarTorneo(
+  edicionId: string,
+  reprogramarTodo = true,
+  maxDiaPueblo = 4,
+  descansoMin = 30,
+) {
   const { data, error } = await supabase.rpc('torneo_programar' as any, {
     p_edicion_id: edicionId,
     p_reprogramar_todo: reprogramarTodo,
+    p_max_dia_pueblo: maxDiaPueblo,
+    p_descanso_min: descansoMin,
   });
   if (error) throw error;
   return data as any;
