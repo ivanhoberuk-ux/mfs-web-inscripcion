@@ -579,17 +579,23 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
   );
 }
 
-// ---------- Nuevo bloque ----------
-function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_id'>) => void }) {
+// ---------- Form de bloque (alta y edición) ----------
+type BloqueValue = Omit<TorneoBloque, 'id' | 'edicion_id'>;
+function NuevoBloque({ onAdd, initial, submitLabel, onCancel }: {
+  onAdd: (b: BloqueValue) => void;
+  initial?: BloqueValue;
+  submitLabel?: string;
+  onCancel?: () => void;
+}) {
   const hoy = new Date();
-  const [dia, setDia] = useState(String(hoy.getDate()).padStart(2, '0'));
-  const [mes, setMes] = useState(String(hoy.getMonth() + 1).padStart(2, '0'));
-  const [anio, setAnio] = useState(String(hoy.getFullYear()));
-  const [hiHora, setHiHora] = useState('08');
-  const [hiMin, setHiMin] = useState('00');
-  const [hfHora, setHfHora] = useState('11');
-  const [hfMin, setHfMin] = useState('30');
-  const [et, setEt] = useState('');
+  const [dia, setDia] = useState(initial ? initial.fecha.slice(8, 10) : String(hoy.getDate()).padStart(2, '0'));
+  const [mes, setMes] = useState(initial ? initial.fecha.slice(5, 7) : String(hoy.getMonth() + 1).padStart(2, '0'));
+  const [anio, setAnio] = useState(initial ? initial.fecha.slice(0, 4) : String(hoy.getFullYear()));
+  const [hiHora, setHiHora] = useState(initial ? initial.hora_inicio.slice(0, 2) : '08');
+  const [hiMin, setHiMin] = useState(initial ? initial.hora_inicio.slice(3, 5) : '00');
+  const [hfHora, setHfHora] = useState(initial ? initial.hora_fin.slice(0, 2) : '11');
+  const [hfMin, setHfMin] = useState(initial ? initial.hora_fin.slice(3, 5) : '30');
+  const [et, setEt] = useState(initial?.etiqueta ?? '');
   const dias = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
   const meses = [
     ['01', 'Enero'], ['02', 'Febrero'], ['03', 'Marzo'], ['04', 'Abril'],
@@ -603,7 +609,7 @@ function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_
   const pickerBox = { borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden' as const };
   return (
     <View style={{ marginTop: spacing.md }}>
-      <Text style={[s.label, { marginBottom: 4 }]}>Agregar bloque</Text>
+      <Text style={[s.label, { marginBottom: 4 }]}>{initial ? 'Editar bloque' : 'Agregar bloque'}</Text>
       <Text style={[s.small, { marginBottom: 4 }]}>Fecha</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
         <View style={[pickerBox, { width: 82 }]}><Picker selectedValue={dia} onValueChange={setDia} style={pickerStyle}>{dias.map((v) => <Picker.Item key={v} label={v} value={v} />)}</Picker></View>
@@ -621,26 +627,29 @@ function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_
         <View style={[pickerBox, { width: 95 }]}><Picker selectedValue={hfMin} onValueChange={setHfMin} style={pickerStyle}>{minutos.map((v) => <Picker.Item key={v} label={`${v} min`} value={v} />)}</Picker></View>
       </View>
       <TextInput placeholder="Etiqueta opcional (ej. Domingo mañana)" value={et} onChangeText={setEt} style={[s.input, { marginBottom: 8 }]} />
-      <MiniBtn label="➕ Agregar bloque" color={colors.success} onPress={() => {
-        const fechaOk = `${anio}-${mes}-${dia}`;
-        const fechaReal = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
-        if (fechaReal.getUTCMonth() !== Number(mes) - 1 || fechaReal.getUTCDate() !== Number(dia)) {
-          notify('Fecha inválida', 'El día seleccionado no existe en ese mes. Elegí otra fecha.');
-          return;
-        }
-        const hiOk = `${hiHora}:${hiMin}`;
-        const hfOk = `${hfHora}:${hfMin}`;
-        if (hfOk <= hiOk) {
-          notify('Horario inválido', 'La hora de fin debe ser posterior a la hora de inicio.');
-          return;
-        }
-        onAdd({ fecha: fechaOk, hora_inicio: hiOk, hora_fin: hfOk, etiqueta: et.trim() || null });
-        setEt('');
-      }} />
-
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        <MiniBtn label={submitLabel || '➕ Agregar bloque'} color={colors.success} onPress={() => {
+          const fechaOk = `${anio}-${mes}-${dia}`;
+          const fechaReal = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
+          if (fechaReal.getUTCMonth() !== Number(mes) - 1 || fechaReal.getUTCDate() !== Number(dia)) {
+            notify('Fecha inválida', 'El día seleccionado no existe en ese mes. Elegí otra fecha.');
+            return;
+          }
+          const hiOk = `${hiHora}:${hiMin}`;
+          const hfOk = `${hfHora}:${hfMin}`;
+          if (hfOk <= hiOk) {
+            notify('Horario inválido', 'La hora de fin debe ser posterior a la hora de inicio.');
+            return;
+          }
+          onAdd({ fecha: fechaOk, hora_inicio: hiOk, hora_fin: hfOk, etiqueta: et.trim() || null });
+          if (!initial) setEt('');
+        }} />
+        {onCancel && <MiniBtn label="Cancelar" color={colors.text.secondary} onPress={onCancel} />}
+      </View>
     </View>
   );
 }
+
 
 function CanchaRow({ cancha, onRename, onDelete }: { cancha: TorneoCancha; onRename: (nombre: string) => void; onDelete: () => void }) {
   const [edit, setEdit] = useState(false);
