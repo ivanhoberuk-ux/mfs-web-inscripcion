@@ -12,7 +12,7 @@ import {
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
   fetchCanchas, addCancha, deleteCancha, fetchBloques, addBloque, deleteBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
-  sortearZonas, generarFixture, programarTorneo, resolverAvances,
+  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
 } from '../lib/torneo';
 
@@ -336,8 +336,23 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 onPress={() => programar(false)} disabled={busy} />
             </View>
           </SectionCard>
+
+          <SectionCard title="Reprogramar por atrasos" emoji="⏰">
+            <Text style={[s.small, { marginBottom: spacing.md }]}>
+              Si un partido se atrasa, elegí desde qué partido corregir y cuántos minutos correr.
+              Se desplaza ese partido y todos los que vienen después (los finalizados no se tocan).
+            </Text>
+            <CorrerHorarios
+              partidos={partidos.filter((p) => p.inicio && p.estado !== 'finalizado')}
+              disciplinas={disciplinas}
+              onRun={(pid, mins, soloCancha) =>
+                run(() => correrHorarios(pid, mins, soloCancha), 'Horarios actualizados')}
+              disabled={busy}
+            />
+          </SectionCard>
         </>
       )}
+
 
       {seccion === 'resultados' && disc && (
         <SectionCard title={`Resultados — ${disc.nombre}`} emoji="📝">
@@ -354,6 +369,76 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
     </View>
   );
 }
+
+// ---------- Correr horarios por atrasos ----------
+function CorrerHorarios({ partidos, disciplinas, onRun, disabled }: {
+  partidos: TorneoPartido[];
+  disciplinas: TorneoDisciplina[];
+  onRun: (partidoId: string, minutos: number, soloCancha: boolean) => void;
+  disabled?: boolean;
+}) {
+  const ordenados = useMemo(
+    () => [...partidos].sort((a, b) => String(a.inicio).localeCompare(String(b.inicio))),
+    [partidos]
+  );
+  const [pid, setPid] = useState('');
+  const [mins, setMins] = useState('15');
+  const [soloCancha, setSoloCancha] = useState(true);
+
+  useEffect(() => {
+    if (!pid && ordenados.length) setPid(ordenados[0].id);
+  }, [ordenados.length]);
+
+  const pickerBox = { borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden' as const, marginBottom: 10 };
+  const pickerStyle = { height: 48, color: colors.neutral[800] };
+
+  if (ordenados.length === 0) {
+    return <Text style={s.small}>No hay partidos con horario para reprogramar.</Text>;
+  }
+
+  return (
+    <View>
+      <Text style={[s.small, { marginBottom: 4 }]}>Partido desde el que se corre</Text>
+      <View style={pickerBox}>
+        <Picker selectedValue={pid} onValueChange={(v) => setPid(String(v))} style={pickerStyle}>
+          {ordenados.map((p) => {
+            const d = disciplinas.find((x) => x.id === p.disciplina_id);
+            const label = `${fmtDia(p.inicio)} ${fmtHora(p.inicio)} · ${d?.emoji ?? ''} ${nombreEquipo(p.equipo_a)} vs ${nombreEquipo(p.equipo_b)}`;
+            return <Picker.Item key={p.id} label={label} value={p.id} />;
+          })}
+        </Picker>
+      </View>
+
+      <Text style={[s.small, { marginBottom: 4 }]}>Minutos de atraso</Text>
+      <View style={pickerBox}>
+        <Picker selectedValue={mins} onValueChange={(v) => setMins(String(v))} style={pickerStyle}>
+          {[5, 10, 15, 20, 25, 30, 40, 45, 60, 90, -5, -10, -15, -30].map((v) => (
+            <Picker.Item key={v} label={v > 0 ? `Atrasar ${v} min` : `Adelantar ${Math.abs(v)} min`} value={String(v)} />
+          ))}
+        </Picker>
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+        <Text style={[s.text, { flex: 1 }]}>
+          {soloCancha ? 'Solo los partidos de esa misma cancha' : 'Todos los partidos de esa disciplina'}
+        </Text>
+        <Switch value={soloCancha} onValueChange={setSoloCancha} />
+      </View>
+
+      <MiniBtn
+        label="⏰ Correr horarios"
+        color={colors.warning ?? colors.primary[600]}
+        disabled={disabled || !pid}
+        onPress={() => confirmAction(
+          'Correr horarios',
+          `Se van a mover los horarios ${Number(mins) > 0 ? `+${mins}` : mins} minutos desde el partido elegido. ¿Continuar?`,
+          () => onRun(pid, Number(mins), soloCancha)
+        )}
+      />
+    </View>
+  );
+}
+
 
 // ---------- Editor de disciplina ----------
 function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p: Partial<TorneoDisciplina>) => void }) {
@@ -375,16 +460,25 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
         <Switch value={form.activa} onValueChange={(v) => setForm({ ...form, activa: v })} />
       </View>
 
-      <Text style={[s.small, { marginBottom: 4 }]}>⏱️ Duración del partido (minutos de juego)</Text>
+      <Text style={[s.small, { marginBottom: 4 }]}>⏱️ Duración de cada tiempo (son 2 tiempos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
-        <Picker selectedValue={String(form.duracion_min ?? 0)} onValueChange={(v) => setForm({ ...form, duracion_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
+        <Picker selectedValue={String(form.tiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, tiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
           {Array.from({ length: 24 }, (_, i) => (i + 1) * 5).map((v) => (
-            <Picker.Item key={v} label={`${v} min`} value={String(v)} />
+            <Picker.Item key={v} label={`${v} min por tiempo`} value={String(v)} />
           ))}
         </Picker>
       </View>
 
-      <Text style={[s.small, { marginBottom: 4 }]}>😮‍💨 Descanso entre partidos (minutos)</Text>
+      <Text style={[s.small, { marginBottom: 4 }]}>⏸️ Entretiempo (descanso dentro del partido)</Text>
+      <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
+        <Picker selectedValue={String(form.entretiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, entretiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
+          {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
+            <Picker.Item key={v} label={v === 0 ? 'Sin entretiempo' : `${v} min`} value={String(v)} />
+          ))}
+        </Picker>
+      </View>
+
+      <Text style={[s.small, { marginBottom: 4 }]}>😮‍💨 Descanso entre partidos (cambio de equipos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
         <Picker selectedValue={String(form.buffer_min ?? 0)} onValueChange={(v) => setForm({ ...form, buffer_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
           {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
@@ -393,8 +487,9 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
         </Picker>
       </View>
 
-      <Text style={[s.small, { marginBottom: 6 }]}>
-        Cada partido ocupa {(form.duracion_min || 0) + (form.buffer_min || 0)} min de cancha.
+      <Text style={[s.small, { marginBottom: 6, fontWeight: '700' }]}>
+        Partido: {(form.tiempo_min || 0) * 2 + (form.entretiempo_min || 0)} min
+        {'  •  '}Ocupa cancha: {(form.tiempo_min || 0) * 2 + (form.entretiempo_min || 0) + (form.buffer_min || 0)} min
       </Text>
 
       {([
@@ -412,13 +507,15 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
 
       <MiniBtn label="💾 Guardar" color={colors.success} onPress={() => onSave({
         activa: form.activa,
-        duracion_min: form.duracion_min,
+        tiempo_min: form.tiempo_min,
+        entretiempo_min: form.entretiempo_min,
         buffer_min: form.buffer_min,
         num_zonas: form.num_zonas,
         clasifican_por_zona: form.clasifican_por_zona,
         puntos_victoria: form.puntos_victoria,
         puntos_empate: form.puntos_empate,
       })} />
+
     </SectionCard>
   );
 }

@@ -701,6 +701,7 @@ export type Database = {
           duracion_min: number
           edicion_id: string
           emoji: string
+          entretiempo_min: number
           id: string
           nombre: string
           num_zonas: number
@@ -709,6 +710,7 @@ export type Database = {
           puntos_derrota: number
           puntos_empate: number
           puntos_victoria: number
+          tiempo_min: number
           updated_at: string
           usa_sets: boolean
         }
@@ -722,6 +724,7 @@ export type Database = {
           duracion_min?: number
           edicion_id: string
           emoji?: string
+          entretiempo_min?: number
           id?: string
           nombre: string
           num_zonas?: number
@@ -730,6 +733,7 @@ export type Database = {
           puntos_derrota?: number
           puntos_empate?: number
           puntos_victoria?: number
+          tiempo_min?: number
           updated_at?: string
           usa_sets?: boolean
         }
@@ -743,6 +747,7 @@ export type Database = {
           duracion_min?: number
           edicion_id?: string
           emoji?: string
+          entretiempo_min?: number
           id?: string
           nombre?: string
           num_zonas?: number
@@ -751,6 +756,7 @@ export type Database = {
           puntos_derrota?: number
           puntos_empate?: number
           puntos_victoria?: number
+          tiempo_min?: number
           updated_at?: string
           usa_sets?: boolean
         }
@@ -1547,6 +1553,14 @@ export type Database = {
         Returns: {
           accion: string
         }[]
+      }
+      torneo_correr_horarios: {
+        Args: {
+          p_minutos: number
+          p_partido_id: string
+          p_solo_cancha?: boolean
+        }
+        Returns: Json
       }
       torneo_generar_fixture: {
         Args: { p_disciplina_id: string }
