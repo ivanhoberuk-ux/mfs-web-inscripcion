@@ -1575,6 +1575,10 @@ export type Database = {
           total: number
         }[]
       }
+      torneo_limpiar_horarios: {
+        Args: { p_edicion_id: string; p_incluir_finalizados?: boolean }
+        Returns: Json
+      }
       torneo_programar: {
         Args: { p_edicion_id: string; p_reprogramar_todo?: boolean }
         Returns: Json
