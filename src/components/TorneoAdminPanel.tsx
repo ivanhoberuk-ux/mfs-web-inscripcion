@@ -69,12 +69,16 @@ function actionMessage(result: any, fallback: string): string {
   if (typeof result.programados === 'number') {
     const pending = Number(result.sin_horario || 0);
     if (pending === 0) return `${result.programados} partidos programados correctamente.`;
+    const porReglas = Number(result.bloqueados_por_reglas || 0);
     const resumen = Array.isArray(result.resumen) ? result.resumen : [];
     const detalle = resumen
       .filter((r: any) => Number(r.sin_horario) > 0)
-      .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${r.minutos_por_partido} min por partido, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
+      .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${Math.round(Number(r.minutos_necesarios || 0))} min en total, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
       .join('\n');
-    return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
+    const causa = porReglas > 0
+      ? `\n\n${porReglas} de esos partidos SÍ entraban en los bloques, pero los bloquearon las reglas: máximo ${result.max_dia_pueblo} partidos por pueblo por día y ${result.descanso_min} min de descanso mínimo entre partidos de un mismo pueblo. Podés aflojar esas reglas arriba del botón “Programar todo”.`
+      : '';
+    return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}${causa}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
   }
   return fallback;
 }
