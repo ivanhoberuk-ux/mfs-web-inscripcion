@@ -2,6 +2,7 @@
 // Panel de administración del Torneo Interpueblos (solo super_admin)
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, TextInput, ActivityIndicator, Alert, Switch, ScrollView, Platform } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
 import { fetchPueblos, type Pueblo } from '../lib/api';
@@ -403,56 +404,61 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
 
 // ---------- Nuevo bloque ----------
 function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_id'>) => void }) {
-  const [fecha, setFecha] = useState('');
-  const [hi, setHi] = useState('');
-  const [hf, setHf] = useState('');
+  const hoy = new Date();
+  const [dia, setDia] = useState(String(hoy.getDate()).padStart(2, '0'));
+  const [mes, setMes] = useState(String(hoy.getMonth() + 1).padStart(2, '0'));
+  const [anio, setAnio] = useState(String(hoy.getFullYear()));
+  const [hiHora, setHiHora] = useState('08');
+  const [hiMin, setHiMin] = useState('00');
+  const [hfHora, setHfHora] = useState('11');
+  const [hfMin, setHfMin] = useState('30');
   const [et, setEt] = useState('');
+  const dias = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const meses = [
+    ['01', 'Enero'], ['02', 'Febrero'], ['03', 'Marzo'], ['04', 'Abril'],
+    ['05', 'Mayo'], ['06', 'Junio'], ['07', 'Julio'], ['08', 'Agosto'],
+    ['09', 'Septiembre'], ['10', 'Octubre'], ['11', 'Noviembre'], ['12', 'Diciembre'],
+  ];
+  const anios = Array.from({ length: 5 }, (_, i) => String(hoy.getFullYear() + i));
+  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutos = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+  const pickerStyle = { height: 48, color: colors.neutral[800] };
+  const pickerBox = { borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden' as const };
   return (
     <View style={{ marginTop: spacing.md }}>
       <Text style={[s.label, { marginBottom: 4 }]}>Agregar bloque</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        <TextInput placeholder="AAAA-MM-DD" value={fecha} onChangeText={setFecha} style={[s.input, { width: 130, marginBottom: 8 }]} />
-        <TextInput placeholder="08:00" value={hi} onChangeText={setHi} style={[s.input, { width: 80, marginBottom: 8 }]} />
-        <TextInput placeholder="11:30" value={hf} onChangeText={setHf} style={[s.input, { width: 80, marginBottom: 8 }]} />
-        <TextInput placeholder="Etiqueta" value={et} onChangeText={setEt} style={[s.input, { flex: 1, minWidth: 120, marginBottom: 8 }]} />
+      <Text style={[s.small, { marginBottom: 4 }]}>Fecha</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+        <View style={[pickerBox, { width: 82 }]}><Picker selectedValue={dia} onValueChange={setDia} style={pickerStyle}>{dias.map((v) => <Picker.Item key={v} label={v} value={v} />)}</Picker></View>
+        <View style={[pickerBox, { flex: 1, minWidth: 150 }]}><Picker selectedValue={mes} onValueChange={setMes} style={pickerStyle}>{meses.map(([v, label]) => <Picker.Item key={v} label={label} value={v} />)}</Picker></View>
+        <View style={[pickerBox, { width: 110 }]}><Picker selectedValue={anio} onValueChange={setAnio} style={pickerStyle}>{anios.map((v) => <Picker.Item key={v} label={v} value={v} />)}</Picker></View>
       </View>
+      <Text style={[s.small, { marginBottom: 4 }]}>Hora de inicio</Text>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <View style={[pickerBox, { width: 95 }]}><Picker selectedValue={hiHora} onValueChange={setHiHora} style={pickerStyle}>{horas.map((v) => <Picker.Item key={v} label={`${v} h`} value={v} />)}</Picker></View>
+        <View style={[pickerBox, { width: 95 }]}><Picker selectedValue={hiMin} onValueChange={setHiMin} style={pickerStyle}>{minutos.map((v) => <Picker.Item key={v} label={`${v} min`} value={v} />)}</Picker></View>
+      </View>
+      <Text style={[s.small, { marginBottom: 4 }]}>Hora de fin</Text>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <View style={[pickerBox, { width: 95 }]}><Picker selectedValue={hfHora} onValueChange={setHfHora} style={pickerStyle}>{horas.map((v) => <Picker.Item key={v} label={`${v} h`} value={v} />)}</Picker></View>
+        <View style={[pickerBox, { width: 95 }]}><Picker selectedValue={hfMin} onValueChange={setHfMin} style={pickerStyle}>{minutos.map((v) => <Picker.Item key={v} label={`${v} min`} value={v} />)}</Picker></View>
+      </View>
+      <TextInput placeholder="Etiqueta opcional (ej. Domingo mañana)" value={et} onChangeText={setEt} style={[s.input, { marginBottom: 8 }]} />
       <MiniBtn label="➕ Agregar bloque" color={colors.success} onPress={() => {
-        // Normalizar por partes para aceptar /, -, puntos y espacios pegados por el navegador.
-        const partesFecha = fecha.trim().match(/\d+/g) ?? [];
-        let fechaOk = '';
-        if (partesFecha.length === 3) {
-          const [a, b, c] = partesFecha;
-          const anio = a.length === 4 ? Number(a) : Number(c);
-          const mes = Number(b);
-          const dia = a.length === 4 ? Number(c) : Number(a);
-          const fechaReal = new Date(Date.UTC(anio, mes - 1, dia));
-          if (
-            anio >= 2000 && anio <= 2100 && mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 &&
-            fechaReal.getUTCFullYear() === anio && fechaReal.getUTCMonth() === mes - 1 && fechaReal.getUTCDate() === dia
-          ) {
-            fechaOk = `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-          }
-        }
-        const hora = (v: string) => {
-          const partes = v.trim().match(/\d+/g) ?? [];
-          if (partes.length < 1 || partes.length > 2) return '';
-          const h = Number(partes[0]);
-          const min = partes.length === 2 ? Number(partes[1]) : 0;
-          if (h < 0 || h > 23 || min < 0 || min > 59) return '';
-          return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-        };
-        const hiOk = hora(hi);
-        const hfOk = hora(hf);
-        if (!fechaOk || !hiOk || !hfOk) {
-          notify('Datos inválidos', 'Usá una fecha como 2026/08/23 o 23/08/2026 y horas como 09:00 y 11:30.');
+        const fechaOk = `${anio}-${mes}-${dia}`;
+        const fechaReal = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
+        if (fechaReal.getUTCMonth() !== Number(mes) - 1 || fechaReal.getUTCDate() !== Number(dia)) {
+          notify('Fecha inválida', 'El día seleccionado no existe en ese mes. Elegí otra fecha.');
           return;
         }
+        const hiOk = `${hiHora}:${hiMin}`;
+        const hfOk = `${hfHora}:${hfMin}`;
         if (hfOk <= hiOk) {
           notify('Horario inválido', 'La hora de fin debe ser posterior a la hora de inicio.');
           return;
         }
         onAdd({ fecha: fechaOk, hora_inicio: hiOk, hora_fin: hfOk, etiqueta: et.trim() || null });
-        setFecha(''); setHi(''); setHf(''); setEt('');
+        setEt('');
       }} />
 
     </View>
