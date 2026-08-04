@@ -112,6 +112,38 @@ export default function Torneo() {
 
   const discNombre = (id: string) => disciplinas.find((d) => d.id === id);
 
+  async function exportarPueblo() {
+    try {
+      const nombrePueblo = pueblos.find((p) => p.id === puebloSel)?.nombre ?? 'Pueblo';
+      const rows: any[][] = [['Disciplina', 'Fase', 'Zona', 'Día', 'Hora', 'Cancha', 'Equipo A', 'Equipo B', 'Marcador', 'Estado']];
+      for (const p of partidosPueblo) {
+        const d = discNombre(p.disciplina_id);
+        rows.push([
+          d ? `${d.emoji} ${d.nombre}` : '',
+          FASE_LABEL[p.fase] ?? p.fase,
+          p.zona ?? '',
+          fmtDia(p.inicio),
+          p.inicio ? fmtHora(p.inicio) : 'A confirmar',
+          p.cancha?.nombre ?? '',
+          p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? ''),
+          p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? ''),
+          p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : '',
+          p.estado,
+        ]);
+      }
+      const blob = generateExcelBlob(rows, {
+        title: `Partidos de ${nombrePueblo}`,
+        subtitle: `${partidosPueblo.length} partidos · Generado el ${humanDate()}`,
+        sheetName: 'Mis partidos',
+      });
+      await shareOrDownload(blob, `Torneo_${safeFileName(nombrePueblo)}_${fileStamp()}.xlsx`);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar', e?.message ?? String(e));
+    }
+  }
+
+
+
   async function exportarFixture() {
     try {
       const rows: any[][] = [['Disciplina', 'Fase', 'Zona', 'Día', 'Hora', 'Cancha', 'Equipo A', 'Equipo B', 'Marcador', 'Estado']];
