@@ -463,7 +463,7 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
       <Text style={[s.small, { marginBottom: 4 }]}>⏱️ Duración de cada tiempo (son 2 tiempos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
         <Picker selectedValue={String(form.tiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, tiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
-          {Array.from({ length: 24 }, (_, i) => (i + 1) * 5).map((v) => (
+          {Array.from({ length: 120 }, (_, i) => i + 1).map((v) => (
             <Picker.Item key={v} label={`${v} min por tiempo`} value={String(v)} />
           ))}
         </Picker>
