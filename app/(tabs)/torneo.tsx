@@ -160,6 +160,7 @@ export default function Torneo() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
           ['fixture', '📅 Fixture'],
+          ['pueblo', '🏘️ Mi pueblo'],
           ['posiciones', '📊 Posiciones'],
           ['goleadores', '🥇 Goleadores'],
           ...(isSuperAdmin ? [['admin', '⚙️ Administrar'] as [Vista, string]] : []),
