@@ -449,6 +449,44 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   );
 }
 
+// ---------- Resumen: partidos por día y disciplina ----------
+function PartidosPorDia({ partidos, disciplinas }: { partidos: TorneoPartido[]; disciplinas: TorneoDisciplina[] }) {
+  const dias = useMemo(() => {
+    const map = new Map<string, { iso: string | null; total: number; porDisc: Map<string, number> }>();
+    for (const p of partidos) {
+      const key = p.inicio ? new Date(p.inicio).toISOString().slice(0, 10) : 'zzz-sin-horario';
+      if (!map.has(key)) map.set(key, { iso: p.inicio, total: 0, porDisc: new Map() });
+      const e = map.get(key)!;
+      if (p.inicio && !e.iso) e.iso = p.inicio;
+      e.total += 1;
+      e.porDisc.set(p.disciplina_id, (e.porDisc.get(p.disciplina_id) || 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [partidos]);
+
+  if (!dias.length) return <Text style={s.small}>No hay partidos generados.</Text>;
+
+  return (
+    <View>
+      {dias.map(([key, e]) => (
+        <View key={key} style={{ backgroundColor: colors.primary[50], padding: spacing.sm, borderRadius: radius.sm, marginBottom: spacing.sm }}>
+          <Text style={{ fontWeight: '800', color: colors.primary[800] }}>
+            {key === 'zzz-sin-horario' ? '🕓 Sin horario asignado' : fmtDia(e.iso)} — {e.total} partido{e.total === 1 ? '' : 's'}
+          </Text>
+          {disciplinas
+            .filter((d) => (e.porDisc.get(d.id) || 0) > 0)
+            .map((d) => (
+              <Text key={d.id} style={s.small}>
+                • {d.emoji} {d.nombre}: {e.porDisc.get(d.id)} partido{e.porDisc.get(d.id) === 1 ? '' : 's'}
+              </Text>
+            ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+
 // ---------- Correr horarios por atrasos ----------
 function CorrerHorarios({ partidos, disciplinas, onRun, disabled }: {
   partidos: TorneoPartido[];
