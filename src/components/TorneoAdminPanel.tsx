@@ -68,12 +68,17 @@ function actionMessage(result: any, fallback: string): string {
   if (typeof result.partidos === 'number') return `${result.partidos} partidos generados.`;
   if (typeof result.programados === 'number') {
     const pending = Number(result.sin_horario || 0);
-    return pending > 0
-      ? `${result.programados} partidos programados. ${pending} quedaron sin horario por falta de espacio disponible.`
-      : `${result.programados} partidos programados correctamente.`;
+    if (pending === 0) return `${result.programados} partidos programados correctamente.`;
+    const resumen = Array.isArray(result.resumen) ? result.resumen : [];
+    const detalle = resumen
+      .filter((r: any) => Number(r.sin_horario) > 0)
+      .map((r: any) => `• ${r.disciplina}: ${r.sin_horario} sin horario (necesita ${r.minutos_por_partido} min por partido, hay ${Math.round(Number(r.minutos_disponibles || 0))} min disponibles en ${r.canchas} cancha/s)`)
+      .join('\n');
+    return `${result.programados} partidos programados. ${pending} quedaron sin horario.\n\n${detalle}\n\nAbajo, en “Partidos sin horario”, ves el detalle partido por partido.`;
   }
   return fallback;
 }
+
 
 export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicion; onChanged?: () => void }) {
   const [seccion, setSeccion] = useState<Seccion>('disciplinas');
@@ -86,6 +91,8 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [partidos, setPartidos] = useState<TorneoPartido[]>([]);
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
+  const [ultimoProg, setUltimoProg] = useState<any>(null);
+
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,7 +171,12 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       notify('Faltan canchas', `Agregá una cancha para: ${sinCancha.map((d) => d.nombre).join(', ')}.`);
       return;
     }
-    run(() => programarTorneo(edicion.id, reprogramarTodo), reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+    run(async () => {
+      const r = await programarTorneo(edicion.id, reprogramarTodo);
+      setUltimoProg(r);
+      return r;
+    }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+
   }
 
   return (
@@ -336,6 +348,30 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 onPress={() => programar(false)} disabled={busy} />
             </View>
           </SectionCard>
+
+          {ultimoProg && Number(ultimoProg.sin_horario || 0) > 0 && (
+            <SectionCard title="Partidos sin horario" emoji="⚠️">
+              <Text style={[s.small, { marginBottom: spacing.md }]}>
+                Quedaron {ultimoProg.sin_horario} partidos sin lugar. Ampliá los bloques horarios,
+                agregá canchas o reducí la duración de los partidos.
+              </Text>
+              {(ultimoProg.resumen ?? []).filter((r: any) => Number(r.sin_horario) > 0).map((r: any, i: number) => (
+                <View key={i} style={{ backgroundColor: colors.primary[50], padding: spacing.sm, borderRadius: radius.sm, marginBottom: spacing.sm }}>
+                  <Text style={{ fontWeight: '800', color: colors.primary[800] }}>{r.disciplina}</Text>
+                  <Text style={s.small}>
+                    {r.sin_horario} sin horario · {r.programados} programados · {r.minutos_por_partido} min por partido ·
+                    {' '}{r.canchas} cancha/s · {Math.round(Number(r.minutos_disponibles || 0))} min disponibles en total
+                  </Text>
+                </View>
+              ))}
+              {(ultimoProg.pendientes ?? []).map((p: any) => (
+                <Text key={p.partido_id} style={[s.small, { marginBottom: 2 }]}>
+                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}
+                </Text>
+              ))}
+            </SectionCard>
+          )}
+
 
           <SectionCard title="Reprogramar por atrasos" emoji="⏰">
             <Text style={[s.small, { marginBottom: spacing.md }]}>
