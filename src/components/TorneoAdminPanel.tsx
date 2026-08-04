@@ -331,10 +331,12 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               <View key={d.id} style={{ marginBottom: spacing.md }}>
                 <Text style={{ fontWeight: '800', color: colors.primary[700], marginBottom: 4 }}>{d.emoji} {d.nombre}</Text>
                 {canchas.filter((c) => c.disciplina_id === d.id).map((c) => (
-                  <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
-                    <Text style={s.text}>• {c.nombre}</Text>
-                    <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteCancha(c.id), 'Cancha eliminada')} />
-                  </View>
+                  <CanchaRow
+                    key={c.id}
+                    cancha={c}
+                    onRename={(nombre) => run(() => renameCancha(c.id, nombre), 'Cancha actualizada')}
+                    onDelete={() => run(() => deleteCancha(c.id), 'Cancha eliminada')}
+                  />
                 ))}
                 <NuevaCancha onAdd={(nombre) => run(() => addCancha(d.id, nombre, canchas.filter((c) => c.disciplina_id === d.id).length + 1), 'Cancha agregada')} />
               </View>
