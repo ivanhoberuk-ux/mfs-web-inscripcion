@@ -20,7 +20,10 @@ export type TorneoDisciplina = {
   activa: boolean;
   cantidad_canchas: number;
   duracion_min: number;
+  tiempo_min: number;
+  entretiempo_min: number;
   buffer_min: number;
+
   num_zonas: number;
   clasifican_por_zona: number;
   usa_sets: boolean;
