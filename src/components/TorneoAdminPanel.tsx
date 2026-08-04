@@ -172,7 +172,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       notify('Faltan horarios', 'Agregá por lo menos un bloque con fecha, hora de inicio y hora de fin.');
       return;
     }
-    const sinCancha = disciplinas.filter((d) => d.activa && !canchas.some((c) => c.disciplina_id === d.id));
+    const sinCancha = disciplinas.filter((d) => d.activa && !canchas.some((c) => c.disciplina_id === (d.canchas_compartidas_con || d.id)));
     if (sinCancha.length > 0) {
       notify('Faltan canchas', `Agregá una cancha para: ${sinCancha.map((d) => d.nombre).join(', ')}.`);
       return;
@@ -348,20 +348,37 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
 
 
           <SectionCard title="Canchas por disciplina" emoji="🥅">
-            {disciplinas.map((d) => (
-              <View key={d.id} style={{ marginBottom: spacing.md }}>
-                <Text style={{ fontWeight: '800', color: colors.primary[700], marginBottom: 4 }}>{d.emoji} {d.nombre}</Text>
-                {canchas.filter((c) => c.disciplina_id === d.id).map((c) => (
-                  <CanchaRow
-                    key={c.id}
-                    cancha={c}
-                    onRename={(nombre) => run(() => renameCancha(c.id, nombre), 'Cancha actualizada')}
-                    onDelete={() => run(() => deleteCancha(c.id), 'Cancha eliminada')}
-                  />
-                ))}
-                <NuevaCancha onAdd={(nombre) => run(() => addCancha(d.id, nombre, canchas.filter((c) => c.disciplina_id === d.id).length + 1), 'Cancha agregada')} />
-              </View>
-            ))}
+            {disciplinas.map((d) => {
+              const poolId = d.canchas_compartidas_con || d.id;
+              const compartida = !!d.canchas_compartidas_con;
+              const dueña = disciplinas.find((x) => x.id === poolId);
+              const propias = canchas.filter((c) => c.disciplina_id === poolId);
+              return (
+                <View key={d.id} style={{ marginBottom: spacing.md }}>
+                  <Text style={{ fontWeight: '800', color: colors.primary[700], marginBottom: 4 }}>{d.emoji} {d.nombre}</Text>
+                  {compartida && (
+                    <Text style={[s.small, { marginBottom: 4 }]}>
+                      Comparte las canchas de {dueña?.emoji} {dueña?.nombre}: se programan indistintamente en cualquiera de ellas.
+                    </Text>
+                  )}
+                  {propias.map((c) => (
+                    compartida ? (
+                      <Text key={c.id} style={[s.small, { marginLeft: 8 }]}>• {c.nombre}</Text>
+                    ) : (
+                      <CanchaRow
+                        key={c.id}
+                        cancha={c}
+                        onRename={(nombre) => run(() => renameCancha(c.id, nombre), 'Cancha actualizada')}
+                        onDelete={() => run(() => deleteCancha(c.id), 'Cancha eliminada')}
+                      />
+                    )
+                  ))}
+                  {!compartida && (
+                    <NuevaCancha onAdd={(nombre) => run(() => addCancha(d.id, nombre, propias.length + 1), 'Cancha agregada')} />
+                  )}
+                </View>
+              );
+            })}
           </SectionCard>
 
           <SectionCard title="Organizador automático" emoji="🤖">

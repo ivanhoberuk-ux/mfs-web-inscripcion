@@ -18,6 +18,7 @@ export type TorneoDisciplina = {
   nombre: string;
   emoji: string;
   activa: boolean;
+  canchas_compartidas_con?: string | null;
   cantidad_canchas: number;
   duracion_min: number;
   tiempo_min: number;

@@ -694,6 +694,7 @@ export type Database = {
         Row: {
           activa: boolean
           buffer_min: number
+          canchas_compartidas_con: string | null
           cantidad_canchas: number
           clasifican_por_zona: number
           codigo: string
@@ -717,6 +718,7 @@ export type Database = {
         Insert: {
           activa?: boolean
           buffer_min?: number
+          canchas_compartidas_con?: string | null
           cantidad_canchas?: number
           clasifican_por_zona?: number
           codigo: string
@@ -740,6 +742,7 @@ export type Database = {
         Update: {
           activa?: boolean
           buffer_min?: number
+          canchas_compartidas_con?: string | null
           cantidad_canchas?: number
           clasifican_por_zona?: number
           codigo?: string
@@ -761,6 +764,13 @@ export type Database = {
           usa_sets?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "torneo_disciplinas_canchas_compartidas_con_fkey"
+            columns: ["canchas_compartidas_con"]
+            isOneToOne: false
+            referencedRelation: "torneo_disciplinas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "torneo_disciplinas_edicion_id_fkey"
             columns: ["edicion_id"]

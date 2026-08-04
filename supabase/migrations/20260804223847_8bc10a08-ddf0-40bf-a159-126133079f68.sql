@@ -1,0 +1,202 @@
+
+ALTER TABLE public.torneo_disciplinas
+  ADD COLUMN IF NOT EXISTS canchas_compartidas_con uuid REFERENCES public.torneo_disciplinas(id) ON DELETE SET NULL;
+
+-- Mover la cancha de fútbol femenino al pool de fútbol masculino y compartirlas
+DO $$
+DECLARE v_masc uuid; v_fem uuid;
+BEGIN
+  SELECT id INTO v_masc FROM public.torneo_disciplinas WHERE codigo = 'futbol_masc' ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_fem  FROM public.torneo_disciplinas WHERE codigo = 'futbol_fem'  ORDER BY created_at LIMIT 1;
+  IF v_masc IS NOT NULL AND v_fem IS NOT NULL THEN
+    UPDATE public.torneo_canchas SET disciplina_id = v_masc, orden = 2 WHERE disciplina_id = v_fem;
+    UPDATE public.torneo_disciplinas SET canchas_compartidas_con = v_masc WHERE id = v_fem;
+  END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.torneo_programar(p_edicion_id uuid, p_reprogramar_todo boolean DEFAULT true, p_max_dia_pueblo integer DEFAULT 9999, p_descanso_min integer DEFAULT 0)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_p record;
+  v_bloque record;
+  v_dur interval;
+  v_cand timestamptz;
+  v_end timestamptz;
+  v_min_start timestamptz;
+  v_cancha uuid;
+  v_pool uuid;
+  v_pa uuid; v_pb uuid;
+  v_ok boolean;
+  v_prog integer := 0;
+  v_sin integer := 0;
+  v_step interval := interval '5 minutes';
+  v_descanso interval := make_interval(mins => greatest(coalesce(p_descanso_min,0),0));
+  v_max_dia_pueblo integer := greatest(coalesce(p_max_dia_pueblo,9999),1);
+  v_pendientes jsonb := '[]'::jsonb;
+  v_resumen jsonb;
+  v_bloqueado_por_reglas integer := 0;
+  v_cabe boolean;
+BEGIN
+  IF NOT is_super_admin() THEN RAISE EXCEPTION 'Solo super_admin'; END IF;
+
+  UPDATE torneo_partidos SET inicio = NULL, fin = NULL, cancha_id = NULL
+  WHERE disciplina_id IN (SELECT id FROM torneo_disciplinas WHERE edicion_id = p_edicion_id AND NOT activa)
+    AND estado <> 'finalizado';
+
+  IF p_reprogramar_todo THEN
+    UPDATE torneo_partidos SET inicio = NULL, fin = NULL, cancha_id = NULL
+    WHERE disciplina_id IN (SELECT id FROM torneo_disciplinas WHERE edicion_id = p_edicion_id AND activa)
+      AND estado <> 'finalizado';
+  END IF;
+
+  FOR v_p IN
+    SELECT tp.*, td.duracion_min, td.buffer_min, td.orden AS d_orden, td.nombre AS d_nombre, td.emoji AS d_emoji,
+           coalesce(td.canchas_compartidas_con, td.id) AS pool_id
+    FROM torneo_partidos tp
+    JOIN torneo_disciplinas td ON td.id = tp.disciplina_id
+    WHERE td.edicion_id = p_edicion_id AND td.activa AND tp.inicio IS NULL
+    ORDER BY tp.fase_orden, tp.ronda, td.orden, tp.created_at
+  LOOP
+    v_dur := make_interval(mins => v_p.duracion_min + v_p.buffer_min);
+    v_pool := v_p.pool_id;
+
+    SELECT max(fin) INTO v_min_start FROM torneo_partidos
+      WHERE disciplina_id = v_p.disciplina_id AND fase_orden < v_p.fase_orden AND fin IS NOT NULL;
+
+    SELECT pueblo_id INTO v_pa FROM torneo_equipos WHERE id = v_p.equipo_a_id;
+    SELECT pueblo_id INTO v_pb FROM torneo_equipos WHERE id = v_p.equipo_b_id;
+
+    v_ok := false;
+    v_cabe := false;
+
+    FOR v_bloque IN SELECT * FROM torneo_bloques WHERE edicion_id = p_edicion_id ORDER BY fecha, hora_inicio LOOP
+      IF ((v_bloque.fecha + v_bloque.hora_inicio) AT TIME ZONE 'America/Asuncion') + v_dur
+         <= ((v_bloque.fecha + v_bloque.hora_fin) AT TIME ZONE 'America/Asuncion') THEN
+        v_cabe := true;
+      END IF;
+
+      IF v_max_dia_pueblo < 9999 AND EXISTS (
+        SELECT 1
+        FROM (SELECT unnest(array_remove(ARRAY[v_pa, v_pb], NULL)) AS pid) t
+        WHERE (
+          SELECT count(*) FROM torneo_partidos o
+          JOIN torneo_disciplinas od ON od.id = o.disciplina_id AND od.activa
+          LEFT JOIN torneo_equipos ea ON ea.id = o.equipo_a_id
+          LEFT JOIN torneo_equipos eb ON eb.id = o.equipo_b_id
+          WHERE o.inicio IS NOT NULL
+            AND (o.inicio AT TIME ZONE 'America/Asuncion')::date = v_bloque.fecha
+            AND (ea.pueblo_id = t.pid OR eb.pueblo_id = t.pid)
+        ) >= v_max_dia_pueblo
+      ) THEN
+        CONTINUE;
+      END IF;
+
+      v_cand := (v_bloque.fecha + v_bloque.hora_inicio) AT TIME ZONE 'America/Asuncion';
+      WHILE (v_cand + v_dur) <= ((v_bloque.fecha + v_bloque.hora_fin) AT TIME ZONE 'America/Asuncion') LOOP
+        v_end := v_cand + v_dur;
+
+        IF v_min_start IS NOT NULL AND v_cand < v_min_start THEN
+          v_cand := v_cand + v_step; CONTINUE;
+        END IF;
+
+        SELECT c.id INTO v_cancha FROM torneo_canchas c
+        WHERE coalesce((SELECT coalesce(d2.canchas_compartidas_con, d2.id) FROM torneo_disciplinas d2 WHERE d2.id = c.disciplina_id), c.disciplina_id) = v_pool
+          AND NOT EXISTS (
+            SELECT 1 FROM torneo_partidos o
+            JOIN torneo_disciplinas od ON od.id = o.disciplina_id AND od.activa
+            WHERE o.cancha_id = c.id AND o.inicio IS NOT NULL
+              AND o.inicio < v_end AND o.fin > v_cand
+          )
+        ORDER BY c.orden, c.nombre LIMIT 1;
+
+        IF v_cancha IS NULL THEN v_cand := v_cand + v_step; CONTINUE; END IF;
+
+        IF v_descanso > interval '0' AND EXISTS (
+          SELECT 1 FROM torneo_partidos o
+          JOIN torneo_disciplinas od ON od.id = o.disciplina_id AND od.activa
+          LEFT JOIN torneo_equipos ea ON ea.id = o.equipo_a_id
+          LEFT JOIN torneo_equipos eb ON eb.id = o.equipo_b_id
+          WHERE o.inicio IS NOT NULL
+            AND o.inicio < (v_end + v_descanso) AND o.fin > (v_cand - v_descanso)
+            AND (
+              (v_pa IS NOT NULL AND (ea.pueblo_id = v_pa OR eb.pueblo_id = v_pa)) OR
+              (v_pb IS NOT NULL AND (ea.pueblo_id = v_pb OR eb.pueblo_id = v_pb))
+            )
+        ) THEN v_cand := v_cand + v_step; CONTINUE; END IF;
+
+        -- Un pueblo no puede jugar dos partidos a la vez
+        IF EXISTS (
+          SELECT 1 FROM torneo_partidos o
+          JOIN torneo_disciplinas od ON od.id = o.disciplina_id AND od.activa
+          LEFT JOIN torneo_equipos ea ON ea.id = o.equipo_a_id
+          LEFT JOIN torneo_equipos eb ON eb.id = o.equipo_b_id
+          WHERE o.inicio IS NOT NULL
+            AND o.inicio < v_end AND o.fin > v_cand
+            AND (
+              (v_pa IS NOT NULL AND (ea.pueblo_id = v_pa OR eb.pueblo_id = v_pa)) OR
+              (v_pb IS NOT NULL AND (ea.pueblo_id = v_pb OR eb.pueblo_id = v_pb))
+            )
+        ) THEN v_cand := v_cand + v_step; CONTINUE; END IF;
+
+        UPDATE torneo_partidos SET inicio = v_cand, fin = v_end, cancha_id = v_cancha WHERE id = v_p.id;
+        v_ok := true;
+        v_prog := v_prog + 1;
+        EXIT;
+      END LOOP;
+      EXIT WHEN v_ok;
+    END LOOP;
+
+    IF NOT v_ok THEN
+      v_sin := v_sin + 1;
+      IF v_cabe THEN v_bloqueado_por_reglas := v_bloqueado_por_reglas + 1; END IF;
+      v_pendientes := v_pendientes || jsonb_build_object(
+        'partido_id', v_p.id,
+        'disciplina', coalesce(v_p.d_emoji,'') || ' ' || v_p.d_nombre,
+        'fase', v_p.fase,
+        'zona', v_p.zona,
+        'ronda', v_p.ronda,
+        'motivo', CASE WHEN v_cabe THEN 'Sin hueco libre (todas las canchas del grupo ocupadas o el pueblo ya juega a esa hora)'
+                       ELSE 'El partido no entra en ningún bloque horario (bloque más corto que la duración)' END,
+        'equipo_a', coalesce((SELECT coalesce(e.nombre, pu.nombre) FROM torneo_equipos e LEFT JOIN pueblos pu ON pu.id = e.pueblo_id WHERE e.id = v_p.equipo_a_id), v_p.etiqueta_a, 'Por definir'),
+        'equipo_b', coalesce((SELECT coalesce(e.nombre, pu.nombre) FROM torneo_equipos e LEFT JOIN pueblos pu ON pu.id = e.pueblo_id WHERE e.id = v_p.equipo_b_id), v_p.etiqueta_b, 'Por definir'),
+        'minutos_necesarios', v_p.duracion_min + v_p.buffer_min
+      );
+    END IF;
+  END LOOP;
+
+  SELECT jsonb_agg(x) INTO v_resumen FROM (
+    SELECT jsonb_build_object(
+      'disciplina', coalesce(td.emoji,'') || ' ' || td.nombre,
+      'sin_horario', count(*) FILTER (WHERE tp.inicio IS NULL),
+      'programados', count(*) FILTER (WHERE tp.inicio IS NOT NULL),
+      'minutos_por_partido', td.duracion_min + td.buffer_min,
+      'minutos_necesarios', count(*) * (td.duracion_min + td.buffer_min),
+      'canchas', (SELECT count(*) FROM torneo_canchas c
+                  JOIN torneo_disciplinas d3 ON d3.id = c.disciplina_id
+                  WHERE coalesce(d3.canchas_compartidas_con, d3.id) = coalesce(td.canchas_compartidas_con, td.id)),
+      'minutos_disponibles', (SELECT count(*) FROM torneo_canchas c
+                  JOIN torneo_disciplinas d4 ON d4.id = c.disciplina_id
+                  WHERE coalesce(d4.canchas_compartidas_con, d4.id) = coalesce(td.canchas_compartidas_con, td.id)) *
+        coalesce((SELECT sum(extract(epoch FROM (b.hora_fin - b.hora_inicio))/60) FROM torneo_bloques b WHERE b.edicion_id = p_edicion_id), 0)
+    ) AS x
+    FROM torneo_disciplinas td
+    JOIN torneo_partidos tp ON tp.disciplina_id = td.id
+    WHERE td.edicion_id = p_edicion_id AND td.activa
+    GROUP BY td.id, td.emoji, td.nombre, td.duracion_min, td.buffer_min, td.orden, td.canchas_compartidas_con
+    ORDER BY td.orden
+  ) s;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'programados', v_prog,
+    'sin_horario', v_sin,
+    'bloqueados_por_reglas', v_bloqueado_por_reglas,
+    'pendientes', v_pendientes,
+    'resumen', coalesce(v_resumen, '[]'::jsonb)
+  );
+END;
+$function$;
