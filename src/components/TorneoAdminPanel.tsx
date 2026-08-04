@@ -12,7 +12,7 @@ import {
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
   fetchCanchas, addCancha, deleteCancha, fetchBloques, addBloque, deleteBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
-  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios,
+  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
 } from '../lib/torneo';
 
@@ -178,6 +178,20 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
 
   }
+
+  function borrarHorarios() {
+    confirmAction(
+      'Borrar todos los horarios',
+      'Se quitarán día, hora y cancha de todos los partidos (los resultados y los partidos se mantienen). ¿Continuar?',
+      () => run(async () => {
+        const r = await limpiarHorarios(edicion.id, false);
+        setUltimoProg(null);
+        return { ok: true, msg: `${r?.limpiados ?? 0} partidos quedaron sin horario.` };
+      }, 'Horarios borrados'),
+    );
+  }
+
+
 
   return (
     <View>
@@ -346,7 +360,14 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 onPress={() => programar(true)} disabled={busy} />
               <MiniBtn label="➕ Programar solo los pendientes" color={colors.info}
                 onPress={() => programar(false)} disabled={busy} />
+              <MiniBtn label="🧹 Borrar todos los horarios" color={colors.error}
+                onPress={borrarHorarios} disabled={busy} />
             </View>
+            <Text style={[s.small, { marginTop: spacing.sm }]}>
+              “Borrar todos los horarios” deja todos los partidos sin día, hora ni cancha para empezar
+              la programación desde cero (no borra los partidos ni los resultados).
+            </Text>
+
           </SectionCard>
 
           {ultimoProg && Number(ultimoProg.sin_horario || 0) > 0 && (

@@ -319,6 +319,16 @@ export async function programarTorneo(edicionId: string, reprogramarTodo = true)
   return data as any;
 }
 
+export async function limpiarHorarios(edicionId: string, incluirFinalizados = false) {
+  const { data, error } = await supabase.rpc('torneo_limpiar_horarios' as any, {
+    p_edicion_id: edicionId,
+    p_incluir_finalizados: incluirFinalizados,
+  });
+  if (error) throw error;
+  return data as any;
+}
+
+
 export async function resolverAvances(disciplinaId: string) {
   const { data, error } = await supabase.rpc('torneo_resolver_avances' as any, { p_disciplina_id: disciplinaId });
   if (error) throw error;
