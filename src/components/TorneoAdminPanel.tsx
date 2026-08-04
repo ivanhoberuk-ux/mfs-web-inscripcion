@@ -180,7 +180,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       return;
     }
     run(async () => {
-      const r = await programarTorneo(edicion.id, reprogramarTodo);
+      const r = await programarTorneo(edicion.id, reprogramarTodo, Number(maxDiaPueblo) || 4, Number(descansoMin) || 0);
       setUltimoProg(r);
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
