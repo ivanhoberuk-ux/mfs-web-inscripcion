@@ -412,6 +412,10 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
           )}
 
 
+          <SectionCard title="Partidos por día y disciplina" emoji="📅">
+            <PartidosPorDia partidos={partidos} disciplinas={disciplinas} />
+          </SectionCard>
+
           <SectionCard title="Reprogramar por atrasos" emoji="⏰">
             <Text style={[s.small, { marginBottom: spacing.md }]}>
               Si un partido se atrasa, elegí desde qué partido corregir y cuántos minutos correr.
