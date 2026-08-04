@@ -268,24 +268,33 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
           {equiposDisc.length === 0 ? (
             <Text style={s.small}>Todavía no hay equipos anotados.</Text>
           ) : (
-            equiposDisc.map((e) => (
-              <View key={e.id} style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
-              }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{nombreEquipo(e as any)}</Text>
-                  <Text style={s.small}>Zona {e.zona ?? '—'}</Text>
+            equiposDisc.map((e) => {
+              const zonas = Array.from({ length: Math.max(1, disc.num_zonas) }, (_, i) => String.fromCharCode(65 + i));
+              return (
+                <View key={e.id} style={{
+                  paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontWeight: '700', color: colors.neutral[800], flex: 1 }}>{nombreEquipo(e as any)}</Text>
+                    <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteEquipo(e.id), 'Equipo eliminado')} />
+                  </View>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+                    <Text style={[s.small, { marginRight: 6 }]}>Zona:</Text>
+                    {zonas.map((z) => (
+                      <MiniBtn
+                        key={z}
+                        label={z}
+                        color={e.zona === z ? colors.success : colors.neutral[400]}
+                        onPress={() => run(() => updateEquipo(e.id, { zona: z }), `Zona ${z} asignada`)}
+                      />
+                    ))}
+                    <MiniBtn label="Sin zona" color={!e.zona ? colors.warning : colors.neutral[300]}
+                      onPress={() => run(() => updateEquipo(e.id, { zona: null }), 'Zona quitada')} />
+                  </View>
                 </View>
-                <TextInput
-                  placeholder="Zona"
-                  defaultValue={e.zona ?? ''}
-                  onEndEditing={(ev) => run(() => updateEquipo(e.id, { zona: ev.nativeEvent.text.toUpperCase() || null }))}
-                  style={[s.input, { width: 70, marginRight: 8, marginBottom: 0, textAlign: 'center' }]}
-                />
-                <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteEquipo(e.id), 'Equipo eliminado')} />
-              </View>
-            ))
+              );
+            })
+
           )}
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md }}>
