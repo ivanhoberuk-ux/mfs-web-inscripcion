@@ -28,20 +28,58 @@ export default function Torneo() {
   const [filtroDisc, setFiltroDisc] = useState<string | 'todas'>('todas');
   const [tabla, setTabla] = useState<TorneoFilaTabla[]>([]);
   const [goleadores, setGoleadores] = useState<TorneoGoleador[]>([]);
+  const [equipos, setEquipos] = useState<TorneoEquipo[]>([]);
+  const [puebloSel, setPuebloSel] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const ed = await fetchEdicionActiva();
       setEdicion(ed);
-      if (!ed) { setDisciplinas([]); setPartidos([]); return; }
+      if (!ed) { setDisciplinas([]); setPartidos([]); setEquipos([]); return; }
       const ds = await fetchDisciplinas(ed.id);
       const activas = ds.filter((d) => d.activa);
       setDisciplinas(activas);
-      setPartidos(await fetchPartidos(activas.map((d) => d.id)));
+      const ids = activas.map((d) => d.id);
+      setPartidos(await fetchPartidos(ids));
+      setEquipos(await fetchEquipos(ids));
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     }
   }, []);
+
+  // Pueblos que participan del torneo
+  const pueblos = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of equipos) map.set(e.pueblo_id, e.pueblo?.nombre ?? 'Pueblo');
+    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [equipos]);
+
+  useEffect(() => {
+    if (puebloSel || pueblos.length === 0) return;
+    const mio = puebloId && pueblos.some((p) => p.id === puebloId) ? puebloId : pueblos[0].id;
+    setPuebloSel(mio);
+  }, [pueblos, puebloId, puebloSel]);
+
+  // Partidos del pueblo seleccionado (todas las disciplinas)
+  const partidosPueblo = useMemo(() => {
+    if (!puebloSel) return [];
+    const misEquipos = new Set(equipos.filter((e) => e.pueblo_id === puebloSel).map((e) => e.id));
+    return partidos
+      .filter((p) => (p.equipo_a_id && misEquipos.has(p.equipo_a_id)) || (p.equipo_b_id && misEquipos.has(p.equipo_b_id)))
+      .sort((a, b) => (a.inicio ?? 'zzz').localeCompare(b.inicio ?? 'zzz'));
+  }, [partidos, equipos, puebloSel]);
+
+  const porDiaPueblo = useMemo(() => {
+    const map = new Map<string, TorneoPartido[]>();
+    for (const p of partidosPueblo) {
+      const k = claveDia(p.inicio);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(p);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [partidosPueblo]);
+
 
   useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, [load]);
 
