@@ -12,7 +12,7 @@ import {
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
   fetchCanchas, addCancha, deleteCancha, fetchBloques, addBloque, deleteBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
-  sortearZonas, generarFixture, programarTorneo, resolverAvances,
+  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
 } from '../lib/torneo';
 
