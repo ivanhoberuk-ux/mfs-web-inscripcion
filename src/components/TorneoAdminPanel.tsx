@@ -179,6 +179,20 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
 
   }
 
+  function borrarHorarios() {
+    confirmAction(
+      'Borrar todos los horarios',
+      'Se quitarán día, hora y cancha de todos los partidos (los resultados y los partidos se mantienen). ¿Continuar?',
+      () => run(async () => {
+        const r = await limpiarHorarios(edicion.id, false);
+        setUltimoProg(null);
+        return { ok: true, msg: `${r?.limpiados ?? 0} partidos quedaron sin horario.` };
+      }, 'Horarios borrados'),
+    );
+  }
+
+
+
   return (
     <View>
       {/* Tabs de sección */}
