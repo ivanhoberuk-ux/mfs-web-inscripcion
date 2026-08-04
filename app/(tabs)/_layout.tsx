@@ -139,6 +139,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="torneo"
+        options={{
+          title: 'Torneo',
+          tabBarIcon: ({ focused }) => (
+            <EmojiIcon emoji="🏆" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="documentos"
         options={{
           title: 'Docs',
@@ -147,6 +156,7 @@ export default function TabLayout() {
           ),
         }}
       />
+
 
       <Tabs.Screen
         name="baja"

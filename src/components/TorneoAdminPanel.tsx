@@ -1,0 +1,456 @@
+// FILE: src/components/TorneoAdminPanel.tsx
+// Panel de administración del Torneo Interpueblos (solo super_admin)
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, TextInput, ActivityIndicator, Alert, Switch, ScrollView } from 'react-native';
+import { s, colors } from '../lib/theme';
+import { radius, spacing } from '../lib/designSystem';
+import { fetchPueblos, type Pueblo } from '../lib/api';
+import {
+  type TorneoEdicion, type TorneoDisciplina, type TorneoEquipo, type TorneoCancha,
+  type TorneoBloque, type TorneoPartido, type TorneoEvento,
+  fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
+  fetchCanchas, addCancha, deleteCancha, fetchBloques, addBloque, deleteBloque,
+  fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
+  sortearZonas, generarFixture, programarTorneo, resolverAvances,
+  nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
+} from '../lib/torneo';
+
+type Seccion = 'disciplinas' | 'equipos' | 'horarios' | 'resultados';
+
+function SectionCard({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
+  return (
+    <View style={[s.card, { marginBottom: spacing.lg }]}>
+      <Text style={[s.cardTitle, { marginBottom: spacing.md }]}>{emoji} {title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function MiniBtn({ label, onPress, color = colors.primary[600], disabled }: any) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        backgroundColor: disabled ? colors.neutral[300] : color,
+        paddingVertical: 8, paddingHorizontal: 12,
+        borderRadius: radius.sm, marginRight: 8, marginBottom: 8,
+      }}
+    >
+      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicion; onChanged?: () => void }) {
+  const [seccion, setSeccion] = useState<Seccion>('disciplinas');
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([]);
+  const [equipos, setEquipos] = useState<TorneoEquipo[]>([]);
+  const [canchas, setCanchas] = useState<TorneoCancha[]>([]);
+  const [bloques, setBloques] = useState<TorneoBloque[]>([]);
+  const [partidos, setPartidos] = useState<TorneoPartido[]>([]);
+  const [pueblos, setPueblos] = useState<Pueblo[]>([]);
+  const [selDisc, setSelDisc] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ds = await fetchDisciplinas(edicion.id);
+      setDisciplinas(ds);
+      const ids = ds.map((d) => d.id);
+      const [eq, ca, bl, pa, pu] = await Promise.all([
+        fetchEquipos(ids), fetchCanchas(ids), fetchBloques(edicion.id), fetchPartidos(ids), fetchPueblos(),
+      ]);
+      setEquipos(eq); setCanchas(ca); setBloques(bl); setPartidos(pa); setPueblos(pu);
+      setSelDisc((prev) => prev ?? ds[0]?.id ?? null);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [edicion.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function run(fn: () => Promise<any>, okMsg?: string) {
+    setBusy(true);
+    try {
+      const r = await fn();
+      await load();
+      onChanged?.();
+      if (okMsg) Alert.alert('Listo', typeof r === 'object' && r ? `${okMsg}\n${JSON.stringify(r)}` : okMsg);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <ActivityIndicator style={{ marginTop: 24 }} />;
+
+  const disc = disciplinas.find((d) => d.id === selDisc) || null;
+  const equiposDisc = equipos.filter((e) => e.disciplina_id === selDisc);
+  const canchasDisc = canchas.filter((c) => c.disciplina_id === selDisc);
+  const partidosDisc = partidos.filter((p) => p.disciplina_id === selDisc);
+
+  return (
+    <View>
+      {/* Tabs de sección */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+        {([
+          ['disciplinas', '⚙️ Disciplinas'],
+          ['equipos', '🏘️ Equipos y zonas'],
+          ['horarios', '🗓️ Horarios y canchas'],
+          ['resultados', '📝 Resultados'],
+        ] as [Seccion, string][]).map(([k, label]) => (
+          <Pressable
+            key={k}
+            onPress={() => setSeccion(k)}
+            style={{
+              paddingVertical: 8, paddingHorizontal: 14, marginRight: 8,
+              borderRadius: radius.full,
+              backgroundColor: seccion === k ? colors.primary[600] : colors.neutral[100],
+            }}
+          >
+            <Text style={{ color: seccion === k ? '#fff' : colors.neutral[700], fontWeight: '700', fontSize: 13 }}>{label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Selector de disciplina */}
+      {seccion !== 'horarios' && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+          {disciplinas.map((d) => (
+            <Pressable
+              key={d.id}
+              onPress={() => setSelDisc(d.id)}
+              style={{
+                paddingVertical: 6, paddingHorizontal: 12, marginRight: 8,
+                borderRadius: radius.full, borderWidth: 2,
+                borderColor: selDisc === d.id ? colors.secondary[500] : colors.neutral[200],
+                backgroundColor: selDisc === d.id ? colors.secondary[50] : '#fff',
+              }}
+            >
+              <Text style={{ fontWeight: '700', fontSize: 13, color: colors.neutral[800] }}>
+                {d.emoji} {d.nombre}{d.activa ? '' : ' (off)'}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+
+      {busy && <ActivityIndicator style={{ marginBottom: 8 }} />}
+
+      {seccion === 'disciplinas' && disc && (
+        <DisciplinaEditor disc={disc} onSave={(patch) => run(() => updateDisciplina(disc.id, patch), 'Disciplina actualizada')} />
+      )}
+
+      {seccion === 'equipos' && disc && (
+        <SectionCard title={`Equipos — ${disc.nombre}`} emoji={disc.emoji}>
+          <Text style={[s.small, { marginBottom: 8 }]}>
+            Anotá los pueblos que participan en esta disciplina. No todos los pueblos tienen que anotarse a todas.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
+            {pueblos
+              .filter((p) => !equiposDisc.some((e) => e.pueblo_id === p.id))
+              .map((p) => (
+                <MiniBtn key={p.id} label={`+ ${p.nombre}`} color={colors.neutral[600]}
+                  onPress={() => run(() => addEquipo(disc.id, p.id), 'Equipo agregado')} />
+              ))}
+          </View>
+
+          {equiposDisc.length === 0 ? (
+            <Text style={s.small}>Todavía no hay equipos anotados.</Text>
+          ) : (
+            equiposDisc.map((e) => (
+              <View key={e.id} style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
+              }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{nombreEquipo(e as any)}</Text>
+                  <Text style={s.small}>Zona {e.zona ?? '—'}</Text>
+                </View>
+                <TextInput
+                  placeholder="Zona"
+                  defaultValue={e.zona ?? ''}
+                  onEndEditing={(ev) => run(() => updateEquipo(e.id, { zona: ev.nativeEvent.text.toUpperCase() || null }))}
+                  style={[s.input, { width: 70, marginRight: 8, marginBottom: 0, textAlign: 'center' }]}
+                />
+                <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteEquipo(e.id), 'Equipo eliminado')} />
+              </View>
+            ))
+          )}
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md }}>
+            <MiniBtn label={`🎲 Sortear ${disc.num_zonas} zonas`} color={colors.info}
+              onPress={() => run(() => sortearZonas(disc.id, disc.num_zonas), 'Zonas sorteadas')} />
+            <MiniBtn label="📋 Generar fixture" color={colors.success}
+              onPress={() => Alert.alert('Generar fixture', 'Se borran los partidos actuales de esta disciplina. ¿Continuar?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Generar', onPress: () => run(() => generarFixture(disc.id), 'Fixture generado') },
+              ])} />
+          </View>
+        </SectionCard>
+      )}
+
+      {seccion === 'horarios' && (
+        <>
+          <SectionCard title="Bloques horarios del torneo" emoji="🗓️">
+            {bloques.map((b) => (
+              <View key={b.id} style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
+              }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>
+                    {b.etiqueta || b.fecha}
+                  </Text>
+                  <Text style={s.small}>{b.fecha} · {b.hora_inicio.slice(0, 5)} a {b.hora_fin.slice(0, 5)}</Text>
+                </View>
+                <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteBloque(b.id), 'Bloque eliminado')} />
+              </View>
+            ))}
+            <NuevoBloque onAdd={(b) => run(() => addBloque({ ...b, edicion_id: edicion.id }), 'Bloque agregado')} />
+          </SectionCard>
+
+          <SectionCard title="Canchas por disciplina" emoji="🥅">
+            {disciplinas.map((d) => (
+              <View key={d.id} style={{ marginBottom: spacing.md }}>
+                <Text style={{ fontWeight: '800', color: colors.primary[700], marginBottom: 4 }}>{d.emoji} {d.nombre}</Text>
+                {canchas.filter((c) => c.disciplina_id === d.id).map((c) => (
+                  <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+                    <Text style={s.text}>• {c.nombre}</Text>
+                    <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteCancha(c.id), 'Cancha eliminada')} />
+                  </View>
+                ))}
+                <NuevaCancha onAdd={(nombre) => run(() => addCancha(d.id, nombre, canchas.filter((c) => c.disciplina_id === d.id).length + 1), 'Cancha agregada')} />
+              </View>
+            ))}
+          </SectionCard>
+
+          <SectionCard title="Organizador automático" emoji="🤖">
+            <Text style={[s.small, { marginBottom: spacing.md }]}>
+              Asigna día, hora y cancha a todos los partidos de las disciplinas activas, evitando que un pueblo
+              juegue dos partidos a la vez y que se solapen las canchas. Los partidos ya finalizados no se tocan.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <MiniBtn label="🤖 Programar todo" color={colors.primary[600]}
+                onPress={() => run(() => programarTorneo(edicion.id, true), 'Torneo programado')} />
+              <MiniBtn label="➕ Programar solo los pendientes" color={colors.info}
+                onPress={() => run(() => programarTorneo(edicion.id, false), 'Pendientes programados')} />
+            </View>
+          </SectionCard>
+        </>
+      )}
+
+      {seccion === 'resultados' && disc && (
+        <SectionCard title={`Resultados — ${disc.nombre}`} emoji="📝">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
+            <MiniBtn label="⏭️ Actualizar clasificados / llaves" color={colors.info}
+              onPress={() => run(() => resolverAvances(disc.id), 'Llaves actualizadas')} />
+          </View>
+          {partidosDisc.length === 0 && <Text style={s.small}>No hay partidos generados.</Text>}
+          {partidosDisc.map((p) => (
+            <PartidoEditor key={p.id} partido={p} onSaved={load} usaSets={disc.usa_sets} />
+          ))}
+        </SectionCard>
+      )}
+    </View>
+  );
+}
+
+// ---------- Editor de disciplina ----------
+function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p: Partial<TorneoDisciplina>) => void }) {
+  const [form, setForm] = useState(disc);
+  useEffect(() => setForm(disc), [disc.id]);
+
+  const num = (k: keyof TorneoDisciplina) => ({
+    value: String((form as any)[k] ?? ''),
+    keyboardType: 'numeric' as const,
+    onChangeText: (t: string) => setForm({ ...form, [k]: Number(t.replace(/[^0-9]/g, '')) || 0 } as any),
+  });
+
+  return (
+    <SectionCard title={disc.nombre} emoji={disc.emoji}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+        <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>
+          {form.activa ? '✅ Disciplina lanzada' : '⛔ Disciplina no lanzada'}
+        </Text>
+        <Switch value={form.activa} onValueChange={(v) => setForm({ ...form, activa: v })} />
+      </View>
+
+      {([
+        ['duracion_min', 'Duración del partido (min)'],
+        ['buffer_min', 'Minutos entre partidos'],
+        ['num_zonas', 'Cantidad de zonas'],
+        ['clasifican_por_zona', 'Clasifican por zona'],
+        ['puntos_victoria', 'Puntos por victoria'],
+        ['puntos_empate', 'Puntos por empate'],
+      ] as [keyof TorneoDisciplina, string][]).map(([k, label]) => (
+        <View key={String(k)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={[s.text, { flex: 1 }]}>{label}</Text>
+          <TextInput {...num(k)} style={[s.input, { width: 90, marginBottom: 0, textAlign: 'center' }]} />
+        </View>
+      ))}
+
+      <MiniBtn label="💾 Guardar" color={colors.success} onPress={() => onSave({
+        activa: form.activa,
+        duracion_min: form.duracion_min,
+        buffer_min: form.buffer_min,
+        num_zonas: form.num_zonas,
+        clasifican_por_zona: form.clasifican_por_zona,
+        puntos_victoria: form.puntos_victoria,
+        puntos_empate: form.puntos_empate,
+      })} />
+    </SectionCard>
+  );
+}
+
+// ---------- Nuevo bloque ----------
+function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_id'>) => void }) {
+  const [fecha, setFecha] = useState('');
+  const [hi, setHi] = useState('');
+  const [hf, setHf] = useState('');
+  const [et, setEt] = useState('');
+  return (
+    <View style={{ marginTop: spacing.md }}>
+      <Text style={[s.label, { marginBottom: 4 }]}>Agregar bloque</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <TextInput placeholder="AAAA-MM-DD" value={fecha} onChangeText={setFecha} style={[s.input, { width: 130, marginBottom: 8 }]} />
+        <TextInput placeholder="08:00" value={hi} onChangeText={setHi} style={[s.input, { width: 80, marginBottom: 8 }]} />
+        <TextInput placeholder="11:30" value={hf} onChangeText={setHf} style={[s.input, { width: 80, marginBottom: 8 }]} />
+        <TextInput placeholder="Etiqueta" value={et} onChangeText={setEt} style={[s.input, { flex: 1, minWidth: 120, marginBottom: 8 }]} />
+      </View>
+      <MiniBtn label="➕ Agregar bloque" color={colors.success} onPress={() => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !/^\d{2}:\d{2}$/.test(hi) || !/^\d{2}:\d{2}$/.test(hf)) {
+          Alert.alert('Datos incompletos', 'Usá el formato AAAA-MM-DD y HH:MM');
+          return;
+        }
+        onAdd({ fecha, hora_inicio: hi, hora_fin: hf, etiqueta: et || null });
+        setFecha(''); setHi(''); setHf(''); setEt('');
+      }} />
+    </View>
+  );
+}
+
+function NuevaCancha({ onAdd }: { onAdd: (nombre: string) => void }) {
+  const [n, setN] = useState('');
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+      <TextInput placeholder="Nombre de cancha" value={n} onChangeText={setN}
+        style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
+      <MiniBtn label="➕" color={colors.success} onPress={() => { if (n.trim()) { onAdd(n.trim()); setN(''); } }} />
+    </View>
+  );
+}
+
+// ---------- Editor de partido ----------
+function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; onSaved: () => void; usaSets: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [a, setA] = useState(partido.marcador_a?.toString() ?? '');
+  const [b, setB] = useState(partido.marcador_b?.toString() ?? '');
+  const [sets, setSets] = useState(partido.detalle_sets ?? '');
+  const [mvp, setMvp] = useState(partido.mvp_nombre ?? '');
+  const [saving, setSaving] = useState(false);
+  const [eventos, setEventos] = useState<TorneoEvento[]>([]);
+  const [jug, setJug] = useState('');
+  const [jugEquipo, setJugEquipo] = useState<string | null>(null);
+
+  const nomA = partido.equipo_a ? nombreEquipo(partido.equipo_a as any) : (partido.etiqueta_a || 'A definir');
+  const nomB = partido.equipo_b ? nombreEquipo(partido.equipo_b as any) : (partido.etiqueta_b || 'A definir');
+
+  useEffect(() => { if (open) fetchEventos(partido.id).then(setEventos).catch(() => {}); }, [open, partido.id]);
+
+  async function guardar(estado: string) {
+    setSaving(true);
+    try {
+      await updatePartido(partido.id, {
+        marcador_a: a === '' ? null : Number(a),
+        marcador_b: b === '' ? null : Number(b),
+        detalle_sets: sets || null,
+        mvp_nombre: mvp || null,
+        estado,
+      } as any);
+      onSaved();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.sm, padding: 10, marginBottom: 8 }}>
+      <Pressable onPress={() => setOpen(!open)}>
+        <Text style={{ fontSize: 11, color: colors.neutral[500], fontWeight: '700' }}>
+          {FASE_LABEL[partido.fase] ?? partido.fase}{partido.zona ? ` · Zona ${partido.zona}` : ''} · {fmtDia(partido.inicio)} {fmtHora(partido.inicio)} · {partido.cancha?.nombre ?? 'sin cancha'}
+        </Text>
+        <Text style={{ fontWeight: '800', color: colors.neutral[800], marginTop: 2 }}>
+          {nomA} {partido.marcador_a ?? '-'} : {partido.marcador_b ?? '-'} {nomB}
+        </Text>
+      </Pressable>
+
+      {open && (
+        <View style={{ marginTop: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <TextInput value={a} onChangeText={setA} keyboardType="numeric" placeholder="0"
+              style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+            <Text style={{ marginHorizontal: 10, fontWeight: '800' }}>:</Text>
+            <TextInput value={b} onChangeText={setB} keyboardType="numeric" placeholder="0"
+              style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+          </View>
+          {usaSets && (
+            <TextInput value={sets} onChangeText={setSets} placeholder="Sets: 25-20 / 23-25 / 15-11"
+              style={[s.input, { marginBottom: 8 }]} />
+          )}
+          <TextInput value={mvp} onChangeText={setMvp} placeholder="MVP del partido" style={[s.input, { marginBottom: 8 }]} />
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <MiniBtn label="✅ Finalizar" color={colors.success} disabled={saving} onPress={() => guardar('finalizado')} />
+            <MiniBtn label="🔴 En juego" color={colors.warning} disabled={saving} onPress={() => guardar('en_juego')} />
+            <MiniBtn label="🕒 Programado" color={colors.neutral[500]} disabled={saving} onPress={() => guardar('programado')} />
+            <MiniBtn label="⛔ Suspender" color={colors.error} disabled={saving} onPress={() => guardar('suspendido')} />
+          </View>
+
+          {/* Goleadores */}
+          {(partido.equipo_a_id || partido.equipo_b_id) && (
+            <View style={{ marginTop: 8, borderTopWidth: 1, borderTopColor: colors.neutral[100], paddingTop: 8 }}>
+              <Text style={[s.label, { marginBottom: 4 }]}>Goles / puntos destacados</Text>
+              {eventos.map((ev) => (
+                <View key={ev.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={s.small}>⚽ {ev.jugador} ({ev.cantidad})</Text>
+                  <Pressable onPress={async () => { await deleteEvento(ev.id); setEventos(await fetchEventos(partido.id)); }}>
+                    <Text style={{ color: colors.error, fontSize: 12 }}>Quitar</Text>
+                  </Pressable>
+                </View>
+              ))}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                <TextInput value={jug} onChangeText={setJug} placeholder="Nombre del jugador"
+                  style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
+              </View>
+              <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                {partido.equipo_a_id && (
+                  <MiniBtn label={`+ ${nomA}`} color={colors.primary[600]} onPress={async () => {
+                    if (!jug.trim()) return;
+                    await addEvento({ partido_id: partido.id, equipo_id: partido.equipo_a_id!, jugador: jug.trim(), tipo: 'gol', cantidad: 1, minuto: null });
+                    setJug(''); setEventos(await fetchEventos(partido.id));
+                  }} />
+                )}
+                {partido.equipo_b_id && (
+                  <MiniBtn label={`+ ${nomB}`} color={colors.primary[600]} onPress={async () => {
+                    if (!jug.trim()) return;
+                    await addEvento({ partido_id: partido.id, equipo_id: partido.equipo_b_id!, jugador: jug.trim(), tipo: 'gol', cantidad: 1, minuto: null });
+                    setJug(''); setEventos(await fetchEventos(partido.id));
+                  }} />
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
