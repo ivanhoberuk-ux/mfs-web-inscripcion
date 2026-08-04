@@ -380,7 +380,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
             </View>
 
             <View style={{ backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md }}>
-              <Text style={{ fontWeight: '800', color: colors.text.primary, marginBottom: 4 }}>⚙️ Reglas de descanso</Text>
+              <Text style={{ fontWeight: '800', color: colors.neutral[800], marginBottom: 4 }}>⚙️ Reglas de descanso</Text>
               <Text style={[s.small, { marginBottom: spacing.sm }]}>
                 Si te quedan partidos sin horario aunque sobre tiempo, suele ser por estas reglas. Aflojalas y volvé a programar.
               </Text>
