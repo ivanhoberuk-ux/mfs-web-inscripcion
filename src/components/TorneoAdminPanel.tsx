@@ -430,7 +430,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                   <Text style={{ fontWeight: '800', color: colors.primary[800] }}>{r.disciplina}</Text>
                   <Text style={s.small}>
                     {r.sin_horario} sin horario · {r.programados} programados · {r.minutos_por_partido} min por partido ·
-                    {' '}{r.canchas} cancha/s · {Math.round(Number(r.minutos_disponibles || 0))} min disponibles en total
+                    {' '}{r.canchas} cancha/s · necesita {Math.round(Number(r.minutos_necesarios || 0))} min y hay {Math.round(Number(r.minutos_disponibles || 0))} min disponibles
                   </Text>
                 </View>
               ))}
