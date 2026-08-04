@@ -384,14 +384,6 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               <Text style={[s.small, { marginBottom: spacing.sm }]}>
                 Si te quedan partidos sin horario aunque sobre tiempo, suele ser por estas reglas. Aflojalas y volvé a programar.
               </Text>
-              <Text style={s.small}>Máximo de partidos por pueblo por día</Text>
-              <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
-                <Picker selectedValue={maxDiaPueblo} onValueChange={(v) => setMaxDiaPueblo(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
-                  {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((v) => (
-                    <Picker.Item key={v} label={`${v} partidos por día`} value={v} />
-                  ))}
-                </Picker>
-              </View>
               <Text style={s.small}>Descanso mínimo entre partidos del mismo pueblo</Text>
               <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden' }}>
                 <Picker selectedValue={descansoMin} onValueChange={(v) => setDescansoMin(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
