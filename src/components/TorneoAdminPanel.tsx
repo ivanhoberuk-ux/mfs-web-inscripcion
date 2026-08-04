@@ -417,13 +417,35 @@ function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_
         <TextInput placeholder="Etiqueta" value={et} onChangeText={setEt} style={[s.input, { flex: 1, minWidth: 120, marginBottom: 8 }]} />
       </View>
       <MiniBtn label="➕ Agregar bloque" color={colors.success} onPress={() => {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !/^\d{2}:\d{2}$/.test(hi) || !/^\d{2}:\d{2}$/.test(hf)) {
-          Alert.alert('Datos incompletos', 'Usá el formato AAAA-MM-DD y HH:MM');
+        // Normalizar: acepta 22/08/2026, 2026-8-2, 8:00, 08.00, etc.
+        const f = fecha.trim().replace(/[/.]/g, '-');
+        const mF = f.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/) || f.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        let fechaOk = '';
+        if (mF) {
+          const [a, b, c] = [mF[1], mF[2], mF[3]];
+          fechaOk = a.length === 4
+            ? `${a}-${b.padStart(2, '0')}-${c.padStart(2, '0')}`
+            : `${c}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
+        }
+        const hora = (v: string) => {
+          const m = v.trim().replace(/[.\s]/g, ':').match(/^(\d{1,2}):?(\d{2})?$/);
+          if (!m) return '';
+          return `${m[1].padStart(2, '0')}:${(m[2] ?? '00').padStart(2, '0')}`;
+        };
+        const hiOk = hora(hi);
+        const hfOk = hora(hf);
+        if (!fechaOk || !hiOk || !hfOk) {
+          notify('Datos incompletos', 'Completá fecha (AAAA-MM-DD) y horas (HH:MM). Ej: 2026-08-22, 08:00, 11:30');
           return;
         }
-        onAdd({ fecha, hora_inicio: hi, hora_fin: hf, etiqueta: et || null });
+        if (hfOk <= hiOk) {
+          notify('Horario inválido', 'La hora de fin debe ser posterior a la hora de inicio.');
+          return;
+        }
+        onAdd({ fecha: fechaOk, hora_inicio: hiOk, hora_fin: hfOk, etiqueta: et.trim() || null });
         setFecha(''); setHi(''); setHf(''); setEt('');
       }} />
+
     </View>
   );
 }
