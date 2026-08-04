@@ -375,16 +375,25 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
         <Switch value={form.activa} onValueChange={(v) => setForm({ ...form, activa: v })} />
       </View>
 
-      <Text style={[s.small, { marginBottom: 4 }]}>⏱️ Duración del partido (minutos de juego)</Text>
+      <Text style={[s.small, { marginBottom: 4 }]}>⏱️ Duración de cada tiempo (son 2 tiempos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
-        <Picker selectedValue={String(form.duracion_min ?? 0)} onValueChange={(v) => setForm({ ...form, duracion_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
+        <Picker selectedValue={String(form.tiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, tiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
           {Array.from({ length: 24 }, (_, i) => (i + 1) * 5).map((v) => (
-            <Picker.Item key={v} label={`${v} min`} value={String(v)} />
+            <Picker.Item key={v} label={`${v} min por tiempo`} value={String(v)} />
           ))}
         </Picker>
       </View>
 
-      <Text style={[s.small, { marginBottom: 4 }]}>😮‍💨 Descanso entre partidos (minutos)</Text>
+      <Text style={[s.small, { marginBottom: 4 }]}>⏸️ Entretiempo (descanso dentro del partido)</Text>
+      <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
+        <Picker selectedValue={String(form.entretiempo_min ?? 0)} onValueChange={(v) => setForm({ ...form, entretiempo_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
+          {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
+            <Picker.Item key={v} label={v === 0 ? 'Sin entretiempo' : `${v} min`} value={String(v)} />
+          ))}
+        </Picker>
+      </View>
+
+      <Text style={[s.small, { marginBottom: 4 }]}>😮‍💨 Descanso entre partidos (cambio de equipos)</Text>
       <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
         <Picker selectedValue={String(form.buffer_min ?? 0)} onValueChange={(v) => setForm({ ...form, buffer_min: Number(v) })} style={{ height: 48, color: colors.neutral[800] }}>
           {Array.from({ length: 13 }, (_, i) => i * 5).map((v) => (
@@ -393,8 +402,9 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
         </Picker>
       </View>
 
-      <Text style={[s.small, { marginBottom: 6 }]}>
-        Cada partido ocupa {(form.duracion_min || 0) + (form.buffer_min || 0)} min de cancha.
+      <Text style={[s.small, { marginBottom: 6, fontWeight: '700' }]}>
+        Partido: {(form.tiempo_min || 0) * 2 + (form.entretiempo_min || 0)} min
+        {'  •  '}Ocupa cancha: {(form.tiempo_min || 0) * 2 + (form.entretiempo_min || 0) + (form.buffer_min || 0)} min
       </Text>
 
       {([
@@ -412,13 +422,15 @@ function DisciplinaEditor({ disc, onSave }: { disc: TorneoDisciplina; onSave: (p
 
       <MiniBtn label="💾 Guardar" color={colors.success} onPress={() => onSave({
         activa: form.activa,
-        duracion_min: form.duracion_min,
+        tiempo_min: form.tiempo_min,
+        entretiempo_min: form.entretiempo_min,
         buffer_min: form.buffer_min,
         num_zonas: form.num_zonas,
         clasifican_por_zona: form.clasifican_por_zona,
         puntos_victoria: form.puntos_victoria,
         puntos_empate: form.puntos_empate,
       })} />
+
     </SectionCard>
   );
 }
