@@ -371,3 +371,8 @@ export async function renameCancha(id: string, nombre: string) {
   const { error } = await supabase.from('torneo_canchas').update({ nombre } as any).eq('id', id);
   if (error) throw error;
 }
+
+export async function updateBloque(id: string, patch: Partial<Omit<TorneoBloque, 'id' | 'edicion_id'>>) {
+  const { error } = await supabase.from('torneo_bloques').update(patch as any).eq('id', id);
+  if (error) throw error;
+}
