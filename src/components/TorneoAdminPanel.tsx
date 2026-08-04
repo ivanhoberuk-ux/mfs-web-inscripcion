@@ -349,6 +349,30 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
             </View>
           </SectionCard>
 
+          {ultimoProg && Number(ultimoProg.sin_horario || 0) > 0 && (
+            <SectionCard title="Partidos sin horario" emoji="⚠️">
+              <Text style={[s.small, { marginBottom: spacing.md }]}>
+                Quedaron {ultimoProg.sin_horario} partidos sin lugar. Ampliá los bloques horarios,
+                agregá canchas o reducí la duración de los partidos.
+              </Text>
+              {(ultimoProg.resumen ?? []).filter((r: any) => Number(r.sin_horario) > 0).map((r: any, i: number) => (
+                <View key={i} style={{ backgroundColor: colors.primary[50], padding: spacing.sm, borderRadius: radius.sm, marginBottom: spacing.sm }}>
+                  <Text style={{ fontWeight: '800', color: colors.primary[800] }}>{r.disciplina}</Text>
+                  <Text style={s.small}>
+                    {r.sin_horario} sin horario · {r.programados} programados · {r.minutos_por_partido} min por partido ·
+                    {' '}{r.canchas} cancha/s · {Math.round(Number(r.minutos_disponibles || 0))} min disponibles en total
+                  </Text>
+                </View>
+              ))}
+              {(ultimoProg.pendientes ?? []).map((p: any) => (
+                <Text key={p.partido_id} style={[s.small, { marginBottom: 2 }]}>
+                  • {p.disciplina} — {p.fase}{p.zona ? ` (Zona ${p.zona})` : ''} · Fecha {p.ronda}: {p.equipo_a} vs {p.equipo_b}
+                </Text>
+              ))}
+            </SectionCard>
+          )}
+
+
           <SectionCard title="Reprogramar por atrasos" emoji="⏰">
             <Text style={[s.small, { marginBottom: spacing.md }]}>
               Si un partido se atrasa, elegí desde qué partido corregir y cuántos minutos correr.
