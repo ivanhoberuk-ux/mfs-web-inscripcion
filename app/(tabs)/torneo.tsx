@@ -185,7 +185,7 @@ export default function Torneo() {
         </View>
       )}
 
-      {vista !== 'admin' && disciplinas.length > 0 && (
+      {vista !== 'admin' && vista !== 'pueblo' && disciplinas.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
           {(vista === 'fixture' ? [{ id: 'todas', emoji: '🎯', nombre: 'Todas' } as any, ...disciplinas] : disciplinas).map((d: any) => {
             const sel = vista === 'fixture' ? filtroDisc === d.id : discSel?.id === d.id;
@@ -202,6 +202,88 @@ export default function Torneo() {
           })}
         </ScrollView>
       )}
+
+      {/* MI PUEBLO */}
+      {vista === 'pueblo' && disciplinas.length > 0 && (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+            {pueblos.map((p) => {
+              const sel = puebloSel === p.id;
+              return (
+                <Pressable key={p.id} onPress={() => setPuebloSel(p.id)} style={{
+                  paddingVertical: 7, paddingHorizontal: 13, marginRight: 8, borderRadius: radius.full,
+                  backgroundColor: sel ? colors.secondary[500] : colors.neutral[100],
+                }}>
+                  <Text style={{ fontWeight: '700', fontSize: 13, color: sel ? colors.primary[800] : colors.neutral[700] }}>
+                    🏘️ {p.nombre}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {pueblos.length === 0 && (
+            <View style={s.card}><Text style={s.text}>Todavía no hay pueblos anotados en el torneo.</Text></View>
+          )}
+
+          {puebloSel && (
+            <Pressable onPress={exportarPueblo} style={{
+              alignSelf: 'flex-start', backgroundColor: colors.success, paddingVertical: 8,
+              paddingHorizontal: 14, borderRadius: radius.sm, marginBottom: spacing.md,
+            }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>📥 Descargar mis partidos</Text>
+            </Pressable>
+          )}
+
+          {puebloSel && partidosPueblo.length === 0 && (
+            <View style={s.card}><Text style={s.text}>Este pueblo todavía no tiene partidos generados.</Text></View>
+          )}
+
+          {porDiaPueblo.map(([dia, lista]) => (
+            <View key={dia} style={{ marginBottom: spacing.lg }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
+                {fmtDia(lista[0].inicio)}
+              </Text>
+              {lista.map((p) => {
+                const d = discNombre(p.disciplina_id);
+                const finalizado = p.estado === 'finalizado';
+                return (
+                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
+                      </Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                        {ESTADO_LABEL[p.estado] ?? p.estado}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
+                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
+                      </Text>
+                      <View style={{
+                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
+                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
+                      }}>
+                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
+                          {p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : fmtHora(p.inicio)}
+                        </Text>
+                      </View>
+                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
+                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
+                      🕒 {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </>
+      )}
+
 
       {/* FIXTURE */}
       {vista === 'fixture' && disciplinas.length > 0 && (
