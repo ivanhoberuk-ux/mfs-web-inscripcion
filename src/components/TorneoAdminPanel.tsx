@@ -310,6 +310,16 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
         <>
           <SectionCard title="Bloques horarios del torneo" emoji="🗓️">
             {bloques.map((b) => (
+              editandoBloque === b.id ? (
+                <View key={b.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
+                  <NuevoBloque
+                    initial={{ fecha: b.fecha, hora_inicio: b.hora_inicio, hora_fin: b.hora_fin, etiqueta: b.etiqueta }}
+                    submitLabel="💾 Guardar cambios"
+                    onCancel={() => setEditandoBloque(null)}
+                    onAdd={(v) => { setEditandoBloque(null); run(() => updateBloque(b.id, v), 'Bloque actualizado'); }}
+                  />
+                </View>
+              ) : (
               <View key={b.id} style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                 paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
@@ -320,11 +330,16 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                   </Text>
                   <Text style={s.small}>{b.fecha} · {b.hora_inicio.slice(0, 5)} a {b.hora_fin.slice(0, 5)}</Text>
                 </View>
-                <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteBloque(b.id), 'Bloque eliminado')} />
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <MiniBtn label="✏️" color={colors.primary[600]} onPress={() => setEditandoBloque(b.id)} />
+                  <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteBloque(b.id), 'Bloque eliminado')} />
+                </View>
               </View>
+              )
             ))}
             <NuevoBloque onAdd={(b) => run(() => addBloque({ ...b, edicion_id: edicion.id }), 'Bloque agregado')} />
           </SectionCard>
+
 
           <SectionCard title="Canchas por disciplina" emoji="🥅">
             {disciplinas.map((d) => (
