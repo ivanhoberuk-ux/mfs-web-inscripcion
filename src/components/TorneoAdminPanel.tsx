@@ -91,6 +91,8 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [partidos, setPartidos] = useState<TorneoPartido[]>([]);
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
+  const [ultimoProg, setUltimoProg] = useState<any>(null);
+
 
   const load = useCallback(async () => {
     setLoading(true);
