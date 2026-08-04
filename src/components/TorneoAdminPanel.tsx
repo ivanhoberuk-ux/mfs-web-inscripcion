@@ -417,25 +417,34 @@ function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_
         <TextInput placeholder="Etiqueta" value={et} onChangeText={setEt} style={[s.input, { flex: 1, minWidth: 120, marginBottom: 8 }]} />
       </View>
       <MiniBtn label="➕ Agregar bloque" color={colors.success} onPress={() => {
-        // Normalizar: acepta 22/08/2026, 2026-8-2, 8:00, 08.00, etc.
-        const f = fecha.trim().replace(/[/.]/g, '-');
-        const mF = f.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/) || f.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        // Normalizar por partes para aceptar /, -, puntos y espacios pegados por el navegador.
+        const partesFecha = fecha.trim().match(/\d+/g) ?? [];
         let fechaOk = '';
-        if (mF) {
-          const [a, b, c] = [mF[1], mF[2], mF[3]];
-          fechaOk = a.length === 4
-            ? `${a}-${b.padStart(2, '0')}-${c.padStart(2, '0')}`
-            : `${c}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
+        if (partesFecha.length === 3) {
+          const [a, b, c] = partesFecha;
+          const anio = a.length === 4 ? Number(a) : Number(c);
+          const mes = Number(b);
+          const dia = a.length === 4 ? Number(c) : Number(a);
+          const fechaReal = new Date(Date.UTC(anio, mes - 1, dia));
+          if (
+            anio >= 2000 && anio <= 2100 && mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 &&
+            fechaReal.getUTCFullYear() === anio && fechaReal.getUTCMonth() === mes - 1 && fechaReal.getUTCDate() === dia
+          ) {
+            fechaOk = `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+          }
         }
         const hora = (v: string) => {
-          const m = v.trim().replace(/[.\s]/g, ':').match(/^(\d{1,2}):?(\d{2})?$/);
-          if (!m) return '';
-          return `${m[1].padStart(2, '0')}:${(m[2] ?? '00').padStart(2, '0')}`;
+          const partes = v.trim().match(/\d+/g) ?? [];
+          if (partes.length < 1 || partes.length > 2) return '';
+          const h = Number(partes[0]);
+          const min = partes.length === 2 ? Number(partes[1]) : 0;
+          if (h < 0 || h > 23 || min < 0 || min > 59) return '';
+          return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
         };
         const hiOk = hora(hi);
         const hfOk = hora(hf);
         if (!fechaOk || !hiOk || !hfOk) {
-          notify('Datos incompletos', 'Completá fecha (AAAA-MM-DD) y horas (HH:MM). Ej: 2026-08-22, 08:00, 11:30');
+          notify('Datos inválidos', 'Usá una fecha como 2026/08/23 o 23/08/2026 y horas como 09:00 y 11:30.');
           return;
         }
         if (hfOk <= hiOk) {
