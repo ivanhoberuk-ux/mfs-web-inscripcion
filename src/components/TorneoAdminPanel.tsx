@@ -10,7 +10,7 @@ import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoEquipo, type TorneoCancha,
   type TorneoBloque, type TorneoPartido, type TorneoEvento,
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
-  fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque,
+  fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque, updateBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
   sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
@@ -88,6 +88,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [equipos, setEquipos] = useState<TorneoEquipo[]>([]);
   const [canchas, setCanchas] = useState<TorneoCancha[]>([]);
   const [bloques, setBloques] = useState<TorneoBloque[]>([]);
+  const [editandoBloque, setEditandoBloque] = useState<string | null>(null);
   const [partidos, setPartidos] = useState<TorneoPartido[]>([]);
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
