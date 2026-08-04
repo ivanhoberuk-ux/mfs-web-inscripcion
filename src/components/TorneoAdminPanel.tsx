@@ -10,7 +10,7 @@ import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoEquipo, type TorneoCancha,
   type TorneoBloque, type TorneoPartido, type TorneoEvento,
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
-  fetchCanchas, addCancha, deleteCancha, fetchBloques, addBloque, deleteBloque,
+  fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
   sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
@@ -331,10 +331,12 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               <View key={d.id} style={{ marginBottom: spacing.md }}>
                 <Text style={{ fontWeight: '800', color: colors.primary[700], marginBottom: 4 }}>{d.emoji} {d.nombre}</Text>
                 {canchas.filter((c) => c.disciplina_id === d.id).map((c) => (
-                  <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
-                    <Text style={s.text}>• {c.nombre}</Text>
-                    <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteCancha(c.id), 'Cancha eliminada')} />
-                  </View>
+                  <CanchaRow
+                    key={c.id}
+                    cancha={c}
+                    onRename={(nombre) => run(() => renameCancha(c.id, nombre), 'Cancha actualizada')}
+                    onDelete={() => run(() => deleteCancha(c.id), 'Cancha eliminada')}
+                  />
                 ))}
                 <NuevaCancha onAdd={(nombre) => run(() => addCancha(d.id, nombre, canchas.filter((c) => c.disciplina_id === d.id).length + 1), 'Cancha agregada')} />
               </View>
@@ -636,6 +638,29 @@ function NuevoBloque({ onAdd }: { onAdd: (b: Omit<TorneoBloque, 'id' | 'edicion_
         setEt('');
       }} />
 
+    </View>
+  );
+}
+
+function CanchaRow({ cancha, onRename, onDelete }: { cancha: TorneoCancha; onRename: (nombre: string) => void; onDelete: () => void }) {
+  const [edit, setEdit] = useState(false);
+  const [n, setN] = useState(cancha.nombre);
+  if (edit) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4 }}>
+        <TextInput value={n} onChangeText={setN} style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
+        <MiniBtn label="💾" color={colors.success} onPress={() => { if (n.trim()) { onRename(n.trim()); setEdit(false); } }} />
+        <MiniBtn label="✖" color={colors.gray?.[500] ?? colors.error} onPress={() => { setN(cancha.nombre); setEdit(false); }} />
+      </View>
+    );
+  }
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+      <Text style={s.text}>• {cancha.nombre}</Text>
+      <View style={{ flexDirection: 'row' }}>
+        <MiniBtn label="✏️" color={colors.primary[600]} onPress={() => setEdit(true)} />
+        <MiniBtn label="🗑" color={colors.error} onPress={onDelete} />
+      </View>
     </View>
   );
 }

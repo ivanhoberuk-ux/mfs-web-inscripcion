@@ -366,3 +366,8 @@ export function claveDia(iso: string | null): string {
   if (!iso) return 'zzz-sin-horario';
   return new Date(iso).toISOString().slice(0, 10);
 }
+
+export async function renameCancha(id: string, nombre: string) {
+  const { error } = await supabase.from('torneo_canchas').update({ nombre } as any).eq('id', id);
+  if (error) throw error;
+}
