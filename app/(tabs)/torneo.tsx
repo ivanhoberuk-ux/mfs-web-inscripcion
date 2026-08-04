@@ -10,14 +10,15 @@ import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src
 import { shareOrDownload } from '../../src/lib/sharing';
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla, type TorneoGoleador,
-  fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchTabla, fetchGoleadores,
+  type TorneoEquipo,
+  fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchTabla, fetchGoleadores, fetchEquipos,
   nombreEquipo, fmtDia, fmtHora, claveDia, FASE_LABEL, ESTADO_LABEL,
 } from '../../src/lib/torneo';
 
-type Vista = 'fixture' | 'posiciones' | 'goleadores' | 'admin';
+type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'goleadores' | 'admin';
 
 export default function Torneo() {
-  const { isSuperAdmin } = useUserRoles();
+  const { isSuperAdmin, puebloId } = useUserRoles();
   const [vista, setVista] = useState<Vista>('fixture');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,20 +28,58 @@ export default function Torneo() {
   const [filtroDisc, setFiltroDisc] = useState<string | 'todas'>('todas');
   const [tabla, setTabla] = useState<TorneoFilaTabla[]>([]);
   const [goleadores, setGoleadores] = useState<TorneoGoleador[]>([]);
+  const [equipos, setEquipos] = useState<TorneoEquipo[]>([]);
+  const [puebloSel, setPuebloSel] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const ed = await fetchEdicionActiva();
       setEdicion(ed);
-      if (!ed) { setDisciplinas([]); setPartidos([]); return; }
+      if (!ed) { setDisciplinas([]); setPartidos([]); setEquipos([]); return; }
       const ds = await fetchDisciplinas(ed.id);
       const activas = ds.filter((d) => d.activa);
       setDisciplinas(activas);
-      setPartidos(await fetchPartidos(activas.map((d) => d.id)));
+      const ids = activas.map((d) => d.id);
+      setPartidos(await fetchPartidos(ids));
+      setEquipos(await fetchEquipos(ids));
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     }
   }, []);
+
+  // Pueblos que participan del torneo
+  const pueblos = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of equipos) map.set(e.pueblo_id, e.pueblo?.nombre ?? 'Pueblo');
+    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [equipos]);
+
+  useEffect(() => {
+    if (puebloSel || pueblos.length === 0) return;
+    const mio = puebloId && pueblos.some((p) => p.id === puebloId) ? puebloId : pueblos[0].id;
+    setPuebloSel(mio);
+  }, [pueblos, puebloId, puebloSel]);
+
+  // Partidos del pueblo seleccionado (todas las disciplinas)
+  const partidosPueblo = useMemo(() => {
+    if (!puebloSel) return [];
+    const misEquipos = new Set(equipos.filter((e) => e.pueblo_id === puebloSel).map((e) => e.id));
+    return partidos
+      .filter((p) => (p.equipo_a_id && misEquipos.has(p.equipo_a_id)) || (p.equipo_b_id && misEquipos.has(p.equipo_b_id)))
+      .sort((a, b) => (a.inicio ?? 'zzz').localeCompare(b.inicio ?? 'zzz'));
+  }, [partidos, equipos, puebloSel]);
+
+  const porDiaPueblo = useMemo(() => {
+    const map = new Map<string, TorneoPartido[]>();
+    for (const p of partidosPueblo) {
+      const k = claveDia(p.inicio);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(p);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [partidosPueblo]);
+
 
   useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, [load]);
 
@@ -72,6 +111,38 @@ export default function Torneo() {
   }, [partidosFiltrados]);
 
   const discNombre = (id: string) => disciplinas.find((d) => d.id === id);
+
+  async function exportarPueblo() {
+    try {
+      const nombrePueblo = pueblos.find((p) => p.id === puebloSel)?.nombre ?? 'Pueblo';
+      const rows: any[][] = [['Disciplina', 'Fase', 'Zona', 'Día', 'Hora', 'Cancha', 'Equipo A', 'Equipo B', 'Marcador', 'Estado']];
+      for (const p of partidosPueblo) {
+        const d = discNombre(p.disciplina_id);
+        rows.push([
+          d ? `${d.emoji} ${d.nombre}` : '',
+          FASE_LABEL[p.fase] ?? p.fase,
+          p.zona ?? '',
+          fmtDia(p.inicio),
+          p.inicio ? fmtHora(p.inicio) : 'A confirmar',
+          p.cancha?.nombre ?? '',
+          p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? ''),
+          p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? ''),
+          p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : '',
+          p.estado,
+        ]);
+      }
+      const blob = generateExcelBlob(rows, {
+        title: `Partidos de ${nombrePueblo}`,
+        subtitle: `${partidosPueblo.length} partidos · Generado el ${humanDate()}`,
+        sheetName: 'Mis partidos',
+      });
+      await shareOrDownload(blob, `Torneo_${safeFileName(nombrePueblo)}_${fileStamp()}.xlsx`);
+    } catch (e: any) {
+      Alert.alert('No se pudo exportar', e?.message ?? String(e));
+    }
+  }
+
+
 
   async function exportarFixture() {
     try {
@@ -121,6 +192,7 @@ export default function Torneo() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
           ['fixture', '📅 Fixture'],
+          ['pueblo', '🏘️ Mi pueblo'],
           ['posiciones', '📊 Posiciones'],
           ['goleadores', '🥇 Goleadores'],
           ...(isSuperAdmin ? [['admin', '⚙️ Administrar'] as [Vista, string]] : []),
@@ -145,7 +217,7 @@ export default function Torneo() {
         </View>
       )}
 
-      {vista !== 'admin' && disciplinas.length > 0 && (
+      {vista !== 'admin' && vista !== 'pueblo' && disciplinas.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
           {(vista === 'fixture' ? [{ id: 'todas', emoji: '🎯', nombre: 'Todas' } as any, ...disciplinas] : disciplinas).map((d: any) => {
             const sel = vista === 'fixture' ? filtroDisc === d.id : discSel?.id === d.id;
@@ -162,6 +234,88 @@ export default function Torneo() {
           })}
         </ScrollView>
       )}
+
+      {/* MI PUEBLO */}
+      {vista === 'pueblo' && disciplinas.length > 0 && (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+            {pueblos.map((p) => {
+              const sel = puebloSel === p.id;
+              return (
+                <Pressable key={p.id} onPress={() => setPuebloSel(p.id)} style={{
+                  paddingVertical: 7, paddingHorizontal: 13, marginRight: 8, borderRadius: radius.full,
+                  backgroundColor: sel ? colors.secondary[500] : colors.neutral[100],
+                }}>
+                  <Text style={{ fontWeight: '700', fontSize: 13, color: sel ? colors.primary[800] : colors.neutral[700] }}>
+                    🏘️ {p.nombre}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {pueblos.length === 0 && (
+            <View style={s.card}><Text style={s.text}>Todavía no hay pueblos anotados en el torneo.</Text></View>
+          )}
+
+          {puebloSel && (
+            <Pressable onPress={exportarPueblo} style={{
+              alignSelf: 'flex-start', backgroundColor: colors.success, paddingVertical: 8,
+              paddingHorizontal: 14, borderRadius: radius.sm, marginBottom: spacing.md,
+            }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>📥 Descargar mis partidos</Text>
+            </Pressable>
+          )}
+
+          {puebloSel && partidosPueblo.length === 0 && (
+            <View style={s.card}><Text style={s.text}>Este pueblo todavía no tiene partidos generados.</Text></View>
+          )}
+
+          {porDiaPueblo.map(([dia, lista]) => (
+            <View key={dia} style={{ marginBottom: spacing.lg }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
+                {fmtDia(lista[0].inicio)}
+              </Text>
+              {lista.map((p) => {
+                const d = discNombre(p.disciplina_id);
+                const finalizado = p.estado === 'finalizado';
+                return (
+                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
+                      </Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                        {ESTADO_LABEL[p.estado] ?? p.estado}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
+                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
+                      </Text>
+                      <View style={{
+                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
+                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
+                      }}>
+                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
+                          {p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : fmtHora(p.inicio)}
+                        </Text>
+                      </View>
+                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
+                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
+                      🕒 {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </>
+      )}
+
 
       {/* FIXTURE */}
       {vista === 'fixture' && disciplinas.length > 0 && (
