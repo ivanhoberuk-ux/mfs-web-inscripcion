@@ -54,6 +54,20 @@ export default function Home() {
 
   const [role, setRole] = useState<'admin' | 'user' | null>(null)
   const [loadingRole, setLoadingRole] = useState(false)
+  const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const ed = await fetchEdicionActiva()
+        if (!mounted || !ed) return
+        const d = await fetchDisciplinas(ed.id)
+        if (mounted) setDisciplinas(d)
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [])
 
   useEffect(() => {
     let mounted = true
