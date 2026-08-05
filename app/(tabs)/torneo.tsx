@@ -8,6 +8,8 @@ import { useUserRoles } from '../../src/hooks/useUserRoles';
 import { TorneoAdminPanel } from '../../src/components/TorneoAdminPanel';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { shareOrDownload } from '../../src/lib/sharing';
+import { supabase } from '../../src/lib/supabase';
+
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla, type TorneoGoleador,
   type TorneoEquipo,
@@ -82,6 +84,16 @@ export default function Torneo() {
 
 
   useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, [load]);
+
+  // Actualización en vivo de marcadores/estados
+  useEffect(() => {
+    const channel = supabase
+      .channel('torneo-partidos-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'torneo_partidos' }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
+
 
   // Disciplina concreta para posiciones/goleadores
   const discSel = useMemo(() => {
