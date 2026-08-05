@@ -207,6 +207,64 @@ export default function Home() {
           <InscripcionAvisoCard />
         </View>
 
+        {/* Torneo Interpueblos */}
+        <Pressable
+          onPress={() => router.push('/torneo')}
+          style={({ pressed }) => ({
+            width: '100%',
+            borderRadius: radius.xl,
+            overflow: 'hidden',
+            backgroundColor: colors.primary[600],
+            borderWidth: 3,
+            borderColor: colors.secondary[500],
+            opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed ? 0.99 : 1 }],
+            ...shadows.lg,
+          })}
+          accessibilityRole="button"
+          accessibilityLabel="Ir al Torneo Interpueblos"
+        >
+          <Image
+            source={torneoHero}
+            style={{ width: '100%', height: 190, resizeMode: 'cover' }}
+            accessibilityLabel="Torneo Interpueblos de fútbol, vóley y básquet"
+          />
+          <View style={{ padding: spacing.lg, gap: 4 }}>
+            <Text style={{
+              fontSize: typography.size.xl,
+              fontWeight: typography.weight.extrabold,
+              color: '#ffffff',
+            }}>
+              🏆 Torneo Interpueblos
+            </Text>
+            <Text style={{
+              fontSize: typography.size.sm,
+              color: colors.secondary[200],
+              fontWeight: typography.weight.medium,
+            }}>
+              Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones
+            </Text>
+            <View style={{
+              marginTop: spacing.sm,
+              alignSelf: 'flex-start',
+              backgroundColor: colors.secondary[500],
+              paddingHorizontal: spacing.lg,
+              paddingVertical: spacing.sm,
+              borderRadius: radius.full,
+            }}>
+              <Text style={{
+                color: colors.primary[800],
+                fontWeight: typography.weight.bold,
+                fontSize: typography.size.sm,
+              }}>
+                Ver el torneo →
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+
+
+
         {/* Estado de documentos del usuario */}
         {user ? (
           <View style={{ width: '100%', gap: 12 }}>
