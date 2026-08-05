@@ -94,6 +94,40 @@ export default function Home() {
     return '¡Buenas noches! 🌙'
   }
 
+  const activas = disciplinas.filter(d => d.activa)
+  const hayFutbol = activas.some(d => d.codigo === 'futbol' || /futbol/i.test(d.nombre))
+  const hayVoley = activas.some(d => d.codigo === 'voley' || /v[oó]ley|volley/i.test(d.nombre))
+  const hayBasquet = activas.some(d => d.codigo === 'basquet' || /b[aá]squet|basket/i.test(d.nombre))
+
+  const torneoHero = React.useMemo(() => {
+    if (activas.length === 1) {
+      if (hayFutbol) return torneoFutbolImg
+      if (hayVoley) return torneoVoleyImg
+      if (hayBasquet) return torneoBasquetImg
+    }
+    return torneoTodosImg
+  }, [activas.length, hayFutbol, hayVoley, hayBasquet])
+
+  const torneoTitle = React.useMemo(() => {
+    if (activas.length === 0) return '🏆 Torneo Interpueblos'
+    if (activas.length === 1) return `🏆 Torneo de ${activas[0].nombre}`
+    const nombres = activas.map(d => d.nombre)
+    if (nombres.length === 2) return `🏆 Torneo de ${nombres[0]} y ${nombres[1]}`
+    return `🏆 Torneo de ${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+  }, [activas])
+
+  const torneoSubtitle = React.useMemo(() => {
+    if (activas.length === 0) return 'Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones'
+    const emojis = activas.map(d => d.emoji).join('')
+    const nombres = activas.map(d => d.nombre).join(', ')
+    return `${nombres} ${emojis} — mirá el fixture, los horarios y las posiciones`
+  }, [activas])
+
+  const torneoAlt = React.useMemo(() => {
+    if (activas.length === 0) return 'Torneo Interpueblos de fútbol, vóley y básquet'
+    return `Torneo Interpueblos de ${activas.map(d => d.nombre).join(', ')}`
+  }, [activas])
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
       {/* Bandera de Paraguay esfumada de fondo (toda la pantalla) */}
