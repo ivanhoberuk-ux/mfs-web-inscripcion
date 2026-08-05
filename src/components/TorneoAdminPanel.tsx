@@ -858,17 +858,38 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
 
       {open && (
         <View style={{ marginTop: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <TextInput value={a} onChangeText={setA} keyboardType="numeric" placeholder="0"
-              style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
-            <Text style={{ marginHorizontal: 10, fontWeight: '800' }}>:</Text>
-            <TextInput value={b} onChangeText={setB} keyboardType="numeric" placeholder="0"
-              style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
-          </View>
-          {usaSets && (
-            <TextInput value={sets} onChangeText={setSets} placeholder="Sets: 25-20 / 23-25 / 15-11"
-              style={[s.input, { marginBottom: 8 }]} />
+          {usaSets ? (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={[s.label, { marginBottom: 4 }]}>Parciales por set</Text>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={{ width: 92, fontSize: 12, fontWeight: '700', color: colors.neutral[600] }}>
+                    {i === 2 ? 'Desempate' : `Set ${i + 1}`}
+                  </Text>
+                  <TextInput value={parciales[i].a} onChangeText={(v) => setParcial(i, 'a', v)} keyboardType="numeric"
+                    placeholder={i === 2 ? '7' : '15'} style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+                  <Text style={{ marginHorizontal: 10, fontWeight: '800' }}>:</Text>
+                  <TextInput value={parciales[i].b} onChangeText={(v) => setParcial(i, 'b', v)} keyboardType="numeric"
+                    placeholder={i === 2 ? '7' : '15'} style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+                </View>
+              ))}
+              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary[700] }}>
+                Sets ganados: {a || 0} - {b || 0}{sets ? `  (${sets})` : ''}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 2 }}>
+                El marcador de la tabla usa los sets ganados. El 3er set solo se completa si hay empate 1-1.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <TextInput value={a} onChangeText={setA} keyboardType="numeric" placeholder="0"
+                style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+              <Text style={{ marginHorizontal: 10, fontWeight: '800' }}>:</Text>
+              <TextInput value={b} onChangeText={setB} keyboardType="numeric" placeholder="0"
+                style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+            </View>
           )}
+
           <TextInput value={mvp} onChangeText={setMvp} placeholder="MVP del partido" style={[s.input, { marginBottom: 8 }]} />
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
