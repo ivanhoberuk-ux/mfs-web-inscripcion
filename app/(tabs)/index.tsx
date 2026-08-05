@@ -282,7 +282,7 @@ export default function Home() {
           <Image
             source={torneoHero}
             style={{ width: '100%', height: 190, resizeMode: 'cover' }}
-            accessibilityLabel="Torneo Interpueblos de fútbol, vóley y básquet"
+            accessibilityLabel={torneoAlt}
           />
           <View style={{ padding: spacing.lg, gap: 4 }}>
             <Text style={{
