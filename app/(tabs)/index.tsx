@@ -97,9 +97,11 @@ export default function Home() {
   }
 
   const activas = disciplinas.filter(d => d.activa)
-  const hayFutbol = activas.some(d => d.codigo === 'futbol' || /futbol/i.test(d.nombre))
-  const hayVoley = activas.some(d => d.codigo === 'voley' || /v[oó]ley|volley/i.test(d.nombre))
-  const hayBasquet = activas.some(d => d.codigo === 'basquet' || /b[aá]squet|basket/i.test(d.nombre))
+  const matchDisc = (d: { codigo?: string | null; nombre?: string | null }, re: RegExp) =>
+    re.test(d.codigo ?? '') || re.test(d.nombre ?? '')
+  const hayFutbol = activas.some(d => matchDisc(d, /f[uú]tbol|futbol|soccer/i))
+  const hayVoley = activas.some(d => matchDisc(d, /v[oó]ley|volley/i))
+  const hayBasquet = activas.some(d => matchDisc(d, /b[aá]squet|basket/i))
 
   const torneoHero = React.useMemo(() => {
     const n = [hayFutbol, hayVoley, hayBasquet].filter(Boolean).length
