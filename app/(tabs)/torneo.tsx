@@ -8,6 +8,8 @@ import { useUserRoles } from '../../src/hooks/useUserRoles';
 import { TorneoAdminPanel } from '../../src/components/TorneoAdminPanel';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { shareOrDownload } from '../../src/lib/sharing';
+import { supabase } from '../../src/lib/supabase';
+
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla, type TorneoGoleador,
   type TorneoEquipo,
