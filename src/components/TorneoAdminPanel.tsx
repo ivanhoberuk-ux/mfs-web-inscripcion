@@ -815,16 +815,27 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
   }
 
 
+  const enJuego = partido.estado === 'en_juego';
+
   return (
-    <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.sm, padding: 10, marginBottom: 8 }}>
+    <View style={{
+      borderWidth: enJuego ? 2 : 1,
+      borderColor: enJuego ? colors.success : colors.neutral[200],
+      backgroundColor: enJuego ? 'rgba(34,197,94,0.12)' : 'transparent',
+      borderRadius: radius.sm, padding: 10, marginBottom: 8,
+    }}>
       <Pressable onPress={() => setOpen(!open)}>
         <Text style={{ fontSize: 11, color: colors.neutral[500], fontWeight: '700' }}>
           {FASE_LABEL[partido.fase] ?? partido.fase}{partido.zona ? ` · Zona ${partido.zona}` : ''} · {fmtDia(partido.inicio)} {fmtHora(partido.inicio)} · {partido.cancha?.nombre ?? 'sin cancha'}
         </Text>
         <Text style={{ fontWeight: '800', color: colors.neutral[800], marginTop: 2 }}>
-          {nomA} {partido.marcador_a ?? '-'} : {partido.marcador_b ?? '-'} {nomB}
+          {enJuego ? '🟢 ' : ''}{nomA} {partido.marcador_a ?? '-'} : {partido.marcador_b ?? '-'} {nomB}
         </Text>
+        {enJuego && (
+          <Text style={{ fontSize: 11, fontWeight: '800', color: colors.success, marginTop: 2 }}>EN JUEGO AHORA</Text>
+        )}
       </Pressable>
+
 
       {open && (
         <View style={{ marginTop: 10 }}>
@@ -843,10 +854,13 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             <MiniBtn label="✅ Finalizar" color={colors.success} disabled={saving} onPress={() => guardar('finalizado')} />
-            <MiniBtn label="🔴 En juego" color={colors.warning} disabled={saving} onPress={() => guardar('en_juego')} />
+            {enJuego
+              ? <MiniBtn label="↩️ Deshacer 'En juego'" color={colors.warning} disabled={saving} onPress={() => guardar('programado')} />
+              : <MiniBtn label="🔴 En juego" color={colors.warning} disabled={saving} onPress={() => guardar('en_juego')} />}
             <MiniBtn label="🕒 Programado" color={colors.neutral[500]} disabled={saving} onPress={() => guardar('programado')} />
             <MiniBtn label="⛔ Suspender" color={colors.error} disabled={saving} onPress={() => guardar('suspendido')} />
           </View>
+
 
           {/* Goleadores */}
           {(partido.equipo_a_id || partido.equipo_b_id) && (
