@@ -781,6 +781,25 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
   const [a, setA] = useState(partido.marcador_a?.toString() ?? '');
   const [b, setB] = useState(partido.marcador_b?.toString() ?? '');
   const [sets, setSets] = useState(partido.detalle_sets ?? '');
+  // Parciales por set (para vóley: 2 sets de 15 + desempate de 7)
+  const [parciales, setParciales] = useState<{ a: string; b: string }[]>(() => {
+    const base = [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }];
+    (partido.detalle_sets ?? '').split('/').forEach((seg, i) => {
+      const m = seg.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m && i < 3) base[i] = { a: m[1], b: m[2] };
+    });
+    return base;
+  });
+
+  function setParcial(i: number, campo: 'a' | 'b', val: string) {
+    const next = parciales.map((p, idx) => (idx === i ? { ...p, [campo]: val.replace(/[^0-9]/g, '') } : p));
+    setParciales(next);
+    const jugados = next.filter((p) => p.a !== '' && p.b !== '');
+    setSets(jugados.map((p) => `${p.a}-${p.b}`).join(' / '));
+    setA(String(jugados.filter((p) => Number(p.a) > Number(p.b)).length));
+    setB(String(jugados.filter((p) => Number(p.b) > Number(p.a)).length));
+  }
+
   const [mvp, setMvp] = useState(partido.mvp_nombre ?? '');
   const [saving, setSaving] = useState(false);
   const [eventos, setEventos] = useState<TorneoEvento[]>([]);
