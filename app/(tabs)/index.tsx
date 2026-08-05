@@ -290,7 +290,7 @@ export default function Home() {
               fontWeight: typography.weight.extrabold,
               color: '#ffffff',
             }}>
-              🏆 Torneo Interpueblos
+              {torneoTitle}
             </Text>
             <Text style={{
               fontSize: typography.size.sm,
