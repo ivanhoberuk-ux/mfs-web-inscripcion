@@ -297,7 +297,7 @@ export default function Home() {
               color: colors.secondary[200],
               fontWeight: typography.weight.medium,
             }}>
-              Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones
+              {torneoSubtitle}
             </Text>
             <View style={{
               marginTop: spacing.sm,
