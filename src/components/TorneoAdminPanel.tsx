@@ -861,16 +861,19 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
           {usaSets ? (
             <View style={{ marginBottom: 8 }}>
               <Text style={[s.label, { marginBottom: 4 }]}>Parciales por set</Text>
+              <Text style={{ fontSize: 11, color: colors.neutral[500], marginBottom: 6 }}>
+                Los primeros 2 sets se juegan hasta 15 puntos. El desempate (3er set) se juega hasta 7 puntos.
+              </Text>
               {[0, 1, 2].map((i) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                   <Text style={{ width: 92, fontSize: 12, fontWeight: '700', color: colors.neutral[600] }}>
                     {i === 2 ? 'Desempate' : `Set ${i + 1}`}
                   </Text>
                   <TextInput value={parciales[i].a} onChangeText={(v) => setParcial(i, 'a', v)} keyboardType="numeric"
-                    placeholder={i === 2 ? '7' : '15'} style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+                    placeholder="0" style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
                   <Text style={{ marginHorizontal: 10, fontWeight: '800' }}>:</Text>
                   <TextInput value={parciales[i].b} onChangeText={(v) => setParcial(i, 'b', v)} keyboardType="numeric"
-                    placeholder={i === 2 ? '7' : '15'} style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
+                    placeholder="0" style={[s.input, { width: 60, textAlign: 'center', marginBottom: 0 }]} />
                 </View>
               ))}
               <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary[700] }}>
