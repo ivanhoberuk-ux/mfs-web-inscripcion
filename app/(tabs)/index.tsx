@@ -102,13 +102,15 @@ export default function Home() {
   const hayBasquet = activas.some(d => d.codigo === 'basquet' || /b[aá]squet|basket/i.test(d.nombre))
 
   const torneoHero = React.useMemo(() => {
-    if (activas.length === 1) {
+    const n = [hayFutbol, hayVoley, hayBasquet].filter(Boolean).length
+    if (n === 1) {
       if (hayFutbol) return torneoFutbolImg
       if (hayVoley) return torneoVoleyImg
       if (hayBasquet) return torneoBasquetImg
     }
+    if (n === 2 && hayFutbol && hayVoley) return torneoFutbolVoleyImg
     return torneoTodosImg
-  }, [activas.length, hayFutbol, hayVoley, hayBasquet])
+  }, [hayFutbol, hayVoley, hayBasquet])
 
   const torneoTitle = React.useMemo(() => {
     if (activas.length === 0) return '🏆 Torneo Interpueblos'
