@@ -11,6 +11,7 @@ import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
 import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
+import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
 // @ts-ignore
@@ -26,7 +27,13 @@ import materParaguay from '../../src/assets/mater-paraguay.png'
 // @ts-ignore
 import santuarioImg from '../../src/assets/santuario.png'
 // @ts-ignore
-import torneoHero from '../../src/assets/torneo-hero.png'
+import torneoFutbolImg from '../../src/assets/torneo-futbol.jpg'
+// @ts-ignore
+import torneoVoleyImg from '../../src/assets/torneo-voley.jpg'
+// @ts-ignore
+import torneoBasquetImg from '../../src/assets/torneo-basquet.jpg'
+// @ts-ignore
+import torneoTodosImg from '../../src/assets/torneo-todos.jpg'
 
 
 type UserRoleRow = { role: 'admin' | 'user' }
