@@ -802,6 +802,10 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
         mvp_nombre: mvp || null,
         estado,
       } as any);
+      // Al finalizar un partido, recalcular clasificados y llenar llaves (SF1 vs SF2, etc.)
+      if (estado === 'finalizado') {
+        try { await resolverAvances(partido.disciplina_id); } catch { /* no bloquear el guardado */ }
+      }
       onSaved();
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
@@ -809,6 +813,7 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
       setSaving(false);
     }
   }
+
 
   return (
     <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.sm, padding: 10, marginBottom: 8 }}>
