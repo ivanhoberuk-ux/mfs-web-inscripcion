@@ -25,6 +25,9 @@ import materIcono from '../../src/assets/mater-icono.png'
 import materParaguay from '../../src/assets/mater-paraguay.png'
 // @ts-ignore
 import santuarioImg from '../../src/assets/santuario.png'
+// @ts-ignore
+import torneoHero from '../../src/assets/torneo-hero.png'
+
 
 type UserRoleRow = { role: 'admin' | 'user' }
 
