@@ -854,10 +854,13 @@ function PartidoEditor({ partido, onSaved, usaSets }: { partido: TorneoPartido; 
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             <MiniBtn label="✅ Finalizar" color={colors.success} disabled={saving} onPress={() => guardar('finalizado')} />
-            <MiniBtn label="🔴 En juego" color={colors.warning} disabled={saving} onPress={() => guardar('en_juego')} />
+            {enJuego
+              ? <MiniBtn label="↩️ Deshacer 'En juego'" color={colors.warning} disabled={saving} onPress={() => guardar('programado')} />
+              : <MiniBtn label="🔴 En juego" color={colors.warning} disabled={saving} onPress={() => guardar('en_juego')} />}
             <MiniBtn label="🕒 Programado" color={colors.neutral[500]} disabled={saving} onPress={() => guardar('programado')} />
             <MiniBtn label="⛔ Suspender" color={colors.error} disabled={saving} onPress={() => guardar('suspendido')} />
           </View>
+
 
           {/* Goleadores */}
           {(partido.equipo_a_id || partido.equipo_b_id) && (
