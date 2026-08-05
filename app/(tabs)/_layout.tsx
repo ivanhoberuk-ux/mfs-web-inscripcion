@@ -141,12 +141,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="torneo"
         options={{
+          href: null,
           title: 'Torneo',
-          tabBarIcon: ({ focused }) => (
-            <EmojiIcon emoji="🏆" focused={focused} />
-          ),
         }}
       />
+
       <Tabs.Screen
         name="documentos"
         options={{
