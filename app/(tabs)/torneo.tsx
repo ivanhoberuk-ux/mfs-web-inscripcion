@@ -83,6 +83,16 @@ export default function Torneo() {
 
   useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, [load]);
 
+  // Actualización en vivo de marcadores/estados
+  useEffect(() => {
+    const channel = supabase
+      .channel('torneo-partidos-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'torneo_partidos' }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
+
+
   // Disciplina concreta para posiciones/goleadores
   const discSel = useMemo(() => {
     if (filtroDisc !== 'todas') return disciplinas.find((d) => d.id === filtroDisc) ?? disciplinas[0] ?? null;
