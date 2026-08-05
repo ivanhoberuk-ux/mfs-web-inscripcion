@@ -11,6 +11,7 @@ import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
 import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
+import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
 // @ts-ignore
@@ -26,7 +27,13 @@ import materParaguay from '../../src/assets/mater-paraguay.png'
 // @ts-ignore
 import santuarioImg from '../../src/assets/santuario.png'
 // @ts-ignore
-import torneoHero from '../../src/assets/torneo-hero.png'
+import torneoFutbolImg from '../../src/assets/torneo-futbol.jpg'
+// @ts-ignore
+import torneoVoleyImg from '../../src/assets/torneo-voley.jpg'
+// @ts-ignore
+import torneoBasquetImg from '../../src/assets/torneo-basquet.jpg'
+// @ts-ignore
+import torneoTodosImg from '../../src/assets/torneo-todos.jpg'
 
 
 type UserRoleRow = { role: 'admin' | 'user' }
@@ -47,6 +54,20 @@ export default function Home() {
 
   const [role, setRole] = useState<'admin' | 'user' | null>(null)
   const [loadingRole, setLoadingRole] = useState(false)
+  const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const ed = await fetchEdicionActiva()
+        if (!mounted || !ed) return
+        const d = await fetchDisciplinas(ed.id)
+        if (mounted) setDisciplinas(d)
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -72,6 +93,40 @@ export default function Home() {
     if (hour < 18) return '¡Buenas tardes! 🌤️'
     return '¡Buenas noches! 🌙'
   }
+
+  const activas = disciplinas.filter(d => d.activa)
+  const hayFutbol = activas.some(d => d.codigo === 'futbol' || /futbol/i.test(d.nombre))
+  const hayVoley = activas.some(d => d.codigo === 'voley' || /v[oó]ley|volley/i.test(d.nombre))
+  const hayBasquet = activas.some(d => d.codigo === 'basquet' || /b[aá]squet|basket/i.test(d.nombre))
+
+  const torneoHero = React.useMemo(() => {
+    if (activas.length === 1) {
+      if (hayFutbol) return torneoFutbolImg
+      if (hayVoley) return torneoVoleyImg
+      if (hayBasquet) return torneoBasquetImg
+    }
+    return torneoTodosImg
+  }, [activas.length, hayFutbol, hayVoley, hayBasquet])
+
+  const torneoTitle = React.useMemo(() => {
+    if (activas.length === 0) return '🏆 Torneo Interpueblos'
+    if (activas.length === 1) return `🏆 Torneo de ${activas[0].nombre}`
+    const nombres = activas.map(d => d.nombre)
+    if (nombres.length === 2) return `🏆 Torneo de ${nombres[0]} y ${nombres[1]}`
+    return `🏆 Torneo de ${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+  }, [activas])
+
+  const torneoSubtitle = React.useMemo(() => {
+    if (activas.length === 0) return 'Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones'
+    const emojis = activas.map(d => d.emoji).join('')
+    const nombres = activas.map(d => d.nombre).join(', ')
+    return `${nombres} ${emojis} — mirá el fixture, los horarios y las posiciones`
+  }, [activas])
+
+  const torneoAlt = React.useMemo(() => {
+    if (activas.length === 0) return 'Torneo Interpueblos de fútbol, vóley y básquet'
+    return `Torneo Interpueblos de ${activas.map(d => d.nombre).join(', ')}`
+  }, [activas])
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
@@ -227,7 +282,7 @@ export default function Home() {
           <Image
             source={torneoHero}
             style={{ width: '100%', height: 190, resizeMode: 'cover' }}
-            accessibilityLabel="Torneo Interpueblos de fútbol, vóley y básquet"
+            accessibilityLabel={torneoAlt}
           />
           <View style={{ padding: spacing.lg, gap: 4 }}>
             <Text style={{
@@ -235,14 +290,14 @@ export default function Home() {
               fontWeight: typography.weight.extrabold,
               color: '#ffffff',
             }}>
-              🏆 Torneo Interpueblos
+              {torneoTitle}
             </Text>
             <Text style={{
               fontSize: typography.size.sm,
               color: colors.secondary[200],
               fontWeight: typography.weight.medium,
             }}>
-              Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones
+              {torneoSubtitle}
             </Text>
             <View style={{
               marginTop: spacing.sm,
