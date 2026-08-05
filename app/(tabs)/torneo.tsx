@@ -303,6 +303,7 @@ export default function Torneo() {
                         {ESTADO_LABEL[p.estado] ?? p.estado}
                       </Text>
                     </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
                       <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
                         {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
