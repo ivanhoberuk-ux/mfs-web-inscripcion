@@ -291,17 +291,20 @@ export default function Torneo() {
               {lista.map((p) => {
                 const d = discNombre(p.disciplina_id);
                 const finalizado = p.estado === 'finalizado';
+                const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 }]}>
+                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
+                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
                         {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
                       </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
                         {ESTADO_LABEL[p.estado] ?? p.estado}
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+
                       <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
                         {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
                       </Text>
@@ -353,16 +356,19 @@ export default function Torneo() {
               {lista.map((p) => {
                 const d = discNombre(p.disciplina_id);
                 const finalizado = p.estado === 'finalizado';
+                const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 }]}>
+                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
+                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
                         {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
                       </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
                         {ESTADO_LABEL[p.estado] ?? p.estado}
                       </Text>
                     </View>
+
 
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
