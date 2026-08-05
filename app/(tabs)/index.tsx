@@ -34,6 +34,8 @@ import torneoVoleyImg from '../../src/assets/torneo-voley.jpg'
 import torneoBasquetImg from '../../src/assets/torneo-basquet.jpg'
 // @ts-ignore
 import torneoTodosImg from '../../src/assets/torneo-todos.jpg'
+// @ts-ignore
+import torneoFutbolVoleyImg from '../../src/assets/torneo-futbol-voley.jpg'
 
 
 type UserRoleRow = { role: 'admin' | 'user' }
