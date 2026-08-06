@@ -287,7 +287,7 @@ export default function Home() {
         >
           <Image
             source={torneoHero}
-            style={{ width: '100%', height: 190, resizeMode: 'cover' }}
+            style={{ width: '100%', height: 190, resizeMode: 'contain', backgroundColor: colors.primary[700] }}
             accessibilityLabel={torneoAlt}
           />
           <View style={{ padding: spacing.lg, gap: 4 }}>
