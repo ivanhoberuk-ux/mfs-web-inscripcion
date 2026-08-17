@@ -808,3 +808,48 @@ function NuevaCancha({ onAdd }: { onAdd: (nombre: string) => void }) {
   );
 }
 
+
+// ---------- Suspender desde un partido (lluvia, corte, etc.) ----------
+function SuspenderDesde({ partidos, disciplinas, onRun, disabled }: {
+  partidos: TorneoPartido[];
+  disciplinas: TorneoDisciplina[];
+  onRun: (partidoId: string) => void;
+  disabled?: boolean;
+}) {
+  const ordenados = useMemo(
+    () => [...partidos].sort((a, b) => String(a.inicio).localeCompare(String(b.inicio))),
+    [partidos]
+  );
+  const [pid, setPid] = useState('');
+  useEffect(() => { if (!pid && ordenados.length) setPid(ordenados[0].id); }, [ordenados.length]);
+
+  if (ordenados.length === 0) return <Text style={s.small}>No hay partidos programados para suspender.</Text>;
+
+  const afectados = (() => {
+    const sel = ordenados.find((p) => p.id === pid);
+    if (!sel?.inicio) return 0;
+    return ordenados.filter((p) => String(p.inicio) >= String(sel.inicio)).length;
+  })();
+
+  return (
+    <View>
+      <Text style={[s.small, { marginBottom: 4 }]}>Suspender desde este partido (inclusive)</Text>
+      <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
+        <Picker selectedValue={pid} onValueChange={(v) => setPid(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
+          {ordenados.map((p) => {
+            const d = disciplinas.find((x) => x.id === p.disciplina_id);
+            const label = `${fmtDia(p.inicio)} ${fmtHora(p.inicio)} · ${d?.emoji ?? ''} ${nombreEquipo(p.equipo_a)} vs ${nombreEquipo(p.equipo_b)}`;
+            return <Picker.Item key={p.id} label={label} value={p.id} />;
+          })}
+        </Picker>
+      </View>
+      <Text style={[s.small, { marginBottom: spacing.sm }]}>Se van a liberar {afectados} partido{afectados === 1 ? '' : 's'}.</Text>
+      <MiniBtn
+        label="🌧️ Suspender desde acá"
+        color={colors.error}
+        disabled={disabled || !pid}
+        onPress={() => onRun(pid)}
+      />
+    </View>
+  );
+}
