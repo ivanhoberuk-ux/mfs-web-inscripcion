@@ -1420,6 +1420,7 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
+      is_operador: { Args: never; Returns: boolean }
       is_pueblo_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
       kpi_asistencias: {
