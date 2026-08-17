@@ -13,7 +13,7 @@ import {
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
   fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque, updateBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
-  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios,
+  sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios, suspenderDesde,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
 } from '../lib/torneo';
 
@@ -183,8 +183,24 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       setUltimoProg(r);
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
-
   }
+
+  function suspenderDesdePartido(pid: string) {
+
+    const p = partidos.find((x) => x.id === pid);
+    if (!p?.inicio) return;
+    confirmAction(
+      'Suspender desde este partido',
+      `Se quitará día, hora y cancha de ese partido y de todos los que vienen después (los finalizados no se tocan). Después agregá un bloque horario para el nuevo día y usá "Programar solo los pendientes". ¿Continuar?`,
+      () => run(async () => {
+        const r = await suspenderDesde(edicion.id, p.inicio as string);
+        setUltimoProg(null);
+        return { ok: true, msg: `${r?.suspendidos ?? 0} partidos quedaron sin horario, listos para reprogramar.` };
+      }, 'Partidos suspendidos'),
+    );
+  }
+
+
 
   function borrarHorarios() {
     confirmAction(
@@ -462,6 +478,22 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               disabled={busy}
             />
           </SectionCard>
+
+          <SectionCard title="Suspender y pasar a otro día" emoji="🌧️">
+            <Text style={[s.small, { marginBottom: spacing.md }]}>
+              Si llueve o hay que cortar: elegí el partido desde el cual se suspende. Ese partido y todos
+              los siguientes quedan sin día, hora ni cancha (los finalizados y los ya jugados no se tocan).
+              Después agregá un bloque horario para el nuevo día y tocá “➕ Programar solo los pendientes”:
+              el sistema los reacomoda sin superponer pueblos.
+            </Text>
+            <SuspenderDesde
+              partidos={partidos.filter((p) => p.inicio && p.estado !== 'finalizado')}
+              disciplinas={disciplinas}
+              onRun={suspenderDesdePartido}
+              disabled={busy}
+            />
+          </SectionCard>
+
         </>
       )}
 
@@ -776,3 +808,48 @@ function NuevaCancha({ onAdd }: { onAdd: (nombre: string) => void }) {
   );
 }
 
+
+// ---------- Suspender desde un partido (lluvia, corte, etc.) ----------
+function SuspenderDesde({ partidos, disciplinas, onRun, disabled }: {
+  partidos: TorneoPartido[];
+  disciplinas: TorneoDisciplina[];
+  onRun: (partidoId: string) => void;
+  disabled?: boolean;
+}) {
+  const ordenados = useMemo(
+    () => [...partidos].sort((a, b) => String(a.inicio).localeCompare(String(b.inicio))),
+    [partidos]
+  );
+  const [pid, setPid] = useState('');
+  useEffect(() => { if (!pid && ordenados.length) setPid(ordenados[0].id); }, [ordenados.length]);
+
+  if (ordenados.length === 0) return <Text style={s.small}>No hay partidos programados para suspender.</Text>;
+
+  const afectados = (() => {
+    const sel = ordenados.find((p) => p.id === pid);
+    if (!sel?.inicio) return 0;
+    return ordenados.filter((p) => String(p.inicio) >= String(sel.inicio)).length;
+  })();
+
+  return (
+    <View>
+      <Text style={[s.small, { marginBottom: 4 }]}>Suspender desde este partido (inclusive)</Text>
+      <View style={{ borderWidth: 1, borderColor: colors.neutral[200], borderRadius: radius.md, backgroundColor: colors.surface.light, overflow: 'hidden', marginBottom: 10 }}>
+        <Picker selectedValue={pid} onValueChange={(v) => setPid(String(v))} style={{ height: 48, color: colors.neutral[800] }}>
+          {ordenados.map((p) => {
+            const d = disciplinas.find((x) => x.id === p.disciplina_id);
+            const label = `${fmtDia(p.inicio)} ${fmtHora(p.inicio)} · ${d?.emoji ?? ''} ${nombreEquipo(p.equipo_a)} vs ${nombreEquipo(p.equipo_b)}`;
+            return <Picker.Item key={p.id} label={label} value={p.id} />;
+          })}
+        </Picker>
+      </View>
+      <Text style={[s.small, { marginBottom: spacing.sm }]}>Se van a liberar {afectados} partido{afectados === 1 ? '' : 's'}.</Text>
+      <MiniBtn
+        label="🌧️ Suspender desde acá"
+        color={colors.error}
+        disabled={disabled || !pid}
+        onPress={() => onRun(pid)}
+      />
+    </View>
+  );
+}

@@ -1612,6 +1612,10 @@ export type Database = {
         Args: { p_disciplina_id: string; p_num_zonas?: number }
         Returns: Json
       }
+      torneo_suspender_desde: {
+        Args: { p_desde: string; p_edicion_id: string }
+        Returns: Json
+      }
       torneo_tabla: {
         Args: { p_disciplina_id: string }
         Returns: {
