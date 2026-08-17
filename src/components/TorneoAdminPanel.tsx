@@ -478,6 +478,22 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               disabled={busy}
             />
           </SectionCard>
+
+          <SectionCard title="Suspender y pasar a otro día" emoji="🌧️">
+            <Text style={[s.small, { marginBottom: spacing.md }]}>
+              Si llueve o hay que cortar: elegí el partido desde el cual se suspende. Ese partido y todos
+              los siguientes quedan sin día, hora ni cancha (los finalizados y los ya jugados no se tocan).
+              Después agregá un bloque horario para el nuevo día y tocá “➕ Programar solo los pendientes”:
+              el sistema los reacomoda sin superponer pueblos.
+            </Text>
+            <SuspenderDesde
+              partidos={partidos.filter((p) => p.inicio && p.estado !== 'finalizado')}
+              disciplinas={disciplinas}
+              onRun={suspenderDesdePartido}
+              disabled={busy}
+            />
+          </SectionCard>
+
         </>
       )}
 
