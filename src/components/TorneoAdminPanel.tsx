@@ -184,7 +184,21 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
 
+  function suspenderDesdePartido(pid: string) {
+    const p = partidos.find((x) => x.id === pid);
+    if (!p?.inicio) return;
+    confirmAction(
+      'Suspender desde este partido',
+      `Se quitará día, hora y cancha de ese partido y de todos los que vienen después (los finalizados no se tocan). Después agregá un bloque horario para el nuevo día y usá "Programar solo los pendientes". ¿Continuar?`,
+      () => run(async () => {
+        const r = await suspenderDesde(edicion.id, p.inicio as string);
+        setUltimoProg(null);
+        return { ok: true, msg: `${r?.suspendidos ?? 0} partidos quedaron sin horario, listos para reprogramar.` };
+      }, 'Partidos suspendidos'),
+    );
   }
+
+
 
   function borrarHorarios() {
     confirmAction(
