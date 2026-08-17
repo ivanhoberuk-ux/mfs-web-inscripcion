@@ -6,6 +6,7 @@ import { Picker } from '@react-native-picker/picker';
 import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
 import { fetchPueblos, type Pueblo } from '../lib/api';
+import { PartidoEditor } from './PartidoEditor';
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoEquipo, type TorneoCancha,
   type TorneoBloque, type TorneoPartido, type TorneoEvento,
