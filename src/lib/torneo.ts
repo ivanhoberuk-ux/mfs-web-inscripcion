@@ -384,3 +384,12 @@ export async function updateBloque(id: string, patch: Partial<Omit<TorneoBloque,
   const { error } = await supabase.from('torneo_bloques').update(patch as any).eq('id', id);
   if (error) throw error;
 }
+
+export async function suspenderDesde(edicionId: string, desdeIso: string) {
+  const { data, error } = await supabase.rpc('torneo_suspender_desde' as any, {
+    p_edicion_id: edicionId,
+    p_desde: desdeIso,
+  });
+  if (error) throw error;
+  return data as any;
+}
