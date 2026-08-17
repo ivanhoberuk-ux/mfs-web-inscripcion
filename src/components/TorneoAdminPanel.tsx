@@ -183,8 +183,10 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       setUltimoProg(r);
       return r;
     }, reprogramarTodo ? 'Torneo programado' : 'Pendientes programados');
+  }
 
   function suspenderDesdePartido(pid: string) {
+
     const p = partidos.find((x) => x.id === pid);
     if (!p?.inicio) return;
     confirmAction(
