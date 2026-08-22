@@ -101,11 +101,13 @@ export default function Torneo() {
     return disciplinas[0] ?? null;
   }, [filtroDisc, disciplinas]);
 
+  // Se recalcula también cuando cambian los partidos (p.ej. por un evento en vivo),
+  // así la tabla de posiciones y los goleadores se actualizan en tiempo real.
   useEffect(() => {
     if (!discSel) { setTabla([]); setGoleadores([]); return; }
     if (vista === 'posiciones') fetchTabla(discSel.id).then(setTabla).catch(() => setTabla([]));
     if (vista === 'goleadores') fetchGoleadores(discSel.id).then(setGoleadores).catch(() => setGoleadores([]));
-  }, [vista, discSel?.id]);
+  }, [vista, discSel?.id, partidos]);
 
   const partidosFiltrados = useMemo(
     () => partidos.filter((p) => filtroDisc === 'todas' || p.disciplina_id === filtroDisc),
