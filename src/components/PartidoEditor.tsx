@@ -153,6 +153,9 @@ export function PartidoEditor({
             <MiniBtn label="🕒 Programado" color={colors.neutral[500]} disabled={saving} onPress={() => guardar('programado')} />
             <MiniBtn label="⛔ Suspender" color={colors.error} disabled={saving} onPress={() => guardar('suspendido')} />
           </View>
+          <Text style={{ fontSize: 11, color: colors.neutral[500], marginBottom: 4 }}>
+            💾 "Guardar marcador" actualiza el resultado en vivo sin cambiar el estado del partido (ideal mientras se está jugando).
+          </Text>
 
           {/* Goleadores */}
           {(partido.equipo_a_id || partido.equipo_b_id) && (
