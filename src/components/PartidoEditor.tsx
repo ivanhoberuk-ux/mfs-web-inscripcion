@@ -145,6 +145,7 @@ export function PartidoEditor({
           <TextInput value={mvp} onChangeText={setMvp} placeholder="MVP del partido" style={[s.input, { marginBottom: 8 }]} />
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <MiniBtn label="💾 Guardar marcador" color={colors.primary[700]} disabled={saving} onPress={() => guardar(partido.estado)} />
             <MiniBtn label="✅ Finalizar" color={colors.success} disabled={saving} onPress={() => guardar('finalizado')} />
             {enJuego
               ? <MiniBtn label="↩️ Deshacer 'En juego'" color={colors.warning} disabled={saving} onPress={() => guardar('programado')} />
