@@ -218,6 +218,28 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
 
   return (
     <View>
+      {/* Visibilidad en el inicio */}
+      <View style={[s.card, {
+        marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'space-between', gap: 12,
+      }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '800', color: colors.neutral[800] }}>
+            🏠 Mostrar el torneo en el inicio
+          </Text>
+          <Text style={s.small}>
+            Si lo apagás, la tarjeta del torneo desaparece de la página principal (la sección sigue disponible en /torneo).
+          </Text>
+        </View>
+        <Switch
+          value={visibleInicio}
+          onValueChange={(v) => {
+            setVisibleInicio(v);
+            run(() => setEdicionVisibleEnInicio(edicion.id, v), v ? 'Torneo visible en el inicio' : 'Torneo oculto del inicio');
+          }}
+        />
+      </View>
+
       {/* Tabs de sección */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
