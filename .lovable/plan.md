@@ -1,77 +1,46 @@
-## Cambios solicitados
+# Ciclo anual: de misiones a sitio institucional (y viceversa)
 
-### 1. Edad mínima para Tío: 30 años
+## La idea
 
-**Backend (migración):**
-- En `register_if_capacity`, agregar validación: si `p_rol = 'Tio'` y edad calculada al 1-ene del año de misión < 30 → `RAISE EXCEPTION 'Para inscribirse como Tío debes tener al menos 30 años cumplidos'`.
+La app pasa a tener **dos modos**, controlados desde Admin, sin borrar nada:
 
-**Frontend (`app/(tabs)/inscribir.tsx`):**
-- Agregar misma validación client-side al seleccionar rol Tío + fecha de nacimiento.
-- Mensaje claro al usuario.
+1. **Modo Misión** (hoy): inscripciones, documentos, mi familia, pueblos, torneo.
+2. **Modo Institucional** (entre temporadas): la portada muestra quiénes somos, fotos/resumen de la misión pasada, contacto y un aviso de "Inscripciones 2027 próximamente". Se ocultan las pestañas de inscripción/documentos/baja.
 
----
+Cuando llega el momento, el super admin crea la configuración 2027 con sus fechas y la activa: la app vuelve sola a Modo Misión, con los pueblos y cupos listos y **cero registros nuevos**, porque todo se filtra por año.
 
-### 2. Nuevo rol "Asesor" (religiosos acompañantes)
+## Por qué esto funciona sin borrar datos
 
-**Características:**
-- No ocupa cupo de ningún pueblo.
-- Puede indicar múltiples pueblos que acompaña (referencial).
-- Subtipo: Padre de Schoenstatt / Diocesano / Hermana de María.
-- Requiere validación por super_admin antes de quedar confirmado.
+Ya existe `registros.año` y `configuracion_inscripcion` (una fila por año, una sola activa). Los registros de 2026 quedan intactos como histórico; 2027 simplemente arranca vacío.
 
-**Backend (migración):**
-- Agregar valores al enum `estado_registro`: `'pendiente_validacion'` (si no existe).
-- Agregar columnas a `registros`:
-  - `tipo_asesor text` (nullable) — 'padre_schoenstatt' | 'diocesano' | 'hermana_maria'
-  - `pueblos_acompaña uuid[]` (nullable) — array de pueblo_ids referenciales
-- Actualizar constraint del check de `rol` para incluir `'Asesor'` (o eliminar check si ya es libre).
-- Actualizar función `ocupa_cupo`: si `rol = 'Asesor'` → `false`.
-- Actualizar `register_if_capacity`:
-  - Aceptar nuevos parámetros `p_tipo_asesor`, `p_pueblos_acompaña`.
-  - Si `rol = 'Asesor'`: no validar cupo, insertar con `estado = 'pendiente_validacion'`, `pueblo_id` puede ser un pueblo "principal" o nulo (mantener NOT NULL → usar primer pueblo del array como referencia).
-  - Validar que `tipo_asesor` no sea null si rol = Asesor.
-- Nueva RPC `validar_asesor(p_registro_id)` solo super_admin → cambia estado a `'confirmado'`.
+## Cambios necesarios
 
-**Frontend:**
-- `inscribir.tsx`: agregar opción "Asesor" en selector de rol. Al elegirlo:
-  - Mostrar selector de subtipo (Padre Schoenstatt / Diocesano / Hermana de María).
-  - Mostrar multi-select de pueblos que acompaña (referencial).
-  - Ocultar/relajar campos no aplicables (padre/madre, talle si no corresponde, etc.).
-  - Al enviar, mostrar mensaje: "Tu inscripción quedó pendiente de validación por un administrador".
-- Panel admin (`admin.tsx` o nuevo): listar asesores pendientes con botón "Validar".
-- Página de inicio (`app/(tabs)/index.tsx`): nueva sección "Asesores de este año" mostrando nombre, tipo de asesor y pueblos que acompañan (solo los confirmados del año activo).
+### 1. Base de datos
+- Nueva columna `configuracion_inscripcion.modo` (`'mision'` | `'institucional'`), o equivalente booleano `misiones_finalizadas`.
+- `estado_inscripcion()` devuelve un nuevo estado `institucional` cuando el año activo está cerrado y marcado como finalizado.
+- `registros.año` deja de tener default fijo 2026: el default pasa a leerse del año activo (`register_if_capacity` ya recibe/deduce el año).
+- Nueva RPC `abrir_anio(p_año, fechas...)`: crea la configuración del nuevo año, la marca activa (el trigger desactiva las demás) y deja el modo en `mision`.
 
----
+### 2. Frontend — año dinámico
+Hoy hay `.eq('año', 2026)` fijo en `app/(tabs)/mi-familia.tsx` y varias veces en `app/(tabs)/documentos.tsx`. Se reemplaza por un hook único `useAñoActivo()` que lee el año activo de la configuración (con caché en memoria).
 
-### 3. Mostrar pueblo y estado de inscripción en home del misionero
+### 3. Frontend — modo institucional
+- `app/(tabs)/_layout.tsx`: ocultar **Inscribirme**, **Mi Familia**, **Docs** y **Baja** cuando el modo es institucional (los admins siguen viendo Inscriptos/Admin/Histórico).
+- `app/(tabs)/index.tsx`: si el modo es institucional, en lugar de las tarjetas de inscripción se muestra la portada institucional.
+- Nuevo componente `src/components/PortadaInstitucional.tsx`: quiénes somos, resumen de la misión del año que terminó (cantidad de misioneros y pueblos, calculado de la base), contactos, y aviso de la próxima temporada.
 
-**Frontend (`app/(tabs)/index.tsx` o componente equivalente):**
-- Junto al `DocumentosEstadoCard`, agregar tarjeta con:
-  - Nombre del pueblo al que se inscribió.
-  - Estado: ✅ Confirmada / ⏳ Lista de espera / 🕓 Pendiente de validación (asesor).
-  - Año de la misión.
-- Datos: consultar `registros` por email del usuario actual (RLS ya lo permite), join con `pueblos`.
+### 4. Frontend — panel de temporada (Admin)
+Nueva tarjeta **"🗓️ Temporada"** en Admin:
+- Estado actual (año activo + modo).
+- Botón **"Cerrar temporada 2026 → modo institucional"**.
+- Botón **"Abrir inscripciones 2027"**: pide las 3 fechas (anticipada, general, cierre) + vencimiento de lista de espera, crea la config y activa el año.
+- Aviso claro de que los datos de años anteriores no se tocan.
 
----
+### 5. Histórico
+`app/(tabs)/historico.tsx` ya lee por año; se verifica que liste todos los años con registros para consultar quiénes misionaron cada año.
 
-### Detalles técnicos
+## Decisiones a confirmar
 
-```text
-Migración SQL (resumen):
-  - ALTER TYPE estado_registro ADD VALUE 'pendiente_validacion' (si falta)
-  - ALTER TABLE registros ADD COLUMN tipo_asesor text, pueblos_acompaña uuid[]
-  - DROP CHECK rol → CHECK rol IN ('Tio','Misionero','Hijo','Asesor')
-  - CREATE OR REPLACE FUNCTION ocupa_cupo (agregar Asesor → false)
-  - CREATE OR REPLACE FUNCTION register_if_capacity (edad Tío + lógica Asesor)
-  - CREATE FUNCTION validar_asesor(uuid) RETURNS void
-
-Archivos a editar:
-  - app/(tabs)/inscribir.tsx (UI + validación cliente)
-  - app/(tabs)/index.tsx (asesores del año + tarjeta estado inscripción)
-  - app/(tabs)/admin.tsx (panel de validación de asesores)
-  - src/lib/api.ts (nuevos parámetros en registerIfCapacity + funciones fetchAsesores, validarAsesor, fetchMiInscripcion)
-```
-
----
-
-¿Procedo con esta implementación?
+- Qué contenido concreto querés en la portada institucional (texto, fotos, links a redes).
+- Si en modo institucional el usuario común debe seguir viendo su inscripción pasada y sus documentos en modo lectura, o se ocultan del todo.
+- Si el torneo sigue visible en modo institucional (hoy ya tiene su propio switch, así que puede quedar independiente).
