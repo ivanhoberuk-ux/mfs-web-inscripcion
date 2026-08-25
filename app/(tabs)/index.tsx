@@ -11,6 +11,8 @@ import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
 import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
+import { PortadaInstitucional } from '../../src/components/PortadaInstitucional'
+import { useTemporada } from '../../src/hooks/useTemporada'
 import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
