@@ -14,7 +14,7 @@ import {
   fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque, updateBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
   sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios, suspenderDesde,
-  nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
+  nombreEquipo, fmtDia, fmtHora, FASE_LABEL, setEdicionVisibleEnInicio,
 } from '../lib/torneo';
 
 type Seccion = 'disciplinas' | 'equipos' | 'horarios' | 'resultados';
