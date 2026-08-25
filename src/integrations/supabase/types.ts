@@ -88,6 +88,7 @@ export type Database = {
           cierre: string
           created_at: string
           lista_espera_vence_at: string | null
+          modo: string
           updated_at: string
         }
         Insert: {
@@ -98,6 +99,7 @@ export type Database = {
           cierre: string
           created_at?: string
           lista_espera_vence_at?: string | null
+          modo?: string
           updated_at?: string
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           cierre?: string
           created_at?: string
           lista_espera_vence_at?: string | null
+          modo?: string
           updated_at?: string
         }
         Relationships: []
@@ -1229,6 +1232,17 @@ export type Database = {
         Args: { r: Database["public"]["Tables"]["reuniones"]["Row"] }
         Returns: number
       }
+      abrir_anio: {
+        Args: {
+          p_año: number
+          p_apertura_anticipada: string
+          p_apertura_general: string
+          p_cierre: string
+          p_lista_espera_vence_at?: string
+        }
+        Returns: undefined
+      }
+      anio_activo: { Args: never; Returns: number }
       assign_co_admin_pueblo: {
         Args: { p_pueblo_id: string; p_user_id: string }
         Returns: undefined
@@ -1550,6 +1564,10 @@ export type Database = {
           pueblo_id: string
           pueblo_nombre: string
         }[]
+      }
+      set_modo_temporada: {
+        Args: { p_año: number; p_modo: string }
+        Returns: undefined
       }
       set_puntajes_por_pueblo: {
         Args: {
