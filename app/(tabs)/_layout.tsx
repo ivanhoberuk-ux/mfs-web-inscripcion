@@ -67,6 +67,8 @@ export default function TabLayout() {
   // Durante la carga inicial, ocultar tabs condicionales para evitar hydration mismatch
   const showInscriptos = !loading && !rolesLoading && !!user && (isAdmin || isPuebloAdmin);
   const showAdmin = !loading && !rolesLoading && isAdmin;
+  // En modo institucional (entre temporadas) se ocultan las pestañas de misión
+  const modoMision = temporadaLoading || !esInstitucional;
 
   return (
     <Tabs
