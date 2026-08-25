@@ -98,6 +98,9 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
   const [ultimoProg, setUltimoProg] = useState<any>(null);
+  const [visibleInicio, setVisibleInicio] = useState<boolean>(edicion.visible_en_inicio !== false);
+
+  useEffect(() => { setVisibleInicio(edicion.visible_en_inicio !== false); }, [edicion.visible_en_inicio]);
 
 
 
