@@ -366,20 +366,24 @@ export default function Home() {
             flexWrap: 'wrap',
             justifyContent: 'center',
           }}>
-            <QuickButton
-              label="Inscribirme"
-              emoji="✍️"
-              bg={colors.primary[600]}
-              onPress={() => router.push('/inscribir')}
-              delay={100}
-            />
-            <QuickButton
-              label="Documentos"
-              emoji="📄"
-              bg={colors.sky[500]}
-              onPress={() => router.push('/documentos')}
-              delay={200}
-            />
+            {!esInstitucional ? (
+              <>
+                <QuickButton
+                  label="Inscribirme"
+                  emoji="✍️"
+                  bg={colors.primary[600]}
+                  onPress={() => router.push('/inscribir')}
+                  delay={100}
+                />
+                <QuickButton
+                  label="Documentos"
+                  emoji="📄"
+                  bg={colors.sky[500]}
+                  onPress={() => router.push('/documentos')}
+                  delay={200}
+                />
+              </>
+            ) : null}
             <QuickButton
               label="Pueblos"
               emoji="🏠"
