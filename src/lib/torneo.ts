@@ -9,7 +9,16 @@ export type TorneoEdicion = {
   anio: number;
   activo: boolean;
   descripcion: string | null;
+  visible_en_inicio?: boolean;
 };
+
+export async function setEdicionVisibleEnInicio(id: string, visible: boolean) {
+  const { error } = await supabase
+    .from('torneo_ediciones')
+    .update({ visible_en_inicio: visible } as any)
+    .eq('id', id);
+  if (error) throw error;
+}
 
 export type TorneoDisciplina = {
   id: string;
