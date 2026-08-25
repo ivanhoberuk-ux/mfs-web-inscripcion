@@ -271,6 +271,7 @@ export default function Home() {
         </View>
 
         {/* Torneo Interpueblos */}
+        {torneoVisible ? (
         <Pressable
           onPress={() => router.push('/torneo')}
           style={({ pressed }) => ({
