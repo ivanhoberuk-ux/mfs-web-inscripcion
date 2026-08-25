@@ -11,6 +11,8 @@ import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
 import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
+import { PortadaInstitucional } from '../../src/components/PortadaInstitucional'
+import { useTemporada } from '../../src/hooks/useTemporada'
 import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo'
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png'
@@ -58,6 +60,8 @@ export default function Home() {
   const [loadingRole, setLoadingRole] = useState(false)
   const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
   const [torneoVisible, setTorneoVisible] = useState(false)
+  const { esInstitucional, año: añoTemporada } = useTemporada()
+
 
   useEffect(() => {
     let mounted = true
@@ -265,9 +269,9 @@ export default function Home() {
           </View>
         </Animated.View>
 
-        {/* Aviso de fechas */}
+        {/* Aviso de fechas / portada institucional entre temporadas */}
         <View style={{ width: '100%' }}>
-          <InscripcionAvisoCard />
+          {esInstitucional ? <PortadaInstitucional año={añoTemporada} /> : <InscripcionAvisoCard />}
         </View>
 
         {/* Torneo Interpueblos */}
@@ -331,7 +335,7 @@ export default function Home() {
 
 
         {/* Estado de documentos del usuario */}
-        {user ? (
+        {user && !esInstitucional ? (
           <View style={{ width: '100%', gap: 12 }}>
             <MiInscripcionCard />
             <ContactosPuebloCard />
@@ -340,7 +344,7 @@ export default function Home() {
         ) : null}
 
         {/* Asesores espirituales del año */}
-        <AsesoresAnioCard />
+        {!esInstitucional ? <AsesoresAnioCard /> : null}
 
         {/* Accesos rápidos */}
         <View style={{ width: '100%' }}>
@@ -362,20 +366,24 @@ export default function Home() {
             flexWrap: 'wrap',
             justifyContent: 'center',
           }}>
-            <QuickButton
-              label="Inscribirme"
-              emoji="✍️"
-              bg={colors.primary[600]}
-              onPress={() => router.push('/inscribir')}
-              delay={100}
-            />
-            <QuickButton
-              label="Documentos"
-              emoji="📄"
-              bg={colors.sky[500]}
-              onPress={() => router.push('/documentos')}
-              delay={200}
-            />
+            {!esInstitucional ? (
+              <>
+                <QuickButton
+                  label="Inscribirme"
+                  emoji="✍️"
+                  bg={colors.primary[600]}
+                  onPress={() => router.push('/inscribir')}
+                  delay={100}
+                />
+                <QuickButton
+                  label="Documentos"
+                  emoji="📄"
+                  bg={colors.sky[500]}
+                  onPress={() => router.push('/documentos')}
+                  delay={200}
+                />
+              </>
+            ) : null}
             <QuickButton
               label="Pueblos"
               emoji="🏠"

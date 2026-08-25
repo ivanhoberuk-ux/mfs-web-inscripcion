@@ -61,7 +61,7 @@ export function InscripcionAvisoCard() {
     );
   }
 
-  if (!config || estado === 'sin_config') return null;
+  if (!config || estado === 'sin_config' || estado === 'institucional') return null;
 
   // Paleta y contenido por fase
   let gradient: [string, string] = ['#FEF3C7', '#FDE68A'];

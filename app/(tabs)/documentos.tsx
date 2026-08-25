@@ -18,7 +18,7 @@ import { s } from '../../src/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad';
 import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf';
-import { uploadToStorage, updateDocumento, publicUrl } from '../../src/lib/api';
+import { uploadToStorage, updateDocumento, publicUrl, fetchAñoActivo } from '../../src/lib/api';
 import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { useAuth } from '../../src/context/AuthProvider';
@@ -148,7 +148,7 @@ export default function Documentos() {
               .eq('id', codeParam.trim())
               .eq('email', user.email!)
               .is('deleted_at', null)
-              .eq('año', 2026)
+              .eq('año', await fetchAñoActivo())
               .maybeSingle();
             if (error) throw error;
             if (data) {
@@ -165,7 +165,7 @@ export default function Documentos() {
             .select(DOC_SELECT_COLS)
             .eq('email', user.email!)
             .is('deleted_at', null)
-            .eq('año', 2026)
+            .eq('año', await fetchAñoActivo())
             .order('created_at', { ascending: false });
           if (listErr) throw listErr;
 
@@ -201,7 +201,7 @@ export default function Documentos() {
             .select(DOC_SELECT_COLS)
             .eq('id', codeParam.trim())
             .is('deleted_at', null)
-            .eq('año', 2026);
+            .eq('año', await fetchAñoActivo());
 
           // Si es pueblo_admin, solo puede ver su pueblo
           if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -352,7 +352,7 @@ export default function Documentos() {
         .select(DOC_SELECT_COLS)
         .eq('id', code.trim())
         .is('deleted_at', null)
-        .eq('año', 2026);
+        .eq('año', await fetchAñoActivo());
 
       // Si es pueblo_admin (no super admin), solo puede ver su pueblo
       if (isPuebloAdmin && !isSuperAdmin && puebloId) {
@@ -388,7 +388,7 @@ export default function Documentos() {
         .select(DOC_SELECT_COLS)
         .eq('ci', ciSan)
         .is('deleted_at', null)
-        .eq('año', 2026)
+        .eq('año', await fetchAñoActivo())
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -431,7 +431,7 @@ export default function Documentos() {
         .select(DOC_SELECT_COLS)
         .or(`nombres.ilike.%${nombreSan}%,apellidos.ilike.%${nombreSan}%`)
         .is('deleted_at', null)
-        .eq('año', 2026)
+        .eq('año', await fetchAñoActivo())
         .order('created_at', { ascending: false })
         .limit(10);
 

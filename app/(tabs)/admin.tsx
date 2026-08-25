@@ -20,6 +20,7 @@ import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
+import { TemporadaPanel } from '../../src/components/TemporadaPanel';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
 import { AsesoresValidacionPanel } from '../../src/components/AsesoresValidacionPanel';
@@ -903,7 +904,10 @@ export default function Admin() {
             )}
           </View>
         ) : showInscripcionConfig ? (
-          <InscripcionConfigPanel />
+          <View style={{ gap: 16 }}>
+            <TemporadaPanel />
+            <InscripcionConfigPanel />
+          </View>
         ) : showPlantillas ? (
           <PlantillasManagerPanel />
         ) : showCreatePueblo ? (

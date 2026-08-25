@@ -79,7 +79,10 @@ export type EstadoInscripcion =
   | 'fase_anticipada'
   | 'fase_general'
   | 'cerrado_despues'
+  | 'institucional'
   | 'sin_config';
+
+export type ModoTemporada = 'mision' | 'institucional';
 
 export type ConfiguracionInscripcion = {
   año: number;
@@ -88,7 +91,10 @@ export type ConfiguracionInscripcion = {
   cierre: string;              // ISO
   activo: boolean;
   lista_espera_vence_at?: string | null; // ISO o null
+  modo?: ModoTemporada;
 };
+
+const CFG_COLS = 'año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at, modo';
 
 /** Obtiene la configuración del año activo + el estado actual evaluado por la BD. */
 export async function fetchEstadoInscripcionActivo(): Promise<{
@@ -97,7 +103,7 @@ export async function fetchEstadoInscripcionActivo(): Promise<{
 }> {
   const { data: cfg, error: e1 } = await supabase
     .from('configuracion_inscripcion' as any)
-    .select('año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at')
+    .select(CFG_COLS)
     .eq('activo', true)
     .maybeSingle();
   if (e1) throw e1;
@@ -110,11 +116,62 @@ export async function fetchEstadoInscripcionActivo(): Promise<{
   return { config: cfg as any, estado: (estado as EstadoInscripcion) ?? 'sin_config' };
 }
 
+/** Año activo (cacheado en memoria). */
+let _añoActivoCache: number | null = null;
+export async function fetchAñoActivo(force = false): Promise<number> {
+  if (_añoActivoCache !== null && !force) return _añoActivoCache;
+  const { data, error } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .select('año')
+    .eq('activo', true)
+    .maybeSingle();
+  if (error) throw error;
+  _añoActivoCache = (data as any)?.año ?? new Date().getFullYear();
+  return _añoActivoCache as number;
+}
+
+/** Modo de la temporada activa. */
+export async function fetchModoTemporada(): Promise<{ modo: ModoTemporada; año: number | null }> {
+  const { data, error } = await supabase
+    .from('configuracion_inscripcion' as any)
+    .select('año, modo')
+    .eq('activo', true)
+    .maybeSingle();
+  if (error) throw error;
+  return { modo: ((data as any)?.modo as ModoTemporada) ?? 'mision', año: (data as any)?.año ?? null };
+}
+
+/** Cambia el modo de la temporada (super_admin). */
+export async function setModoTemporada(año: number, modo: ModoTemporada) {
+  const { error } = await supabase.rpc('set_modo_temporada' as any, { p_año: año, p_modo: modo });
+  if (error) throw error;
+  _añoActivoCache = null;
+}
+
+/** Abre (crea y activa) un nuevo año de inscripciones. Solo super_admin. */
+export async function abrirAñoInscripcion(params: {
+  año: number;
+  apertura_anticipada: string;
+  apertura_general: string;
+  cierre: string;
+  lista_espera_vence_at?: string | null;
+}) {
+  const { error } = await supabase.rpc('abrir_anio' as any, {
+    'p_año': params.año,
+    p_apertura_anticipada: params.apertura_anticipada,
+    p_apertura_general: params.apertura_general,
+    p_cierre: params.cierre,
+    p_lista_espera_vence_at: params.lista_espera_vence_at ?? null,
+  });
+  if (error) throw error;
+  _añoActivoCache = null;
+}
+
 /** Lista todas las configuraciones (para admin). */
 export async function fetchConfiguracionesInscripcion(): Promise<ConfiguracionInscripcion[]> {
   const { data, error } = await supabase
     .from('configuracion_inscripcion' as any)
-    .select('año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at')
+    .select(CFG_COLS)
     .order('año', { ascending: false });
   if (error) throw error;
   return (data ?? []) as any;
@@ -126,6 +183,7 @@ export async function upsertConfiguracionInscripcion(cfg: ConfiguracionInscripci
     .from('configuracion_inscripcion' as any)
     .upsert(cfg, { onConflict: 'año' });
   if (error) throw error;
+  _añoActivoCache = null;
 }
 
 /** Marca un año como activo (el trigger desactiva los demás). */
@@ -135,7 +193,9 @@ export async function activarAñoInscripcion(año: number) {
     .update({ activo: true })
     .eq('año', año);
   if (error) throw error;
+  _añoActivoCache = null;
 }
+
 
 // --------- Plantillas / Documentos comunes (super admin) ----------
 export type PlantillaDocumento = {

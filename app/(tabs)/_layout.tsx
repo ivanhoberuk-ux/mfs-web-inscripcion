@@ -5,6 +5,7 @@ import { Platform, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../src/lib/supabase';
 import { colors } from '../../src/lib/designSystem';
+import { useTemporada } from '../../src/hooks/useTemporada';
 
 // Componente de icono con emoji
 function EmojiIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
@@ -24,6 +25,8 @@ export default function TabLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPuebloAdmin, setIsPuebloAdmin] = useState(false);
   const [rolesLoading, setRolesLoading] = useState(true);
+  const { esInstitucional, loading: temporadaLoading } = useTemporada();
+
 
   // Fetch admin status from server-side user_roles table
   useEffect(() => {
@@ -64,6 +67,8 @@ export default function TabLayout() {
   // Durante la carga inicial, ocultar tabs condicionales para evitar hydration mismatch
   const showInscriptos = !loading && !rolesLoading && !!user && (isAdmin || isPuebloAdmin);
   const showAdmin = !loading && !rolesLoading && isAdmin;
+  // En modo institucional (entre temporadas) se ocultan las pestañas de misión
+  const modoMision = temporadaLoading || !esInstitucional;
 
   return (
     <Tabs
@@ -104,6 +109,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inscribir"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Inscribirme',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="✍️" focused={focused} />
@@ -113,7 +119,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="mi-familia"
         options={{
-          href: !loading && !!user ? undefined : null,
+          href: modoMision && !loading && !!user ? undefined : null,
           title: 'Mi Familia',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="👨‍👩‍👧" focused={focused} />
@@ -149,6 +155,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="documentos"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Docs',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="📄" focused={focused} />
@@ -160,6 +167,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="baja"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Baja',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="👋" focused={focused} />
