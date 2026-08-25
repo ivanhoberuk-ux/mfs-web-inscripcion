@@ -60,6 +60,8 @@ export default function Home() {
   const [loadingRole, setLoadingRole] = useState(false)
   const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
   const [torneoVisible, setTorneoVisible] = useState(false)
+  const { esInstitucional, año: añoTemporada } = useTemporada()
+
 
   useEffect(() => {
     let mounted = true
