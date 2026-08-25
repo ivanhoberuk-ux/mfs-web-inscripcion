@@ -335,7 +335,7 @@ export default function Home() {
 
 
         {/* Estado de documentos del usuario */}
-        {user ? (
+        {user && !esInstitucional ? (
           <View style={{ width: '100%', gap: 12 }}>
             <MiInscripcionCard />
             <ContactosPuebloCard />
@@ -344,7 +344,7 @@ export default function Home() {
         ) : null}
 
         {/* Asesores espirituales del año */}
-        <AsesoresAnioCard />
+        {!esInstitucional ? <AsesoresAnioCard /> : null}
 
         {/* Accesos rápidos */}
         <View style={{ width: '100%' }}>
