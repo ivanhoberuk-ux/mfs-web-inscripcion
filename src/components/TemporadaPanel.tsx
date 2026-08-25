@@ -155,8 +155,8 @@ export function TemporadaPanel() {
         <Accion
           label={yaExisteProximo ? `🔁 Activar inscripciones ${proximoAño}` : `🚀 Abrir inscripciones ${proximoAño}`}
           hint="Crea (o reactiva) el año siguiente copiando las fechas del año anterior +1 año, en modo misión. Los registros de años anteriores no se tocan."
-          color={colors.secondary[600] ?? colors.secondary[500]}
-          textColor={colors.primary[900] ?? '#0b2545'}
+          color={colors.secondary[600]}
+          textColor={colors.primary[900]}
           disabled={busy || !activa}
           onPress={abrirProximo}
         />
