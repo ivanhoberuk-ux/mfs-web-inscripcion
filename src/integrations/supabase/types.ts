@@ -789,6 +789,7 @@ export type Database = {
           id: string
           nombre: string
           updated_at: string
+          visible_en_inicio: boolean
         }
         Insert: {
           activo?: boolean
@@ -798,6 +799,7 @@ export type Database = {
           id?: string
           nombre: string
           updated_at?: string
+          visible_en_inicio?: boolean
         }
         Update: {
           activo?: boolean
@@ -807,6 +809,7 @@ export type Database = {
           id?: string
           nombre?: string
           updated_at?: string
+          visible_en_inicio?: boolean
         }
         Relationships: []
       }

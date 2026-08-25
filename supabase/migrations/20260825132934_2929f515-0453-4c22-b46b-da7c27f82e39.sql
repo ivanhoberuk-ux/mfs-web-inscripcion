@@ -1,0 +1,1 @@
+ALTER TABLE public.torneo_ediciones ADD COLUMN IF NOT EXISTS visible_en_inicio boolean NOT NULL DEFAULT true;
