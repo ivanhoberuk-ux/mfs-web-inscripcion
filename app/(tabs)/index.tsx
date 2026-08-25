@@ -57,6 +57,7 @@ export default function Home() {
   const [role, setRole] = useState<'admin' | 'user' | null>(null)
   const [loadingRole, setLoadingRole] = useState(false)
   const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
+  const [torneoVisible, setTorneoVisible] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -64,6 +65,7 @@ export default function Home() {
       try {
         const ed = await fetchEdicionActiva()
         if (!mounted || !ed) return
+        setTorneoVisible(ed.visible_en_inicio !== false)
         const d = await fetchDisciplinas(ed.id)
         if (mounted) setDisciplinas(d)
       } catch {}
