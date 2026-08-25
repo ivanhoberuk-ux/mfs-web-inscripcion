@@ -14,7 +14,7 @@ import {
   fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque, updateBloque,
   fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
   sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios, suspenderDesde,
-  nombreEquipo, fmtDia, fmtHora, FASE_LABEL,
+  nombreEquipo, fmtDia, fmtHora, FASE_LABEL, setEdicionVisibleEnInicio,
 } from '../lib/torneo';
 
 type Seccion = 'disciplinas' | 'equipos' | 'horarios' | 'resultados';
@@ -98,6 +98,9 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
   const [ultimoProg, setUltimoProg] = useState<any>(null);
+  const [visibleInicio, setVisibleInicio] = useState<boolean>(edicion.visible_en_inicio !== false);
+
+  useEffect(() => { setVisibleInicio(edicion.visible_en_inicio !== false); }, [edicion.visible_en_inicio]);
 
 
 
@@ -218,6 +221,28 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
 
   return (
     <View>
+      {/* Visibilidad en el inicio */}
+      <View style={[s.card, {
+        marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'space-between', gap: 12,
+      }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '800', color: colors.neutral[800] }}>
+            🏠 Mostrar el torneo en el inicio
+          </Text>
+          <Text style={s.small}>
+            Si lo apagás, la tarjeta del torneo desaparece de la página principal (la sección sigue disponible en /torneo).
+          </Text>
+        </View>
+        <Switch
+          value={visibleInicio}
+          onValueChange={(v) => {
+            setVisibleInicio(v);
+            run(() => setEdicionVisibleEnInicio(edicion.id, v), v ? 'Torneo visible en el inicio' : 'Torneo oculto del inicio');
+          }}
+        />
+      </View>
+
       {/* Tabs de sección */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
