@@ -109,6 +109,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inscribir"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Inscribirme',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="✍️" focused={focused} />
@@ -118,7 +119,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="mi-familia"
         options={{
-          href: !loading && !!user ? undefined : null,
+          href: modoMision && !loading && !!user ? undefined : null,
           title: 'Mi Familia',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="👨‍👩‍👧" focused={focused} />
@@ -154,6 +155,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="documentos"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Docs',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="📄" focused={focused} />
@@ -165,6 +167,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="baja"
         options={{
+          href: modoMision ? undefined : null,
           title: 'Baja',
           tabBarIcon: ({ focused }) => (
             <EmojiIcon emoji="👋" focused={focused} />
