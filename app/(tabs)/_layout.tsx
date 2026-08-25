@@ -5,6 +5,7 @@ import { Platform, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../src/lib/supabase';
 import { colors } from '../../src/lib/designSystem';
+import { useTemporada } from '../../src/hooks/useTemporada';
 
 // Componente de icono con emoji
 function EmojiIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
