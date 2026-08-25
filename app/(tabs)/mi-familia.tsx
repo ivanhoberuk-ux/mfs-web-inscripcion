@@ -6,6 +6,7 @@ import { supabase } from '../../src/lib/supabase'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
+import { fetchAñoActivo } from '../../src/lib/api'
 
 type Registro = {
   id: string
@@ -41,7 +42,7 @@ export default function MiFamilia() {
         .select('*')
         .eq('email', session.user.email)
         .is('deleted_at', null)
-        .eq('año', 2026)
+        .eq('año', await fetchAñoActivo())
         .order('created_at', { ascending: true })
 
       const lista = (regs ?? []) as Registro[]
