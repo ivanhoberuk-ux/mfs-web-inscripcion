@@ -25,6 +25,8 @@ export default function TabLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPuebloAdmin, setIsPuebloAdmin] = useState(false);
   const [rolesLoading, setRolesLoading] = useState(true);
+  const { esInstitucional, loading: temporadaLoading } = useTemporada();
+
 
   // Fetch admin status from server-side user_roles table
   useEffect(() => {
