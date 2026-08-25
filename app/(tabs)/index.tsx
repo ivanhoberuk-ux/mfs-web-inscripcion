@@ -269,9 +269,9 @@ export default function Home() {
           </View>
         </Animated.View>
 
-        {/* Aviso de fechas */}
+        {/* Aviso de fechas / portada institucional entre temporadas */}
         <View style={{ width: '100%' }}>
-          <InscripcionAvisoCard />
+          {esInstitucional ? <PortadaInstitucional año={añoTemporada} /> : <InscripcionAvisoCard />}
         </View>
 
         {/* Torneo Interpueblos */}
