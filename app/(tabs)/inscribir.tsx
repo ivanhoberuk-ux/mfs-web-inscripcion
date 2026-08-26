@@ -258,16 +258,35 @@ export default function Inscribir() {
         }
         
         // Cargar TODAS las inscripciones del usuario (propias + hijos) del año vigente
+        const { fetchAñoActivo } = await import('../../src/lib/api')
+        const añoVigente = await fetchAñoActivo()
         const { data: registros } = await supabase
           .from('registros')
           .select('*')
           .eq('email', session.user.email)
           .is('deleted_at', null)
-          .eq('año', 2026)
+          .eq('año', añoVigente)
           .order('created_at', { ascending: true })
 
         const lista = registros ?? []
         setMisRegistros(lista)
+
+        // Si todavía no se inscribió este año, buscar sus datos de años anteriores
+        let previos: any[] = []
+        if (lista.length === 0) {
+          const { data: anteriores } = await supabase
+            .from('registros')
+            .select('*')
+            .eq('email', session.user.email)
+            .is('deleted_at', null)
+            .lt('año', añoVigente)
+            .order('año', { ascending: false })
+            .order('created_at', { ascending: true })
+          // Quedarnos solo con el año más reciente en el que participó
+          const ultimoAño = (anteriores ?? [])[0]?.año ?? null
+          previos = (anteriores ?? []).filter((r: any) => r.año === ultimoAño)
+          setRegistrosPrevios(previos)
+        }
 
         // Si llega ?edit=<id>, abrir ese registro específico
         const editId = typeof params.edit === 'string' ? params.edit : null
