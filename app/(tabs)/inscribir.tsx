@@ -194,6 +194,19 @@ export default function Inscribir() {
     setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50)
   }
 
+  /** Precarga el formulario con los datos de una inscripción de un año anterior.
+   *  NO es modo edición: se crea una inscripción nueva para el año vigente. */
+  function precargarDesdeAñoAnterior(registro: any) {
+    cargarRegistroEnFormulario(registro)
+    setRegistroExistente(null)
+    setModoEdicion(false)
+    setPrecargadoDeAño(registro?.año ?? null)
+    // El pueblo y los términos se vuelven a elegir/aceptar cada año
+    setAcepta(false)
+    if (registro?.rol !== 'Hijo') setMisionoAntes(true)
+  }
+
+
   // Inicia una nueva inscripción de hijo/a bajo el mismo email del usuario
   function iniciarInscribirHijo() {
     const titular = misRegistros.find((r: any) => r.rol === 'Tio') ?? null
