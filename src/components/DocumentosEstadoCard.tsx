@@ -69,12 +69,14 @@ export function DocumentosEstadoCard() {
     ;(async () => {
       if (!user?.email) { setLoading(false); return }
       setLoading(true)
+      const { fetchAñoActivo } = await import('../lib/api')
+      const añoVigente = await fetchAñoActivo()
       const { data } = await supabase
         .from('registros')
         .select('id,nombres,apellidos,rol,nacimiento,cedula_frente_url,cedula_dorso_url,autorizacion_url,ficha_medica_url,firma_url')
         .eq('email', user.email)
         .is('deleted_at', null)
-        .eq('año', 2026)
+        .eq('año', añoVigente)
         .order('created_at', { ascending: true })
       if (!active) return
       setRegistros((data ?? []) as Reg[])
