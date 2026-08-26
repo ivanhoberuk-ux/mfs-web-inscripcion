@@ -1122,6 +1122,45 @@ export default function Inscribir() {
         </Card>
       )}
 
+      {/* Reinscripción: datos de años anteriores */}
+      {misRegistros.length === 0 && registrosPrevios.length > 0 && (
+        <Card style={{ backgroundColor: '#ECFDF5', borderLeftWidth: 4, borderLeftColor: '#10B981' }}>
+          <Text style={[s.text, { fontWeight: '700', color: '#065f46' }]}>
+            ♻️ Ya misionaste en {registrosPrevios[0]?.año}
+          </Text>
+          <Text style={[s.small, { color: '#065f46', marginTop: 4, marginBottom: 8 }]}>
+            {precargadoDeAño
+              ? `Precargamos tus datos de ${precargadoDeAño}. Revisalos, actualizá lo que haya cambiado, elegí tu pueblo y aceptá los términos para completar tu inscripción ${añoActivo}.`
+              : `Podés reinscribirte usando tus datos de ${registrosPrevios[0]?.año} sin cargar todo de nuevo.`}
+          </Text>
+          {registrosPrevios.map((r: any) => (
+            <View
+              key={r.id}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#D1FAE5',
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[s.text, { fontWeight: '600' }]}>
+                  {r.rol === 'Hijo' ? '🧒' : r.rol === 'Tio' ? '🧑‍🏫' : '✝️'} {r.nombres} {r.apellidos}
+                </Text>
+                <Text style={[s.small, { color: colors.text.tertiary.light }]}>
+                  {r.rol} · {r.año}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => precargarDesdeAñoAnterior(r)}
+                style={[s.button, { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#10B981' }]}
+              >
+                <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>Usar sus datos</Text>
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      )}
+
+
       {/* Pueblo */}
       <Card>
         <Label>Pueblo (Elegí uno)</Label>
