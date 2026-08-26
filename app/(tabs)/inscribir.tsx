@@ -117,6 +117,9 @@ export default function Inscribir() {
   const [modoEdicion, setModoEdicion] = useState(false)
   // Todas las inscripciones (propias + hijos) bajo el email del usuario
   const [misRegistros, setMisRegistros] = useState<any[]>([])
+  // Inscripciones de años anteriores (para precargar datos y reinscribir)
+  const [registrosPrevios, setRegistrosPrevios] = useState<any[]>([])
+  const [precargadoDeAño, setPrecargadoDeAño] = useState<number | null>(null)
   const scrollRef = useRef<ScrollView>(null)
 
   // Estado de inscripción (fechas/año activo)
@@ -191,6 +194,19 @@ export default function Inscribir() {
     setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50)
   }
 
+  /** Precarga el formulario con los datos de una inscripción de un año anterior.
+   *  NO es modo edición: se crea una inscripción nueva para el año vigente. */
+  function precargarDesdeAñoAnterior(registro: any) {
+    cargarRegistroEnFormulario(registro)
+    setRegistroExistente(null)
+    setModoEdicion(false)
+    setPrecargadoDeAño(registro?.año ?? null)
+    // El pueblo y los términos se vuelven a elegir/aceptar cada año
+    setAcepta(false)
+    if (registro?.rol !== 'Hijo') setMisionoAntes(true)
+  }
+
+
   // Inicia una nueva inscripción de hijo/a bajo el mismo email del usuario
   function iniciarInscribirHijo() {
     const titular = misRegistros.find((r: any) => r.rol === 'Tio') ?? null
@@ -258,16 +274,35 @@ export default function Inscribir() {
         }
         
         // Cargar TODAS las inscripciones del usuario (propias + hijos) del año vigente
+        const { fetchAñoActivo } = await import('../../src/lib/api')
+        const añoVigente = await fetchAñoActivo()
         const { data: registros } = await supabase
           .from('registros')
           .select('*')
           .eq('email', session.user.email)
           .is('deleted_at', null)
-          .eq('año', 2026)
+          .eq('año', añoVigente)
           .order('created_at', { ascending: true })
 
         const lista = registros ?? []
         setMisRegistros(lista)
+
+        // Si todavía no se inscribió este año, buscar sus datos de años anteriores
+        let previos: any[] = []
+        if (lista.length === 0) {
+          const { data: anteriores } = await supabase
+            .from('registros')
+            .select('*')
+            .eq('email', session.user.email)
+            .is('deleted_at', null)
+            .lt('año', añoVigente)
+            .order('año', { ascending: false })
+            .order('created_at', { ascending: true })
+          // Quedarnos solo con el año más reciente en el que participó
+          const ultimoAño = (anteriores ?? [])[0]?.año ?? null
+          previos = (anteriores ?? []).filter((r: any) => r.año === ultimoAño)
+          setRegistrosPrevios(previos)
+        }
 
         // Si llega ?edit=<id>, abrir ese registro específico
         const editId = typeof params.edit === 'string' ? params.edit : null
@@ -303,7 +338,13 @@ export default function Inscribir() {
         } else {
           // Por defecto: cargar el titular si existe
           const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
-          if (titular) cargarRegistroEnFormulario(titular)
+          if (titular) {
+            cargarRegistroEnFormulario(titular)
+          } else if (previos.length > 0) {
+            // No se inscribió este año: precargamos sus datos del año anterior
+            const titularPrevio = previos.find((r: any) => r.rol !== 'Hijo') ?? previos[0]
+            precargarDesdeAñoAnterior(titularPrevio)
+          }
         }
 
       } catch (e: any) {
@@ -1080,6 +1121,45 @@ export default function Inscribir() {
           )}
         </Card>
       )}
+
+      {/* Reinscripción: datos de años anteriores */}
+      {misRegistros.length === 0 && registrosPrevios.length > 0 && (
+        <Card style={{ backgroundColor: '#ECFDF5', borderLeftWidth: 4, borderLeftColor: '#10B981' }}>
+          <Text style={[s.text, { fontWeight: '700', color: '#065f46' }]}>
+            ♻️ Ya misionaste en {registrosPrevios[0]?.año}
+          </Text>
+          <Text style={[s.small, { color: '#065f46', marginTop: 4, marginBottom: 8 }]}>
+            {precargadoDeAño
+              ? `Precargamos tus datos de ${precargadoDeAño}. Revisalos, actualizá lo que haya cambiado, elegí tu pueblo y aceptá los términos para completar tu inscripción ${añoActivo}.`
+              : `Podés reinscribirte usando tus datos de ${registrosPrevios[0]?.año} sin cargar todo de nuevo.`}
+          </Text>
+          {registrosPrevios.map((r: any) => (
+            <View
+              key={r.id}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#D1FAE5',
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[s.text, { fontWeight: '600' }]}>
+                  {r.rol === 'Hijo' ? '🧒' : r.rol === 'Tio' ? '🧑‍🏫' : '✝️'} {r.nombres} {r.apellidos}
+                </Text>
+                <Text style={[s.small, { color: colors.text.tertiary.light }]}>
+                  {r.rol} · {r.año}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => precargarDesdeAñoAnterior(r)}
+                style={[s.button, { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#10B981' }]}
+              >
+                <Text style={[s.buttonText, { color: 'white', fontSize: 13 }]}>Usar sus datos</Text>
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      )}
+
 
       {/* Pueblo */}
       <Card>
