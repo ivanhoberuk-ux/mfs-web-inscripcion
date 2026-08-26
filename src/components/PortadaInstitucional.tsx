@@ -17,20 +17,30 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
     (async () => {
       if (!año) { setLoading(false); return; }
       try {
-        const { data, error } = await supabase
-          .from('registros')
-          .select('pueblo_id')
-          .eq('año', año)
-          .eq('estado', 'confirmado')
-          .is('deleted_at', null)
-          .eq('no_clasifico', false);
-        if (error) throw error;
-        const rows = (data ?? []) as { pueblo_id: string }[];
+        // Supabase limita a 1000 filas por request: paginamos para contar todo
+        const PAGE = 1000;
+        let desde = 0;
+        const pueblosSet = new Set<string>();
+        let total = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data, error } = await supabase
+            .from('registros')
+            .select('pueblo_id')
+            .eq('año', año)
+            .eq('estado', 'confirmado')
+            .is('deleted_at', null)
+            .eq('no_clasifico', false)
+            .range(desde, desde + PAGE - 1);
+          if (error) throw error;
+          const rows = (data ?? []) as { pueblo_id: string }[];
+          total += rows.length;
+          rows.forEach(r => { if (r.pueblo_id) pueblosSet.add(r.pueblo_id); });
+          if (rows.length < PAGE) break;
+          desde += PAGE;
+        }
         if (mounted) {
-          setResumen({
-            misioneros: rows.length,
-            pueblos: new Set(rows.map(r => r.pueblo_id).filter(Boolean)).size,
-          });
+          setResumen({ misioneros: total, pueblos: pueblosSet.size });
         }
       } catch (e) {
         console.warn('No se pudo cargar el resumen institucional:', e);
