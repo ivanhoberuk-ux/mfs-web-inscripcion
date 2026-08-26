@@ -322,7 +322,13 @@ export default function Inscribir() {
         } else {
           // Por defecto: cargar el titular si existe
           const titular = lista.find((r: any) => r.rol !== 'Hijo') ?? lista[0] ?? null
-          if (titular) cargarRegistroEnFormulario(titular)
+          if (titular) {
+            cargarRegistroEnFormulario(titular)
+          } else if (previos.length > 0) {
+            // No se inscribió este año: precargamos sus datos del año anterior
+            const titularPrevio = previos.find((r: any) => r.rol !== 'Hijo') ?? previos[0]
+            precargarDesdeAñoAnterior(titularPrevio)
+          }
         }
 
       } catch (e: any) {
