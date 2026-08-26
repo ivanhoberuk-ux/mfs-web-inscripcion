@@ -117,6 +117,9 @@ export default function Inscribir() {
   const [modoEdicion, setModoEdicion] = useState(false)
   // Todas las inscripciones (propias + hijos) bajo el email del usuario
   const [misRegistros, setMisRegistros] = useState<any[]>([])
+  // Inscripciones de años anteriores (para precargar datos y reinscribir)
+  const [registrosPrevios, setRegistrosPrevios] = useState<any[]>([])
+  const [precargadoDeAño, setPrecargadoDeAño] = useState<number | null>(null)
   const scrollRef = useRef<ScrollView>(null)
 
   // Estado de inscripción (fechas/año activo)
