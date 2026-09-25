@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthProvider'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
 import { Button } from './Button'
+import { documentosFaltantes } from '../lib/documentos'
 
 type Reg = {
   id: string
@@ -18,44 +19,6 @@ type Reg = {
   autorizacion_url: string | null
   ficha_medica_url: string | null
   firma_url: string | null
-}
-
-const DOC_LABELS: Record<string, string> = {
-  cedula_frente_url: 'Cédula (frente)',
-  cedula_dorso_url: 'Cédula (dorso)',
-  firma_url: 'Firma',
-  autorizacion_url: 'Permiso del menor',
-}
-
-function parseNacimiento(n?: string | null): Date | null {
-  if (!n) return null
-  if (/^\d{4}-\d{2}-\d{2}$/.test(n)) {
-    const [Y, M, D] = n.split('-').map((x) => parseInt(x, 10))
-    return new Date(Date.UTC(Y, M - 1, D))
-  }
-  if (/^\d{2}-\d{2}-\d{4}$/.test(n)) {
-    const [D, M, Y] = n.split('-').map((x) => parseInt(x, 10))
-    return new Date(Date.UTC(Y, M - 1, D))
-  }
-  return null
-}
-function calcAge(d: Date): number {
-  const t = new Date()
-  let a = t.getUTCFullYear() - d.getUTCFullYear()
-  const m = t.getUTCMonth() - d.getUTCMonth()
-  if (m < 0 || (m === 0 && t.getUTCDate() < d.getUTCDate())) a--
-  return a
-}
-
-function requiredDocs(r: Reg): string[] {
-  const base = ['cedula_frente_url', 'cedula_dorso_url', 'firma_url']
-  const nac = parseNacimiento(r.nacimiento)
-  const edad = nac ? calcAge(nac) : null
-  // 'Hijo' role doesn't need 'Permiso del Menor' (per memory)
-  if (edad != null && edad < 18 && r.rol !== 'Hijo') {
-    base.push('autorizacion_url')
-  }
-  return base
 }
 
 export function DocumentosEstadoCard() {
@@ -102,8 +65,7 @@ export function DocumentosEstadoCard() {
 
   // Calcular faltantes por inscripto
   const detalles = registros.map(r => {
-    const required = requiredDocs(r)
-    const faltan = required.filter(k => !(r as any)[k])
+    const faltan = documentosFaltantes(r)
     return { reg: r, faltan }
   })
 
@@ -172,7 +134,7 @@ export function DocumentosEstadoCard() {
               <View style={{ marginTop: 4, gap: 2 }}>
                 {faltan.map(k => (
                   <Text key={k} style={{ fontSize: 12, color: '#92400E' }}>
-                    • {DOC_LABELS[k] ?? k}
+                    • {k}
                   </Text>
                 ))}
               </View>
