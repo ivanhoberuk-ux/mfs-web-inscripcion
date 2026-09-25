@@ -191,7 +191,7 @@ export function DashboardGeneralPanel() {
 
   // ===== Edades exactas por rol =====
   const edadesPorRol = useMemo(() => {
-    const refDate = new Date(year, 0, 1);
+    const refDate = new Date(year ?? new Date().getFullYear(), 0, 1);
     const roles: Array<'Hijo' | 'Misionero' | 'Tio'> = ['Hijo', 'Misionero', 'Tio'];
     const result: Record<string, { entries: { edad: number; count: number }[]; sinFecha: number; total: number }> = {};
     roles.forEach(rol => {
@@ -408,7 +408,7 @@ export function DashboardGeneralPanel() {
     }
   }
 
-  const refDate = new Date(year, 0, 1);
+  const refDate = new Date(year ?? new Date().getFullYear(), 0, 1);
   const openDrill = (title: string, predicate: (r: RegistroDash) => boolean) => {
     setDrill({ title, rows: filtered.filter(predicate) });
   };
