@@ -132,57 +132,20 @@ export default function VerInscriptosAdmin() {
   useEffect(() => {
     if (!accessChecked) return
     ;(async () => {
-      const año = new Date().getFullYear()
       const { data } = await supabase
         .from('configuracion_inscripcion')
         .select('lista_espera_vence_at')
-        .eq('año', año)
-        .order('updated_at', { ascending: false })
-        .limit(1)
+        .eq('activo', true)
         .maybeSingle()
       setListaEsperaVenceAt((data as any)?.lista_espera_vence_at ?? null)
     })()
   }, [accessChecked])
 
-  function calcAge(iso?: string | null): number | null {
-    if (!iso) return null
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return null
-    const t = new Date()
-    let age = t.getFullYear() - d.getFullYear()
-    const m = t.getMonth() - d.getMonth()
-    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) age--
-    return age
-  }
-
   function requiredDocsOk(r: Row) {
-    const age = calcAge(r.nacimiento)
-    const isAdult = age === null ? true : age >= 18 // sin fecha => asumimos adulto
-    // Docs SIEMPRE requeridos: cédula frente + dorso + firma
-    const okCedulaFrente = !!r.cedula_frente_url
-    const okCedulaDorso = !!r.cedula_dorso_url
-    const okFirma = !!r.firma_url
-    // Permiso del menor: solo si es menor de 18 Y rol != 'Hijo'
-    const necesitaPermiso = !isAdult && r.rol !== 'Hijo'
-    const okPermiso = !!r.autorizacion_url
-    const okRequeridos =
-      okCedulaFrente && okCedulaDorso && okFirma && (!necesitaPermiso || okPermiso)
-    return {
-      age,
-      isAdult,
-      necesitaPermiso,
-      okCedulaFrente,
-      okCedulaDorso,
-      okFirma,
-      okPermiso,
-      // compat con export CSV existente
-      requiredName: necesitaPermiso ? 'Permiso del menor' : 'Cédulas + Firma',
-      okRequeridos,
-      okAcept: okPermiso,
-      okPerm: okPermiso,
-    }
+    const st = estadoDocumentos(r)
+    const age = edadDe(r.nacimiento)
+    return { ...st, age, isAdult: age === null || age >= 18 }
   }
-
 
   async function runSearch(reset: boolean) {
     if (!accessChecked) return
@@ -198,6 +161,8 @@ export default function VerInscriptosAdmin() {
         .select(
           'id,created_at,nombres,apellidos,ci,email,telefono,direccion,ciudad,pueblo_id,rol,nacimiento,es_jefe,emergencia_nombre,emergencia_telefono,tratamiento_especial,tratamiento_detalle,alimentacion_especial,alimentacion_detalle,padre_nombre,padre_telefono,madre_nombre,madre_telefono,talle_remera,misiono_antes,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url,estado,no_clasifico,no_clasificado_at,no_clasificado_motivo'
         )
+        .is('deleted_at', null)
+        .eq('año', await fetchAñoActivo())
         .order('created_at', { ascending: false })
 
       // pueblo_admin/co_admin: force filter to own pueblo (backend RLS also enforces this)
@@ -253,21 +218,14 @@ export default function VerInscriptosAdmin() {
 
       // Obtener roles de cada usuario
       const rolesMap: Record<string, UserWithRoles> = {}
-      
-      await Promise.all(
-        profiles.map(async (profile) => {
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', profile.id)
-          
-          rolesMap[profile.email] = {
-            user_id: profile.id,
-            roles: roles?.map(r => r.role) || [],
-            pueblo_id: profile.pueblo_id
-          }
-        })
-      )
+      const rolesByUser = await fetchRolesPorUsuario(profiles.map((p) => p.id))
+      for (const profile of profiles) {
+        rolesMap[profile.email] = {
+          user_id: profile.id,
+          roles: rolesByUser[profile.id] || [],
+          pueblo_id: profile.pueblo_id,
+        }
+      }
       
       setUserRolesMap(prev => ({ ...prev, ...rolesMap }))
     } catch (err) {
@@ -643,7 +601,7 @@ export default function VerInscriptosAdmin() {
       'tratamiento_especial', 'tratamiento_detalle',
       'alimentacion_especial', 'alimentacion_detalle',
       'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
-      'es_adulto', 'requerido', 'ok_requerido', 'ok_firma', 'completos',
+      'es_adulto', 'documentos_faltantes', 'ok_firma', 'completos',
       'url_aceptacion', 'url_permiso', 'url_firma',
       'cedula_frente_url', 'cedula_dorso_url',
     ]
@@ -681,8 +639,7 @@ export default function VerInscriptosAdmin() {
         r.madre_nombre || '',
         r.madre_telefono || '',
         st.isAdult ? 'true' : 'false',
-        st.requiredName,
-        st.isAdult ? (st.okAcept ? 'true' : 'false') : (st.okPerm ? 'true' : 'false'),
+        st.faltantes.join(', '),
         st.okFirma ? 'true' : 'false',
         st.okRequeridos ? 'true' : 'false',
         r.autorizacion_url || '',
@@ -829,6 +786,7 @@ export default function VerInscriptosAdmin() {
                       <Chip ok={st.okCedulaDorso} label="Céd. dorso" />
                       <Chip ok={st.okFirma} label="Firma" />
                       {st.necesitaPermiso && <Chip ok={st.okPermiso} label="Permiso menor" />}
+                      {st.necesitaAceptacion && <Chip ok={st.okAceptacion} label="Aceptación" />}
                       <Chip ok={st.okRequeridos} label="Completos" />
                     </View>
                     <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
