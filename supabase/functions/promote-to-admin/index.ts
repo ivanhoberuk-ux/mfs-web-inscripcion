@@ -6,121 +6,78 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
 Deno.serve(async (req: any) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    if (!authHeader) return json({ error: 'No authorization header' }, 401)
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
     const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
+      global: { headers: { Authorization: authHeader } },
     })
 
-    // Verificar que el usuario actual es admin
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Usuario no autenticado' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    if (userError || !user) return json({ error: 'Usuario no autenticado' }, 401)
 
-    const { data: roleData, error: roleError } = await supabase
+    const { data: callerRoles, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .single()
-
-    if (roleError || !roleData || roleData.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'No tienes permisos de administrador' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (roleError || !(callerRoles ?? []).map((r: any) => r.role).includes('admin')) {
+      return json({ error: 'No tienes permisos de administrador' }, 403)
     }
 
-    // Obtener el email del body
     const { email } = await req.json()
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email es requerido' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return json({ error: 'Email es requerido' }, 400)
     }
 
-    // Buscar el user_id por email en auth.users usando el service role
-    const { data: userData, error: userLookupError } = await supabase.auth.admin.listUsers()
-    
-    if (userLookupError) {
-      console.error('Error listing users:', userLookupError)
-      return new Response(JSON.stringify({ error: 'Error al buscar usuarios' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    const { data: target, error: lookupError } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .ilike('email', email.trim())
+      .maybeSingle()
 
-    const targetUser = userData.users.find((u: any) => u.email === email)
-    
-    if (!targetUser) {
-      return new Response(
-        JSON.stringify({ error: 'No se encontró un usuario con ese email. La persona debe crear una cuenta primero en /login.' }), 
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+    if (lookupError) {
+      console.error('Error buscando perfil:', lookupError)
+      return json({ error: 'Error al buscar usuarios' }, 500)
+    }
+    if (!target) {
+      return json(
+        { error: 'No se encontró un usuario con ese email. La persona debe crear una cuenta primero en /login.' },
+        404,
       )
     }
 
-    // Verificar si ya es admin
-    const { data: existingRole } = await supabase
+    const { data: targetRoles } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', targetUser.id)
-      .single()
-
-    if (existingRole && existingRole.role === 'admin') {
-      return new Response(JSON.stringify({ error: 'Este usuario ya es administrador' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      .eq('user_id', target.id)
+    if ((targetRoles ?? []).some((r: any) => r.role === 'admin')) {
+      return json({ error: 'Este usuario ya es administrador' }, 400)
     }
 
-    // Agregar rol de admin
     const { error: insertError } = await supabase
       .from('user_roles')
-      .upsert({ user_id: targetUser.id, role: 'admin' })
-
-    if (insertError) {
+      .insert({ user_id: target.id, role: 'admin' })
+    if (insertError && insertError.code !== '23505') {
       console.error('Error inserting role:', insertError)
-      return new Response(JSON.stringify({ error: 'Error al asignar rol de administrador' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return json({ error: 'Error al asignar rol de administrador' }, 500)
     }
 
-    console.log('User promoted to admin:', { email, userId: targetUser.id })
-
-    return new Response(
-      JSON.stringify({ success: true, message: 'Usuario promovido a administrador exitosamente' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    console.log('User promoted to admin:', { email: target.email, userId: target.id })
+    return json({ success: true, message: 'Usuario promovido a administrador exitosamente' })
   } catch (error: any) {
     console.error('Error in promote-to-admin function:', error)
-    return new Response(JSON.stringify({ error: error.message || 'Error interno del servidor' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Error interno del servidor' }, 500)
   }
 })
