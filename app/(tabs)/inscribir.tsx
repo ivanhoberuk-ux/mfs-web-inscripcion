@@ -710,7 +710,7 @@ export default function Inscribir() {
         ])
       } else {
         // Modo creación: verificar duplicados (solo del año vigente) y crear nuevo registro
-        const añoVigente = await fetchAñoActivo()
+        const añoVigente = await (await import("../../src/lib/api")).fetchAñoActivo()
         const { data: existentes, error: checkError } = await supabase
           .from('registros')
           .select('id, nombres, apellidos')
