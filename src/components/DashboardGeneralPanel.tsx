@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx-js-style';
 import { fileStamp, humanDate } from '../lib/excel';
 import { shareOrDownload } from '../lib/sharing';
 import { Alert } from 'react-native';
+import { fetchAñoActivo } from '../lib/api';
 
 type RegistroDash = {
   id: string;
@@ -89,10 +90,29 @@ export function DashboardGeneralPanel() {
   const [registros, setRegistros] = useState<RegistroDash[]>([]);
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [puebloFiltro, setPuebloFiltro] = useState<string>('all');
-  const [year, setYear] = useState<number>(new Date().getFullYear() < 2026 ? 2026 : new Date().getFullYear());
+  const [year, setYear] = useState<number | null>(null);
+  const [añosDisponibles, setAñosDisponibles] = useState<number[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [activo, { data }] = await Promise.all([
+          fetchAñoActivo(),
+          supabase.from('configuracion_inscripcion' as any).select('año').order('año'),
+        ]);
+        const años = [...new Set([...((data ?? []) as any[]).map((c) => c.año as number), activo])].sort((a, b) => a - b);
+        setAñosDisponibles(años);
+        setYear(activo);
+      } catch (e) {
+        console.error('[Dashboard] años', e);
+        setYear(new Date().getFullYear());
+      }
+    })();
+  }, []);
   const [drill, setDrill] = useState<{ title: string; rows: RegistroDash[] } | null>(null);
 
   async function load() {
+    if (year == null) return;
     try {
       setLoading(true);
       // Cargar pueblos
@@ -399,7 +419,7 @@ export function DashboardGeneralPanel() {
       <View style={[s.card, { marginBottom: 4 }]}>
         <Text style={[s.subtitle, { marginBottom: 8 }]}>📊 Dashboard General — Año {year}</Text>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-          {[2025, 2026, 2027].map(y => (
+          {añosDisponibles.map(y => (
             <Pressable key={y} onPress={() => setYear(y)}
               style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: y === year ? '#0a7ea4' : '#f3f4f6' }}>
               <Text style={{ color: y === year ? 'white' : '#374151', fontWeight: '700' }}>{y}</Text>
