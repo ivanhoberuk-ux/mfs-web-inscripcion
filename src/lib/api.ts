@@ -713,3 +713,19 @@ function parseDataUrl(dataUrl: string): { mime: string | null; base64: string } 
   }
   return { mime: m[1], base64: m[2] };
 }
+
+/** Trae los roles de muchos usuarios en pocas consultas (lotes de 500). */
+export async function fetchRolesPorUsuario(userIds: string[]): Promise<Record<string, string[]>> {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  const map: Record<string, string[]> = {};
+  for (let i = 0; i < ids.length; i += 500) {
+    const lote = ids.slice(i, i + 500);
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('user_id', lote);
+    if (error) throw error;
+    for (const r of (data ?? []) as any[]) (map[r.user_id] ||= []).push(r.role);
+  }
+  return map;
+}

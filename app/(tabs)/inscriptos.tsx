@@ -11,6 +11,8 @@ import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
 import { Field } from '../../src/components/Field'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
+import { estadoDocumentos, edadDe } from '../../src/lib/documentos'
+import { fetchAñoActivo, fetchRolesPorUsuario } from '../../src/lib/api'
 
 type Row = {
   id: string
