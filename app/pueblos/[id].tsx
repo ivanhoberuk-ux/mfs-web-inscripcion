@@ -198,7 +198,6 @@ export default function PuebloInscriptosScreen() {
       for (const r of filtered) {
         const d = parseNacimientoToDate(r.nacimiento)
         const age = getAge(d)
-        const req = requiredDocLabel(age, r.rol)
         const ok = hasRequiredDoc(r, age)
 
         const base = [r.id, r.nombres ?? '', r.apellidos ?? '']
