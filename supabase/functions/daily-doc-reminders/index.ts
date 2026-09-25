@@ -19,6 +19,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const MAX_INDIVIDUALES = 150;
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 Deno.serve(async (req) => {
@@ -90,8 +91,11 @@ Deno.serve(async (req) => {
 
     let emailsSent = 0;
     const logInserts: any[] = [];
+    const destinatarios = [...byEmail.entries()];
+    const lote = destinatarios.slice(0, MAX_INDIVIDUALES);
+    const restantes = destinatarios.length - lote.length;
 
-    for (const [email, personas] of byEmail) {
+    for (const [email, personas] of lote) {
       const varios = personas.length > 1;
       const bloques = personas
         .map(
@@ -153,7 +157,8 @@ Deno.serve(async (req) => {
     const puebloIds = Object.keys(byPueblo);
     let summariesSent = 0;
 
-    if (puebloIds.length > 0) {
+    // Los resúmenes a admins se envían solo cuando ya no quedan individuales pendientes
+    if (restantes === 0 && puebloIds.length > 0) {
       const { data: pueblos } = await supabase
         .from("pueblos").select("id, nombre").in("id", puebloIds);
       const puebloNameMap: Record<string, string> = {};
@@ -263,6 +268,7 @@ Deno.serve(async (req) => {
       año: config.año,
       pendientes: pendientes.length,
       emailsSent,
+      restantes,
       summariesSent,
       logsInserted: logInserts.length,
     });

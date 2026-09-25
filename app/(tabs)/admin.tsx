@@ -15,7 +15,8 @@ import {
 import { useRouter } from 'expo-router';
 import { s } from '../../src/lib/theme';
 import { supabase } from '../../src/lib/supabase';
-import { fetchOcupacion, updatePueblo, fetchPueblos } from '../../src/lib/api';
+import { fetchOcupacion, updatePueblo, fetchPueblos, fetchAñoActivo, fetchRolesPorUsuario } from '../../src/lib/api';
+import { documentosFaltantes, edadDe } from '../../src/lib/documentos';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { useAuth } from '../../src/context/AuthProvider';
@@ -262,19 +263,11 @@ export default function Admin() {
       if (profilesError) throw profilesError
       
       // Obtener roles de cada usuario
-      const usersWithRoles = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', profile.id)
-          
-          return {
-            ...profile,
-            roles: roles?.map(r => r.role) || []
-          }
-        })
-      )
+      const rolesByUser = await fetchRolesPorUsuario((profiles || []).map((p) => p.id))
+      const usersWithRoles = (profiles || []).map((profile) => ({
+        ...profile,
+        roles: rolesByUser[profile.id] || [],
+      }))
       
       setUsuarios(usersWithRoles)
     } catch (e: any) {
@@ -452,13 +445,7 @@ export default function Admin() {
   async function exportRegistrosJSON() {
     try {
       setExporting(true);
-      const { data, error } = await supabase
-        .from('registros')
-        .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,emergencia_nombre,emergencia_telefono,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
-        )
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const data = await fetchRegistrosActivos();
       const blob = new Blob([JSON.stringify(data ?? [], null, 2)], {
         type: 'application/json;charset=utf-8',
         lastModified: Date.now(),
@@ -474,18 +461,12 @@ export default function Admin() {
   async function exportRegistrosCSV() {
     try {
       setExporting(true);
-      const { data, error } = await supabase
-        .from('registros')
-        .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,emergencia_nombre,emergencia_telefono,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
-        )
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const data = await fetchRegistrosActivos();
 
       const header = [
         'id','fecha','pueblo','nombres','apellidos','ci','email','telefono','direccion',
         'emergencia_nombre','emergencia_telefono','rol','nacimiento',
-        'url_aceptacion','url_permiso','url_firma'
+        'url_aceptacion','url_permiso','url_firma','documentos_faltantes'
       ];
       const rows: any[][] = [header];
 
@@ -496,7 +477,8 @@ export default function Admin() {
           pueblosMap[r.pueblo_id] || r.pueblo_id,
           r.nombres, r.apellidos, r.ci ?? '', r.email ?? '', r.telefono ?? '',
           r.direccion ?? '', r.emergencia_nombre ?? '', r.emergencia_telefono ?? '',
-          r.rol, r.nacimiento ?? '', r.autorizacion_url ?? '', r.ficha_medica_url ?? '', r.firma_url ?? ''
+          r.rol, r.nacimiento ?? '', r.autorizacion_url ?? '', r.ficha_medica_url ?? '', r.firma_url ?? '',
+          documentosFaltantes(r).join(', ')
         ];
         rows.push(row);
       });
@@ -539,50 +521,35 @@ export default function Admin() {
     }
   }
 
-  function calcAge(iso?: string | null): number | null {
-    if (!iso) return null;
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return null;
-    const t = new Date();
-    let age = t.getFullYear() - d.getFullYear();
-    const m = t.getMonth() - d.getMonth();
-    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) age--;
-    return age;
-  }
-
-  function hasRequiredDoc(r: Registro): boolean | null {
-    const age = calcAge(r.nacimiento);
-    // Hijo goes with parents - no permission doc needed for minors
-    if (r.rol === 'Hijo') {
-      const isAdult = age === null ? true : age >= 18;
-      return isAdult ? !!r.autorizacion_url : true; // minor Hijo = no doc needed
+  /** Registros activos (no cancelados) del año vigente, paginados (sin límite de 1000). */
+  async function fetchRegistrosActivos(): Promise<any[]> {
+    const año = await fetchAñoActivo();
+    const all: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from('registros')
+        .select(
+          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,emergencia_nombre,emergencia_telefono,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
+        )
+        .is('deleted_at', null)
+        .eq('año', año)
+        .order('created_at', { ascending: false })
+        .range(from, from + 999);
+      if (error) throw error;
+      all.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
     }
-    const isAdult = age === null ? true : age >= 18;
-    if (isAdult) {
-      return !!r.autorizacion_url;
-    } else {
-      return !!r.ficha_medica_url;
-    }
+    return all;
   }
 
   async function exportFaltanDocumentos() {
     try {
       setExporting(true);
-      const { data, error } = await supabase
-        .from('registros')
-        .select(
-          'id,created_at,nombres,apellidos,ci,email,telefono,direccion,emergencia_nombre,emergencia_telefono,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
-        )
-        .order('pueblo_id', { ascending: true })
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const data = (await fetchRegistrosActivos()).sort((a: any, b: any) =>
+        String(a.pueblo_id).localeCompare(String(b.pueblo_id)));
 
       // Filtrar solo los que faltan documentos
-      const faltantes = (data ?? []).filter((r: Registro) => {
-        const hasDoc = hasRequiredDoc(r);
-        return hasDoc === false || hasDoc === null || !r.firma_url;
-      });
+      const faltantes = data.filter((r: any) => documentosFaltantes(r).length > 0);
 
       if (faltantes.length === 0) {
         Alert.alert('Sin resultados', 'No hay inscriptos con documentos faltantes');
@@ -591,16 +558,12 @@ export default function Admin() {
 
       const header = [
         'pueblo', 'nombres', 'apellidos', 'ci', 'email', 'telefono',
-        'rol', 'edad', 'doc_requerido', 'tiene_firma',
-        'tiene_doc_requerido', 'fecha_inscripcion'
+        'rol', 'edad', 'documentos_faltantes', 'fecha_inscripcion'
       ];
       const rows: any[][] = [header];
 
-      faltantes.forEach((r: Registro) => {
-        const age = calcAge(r.nacimiento);
-        const isAdult = age === null ? true : age >= 18;
-        const docRequerido = isAdult ? 'Aceptación' : 'Permiso';
-        const tieneDoc = hasRequiredDoc(r);
+      faltantes.forEach((r: any) => {
+        const age = edadDe(r.nacimiento);
         
         const row = [
           pueblosMap[r.pueblo_id] || r.pueblo_id,
@@ -611,9 +574,7 @@ export default function Admin() {
           r.telefono ?? '',
           r.rol,
           age ?? 'N/A',
-          docRequerido,
-          r.firma_url ? 'SI' : 'NO',
-          tieneDoc ? 'SI' : 'NO',
+          documentosFaltantes(r).join(', '),
           new Date(r.created_at).toISOString()
         ];
         rows.push(row);

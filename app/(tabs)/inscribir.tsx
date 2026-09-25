@@ -667,9 +667,9 @@ export default function Inscribir() {
       
       if (modoEdicion && registroExistente) {
         // Modo edición: actualizar registro existente
-        const { error: updateError } = await supabase
-          .from('registros')
-          .update({
+        const { error: updateError } = await supabase.rpc('actualizar_registro' as any, {
+          p_registro_id: registroExistente.id,
+          p_datos: {
             pueblo_id: puebloId,
             nombres: nombres.trim(),
             apellidos: apellidos.trim(),
@@ -694,22 +694,31 @@ export default function Inscribir() {
             talle_remera: talleRemera || null,
             pertenece_schoenstatt: !!perteneceSchoenstatt,
             rama_schoenstatt: perteneceSchoenstatt ? (ramaSchoenstatt || null) : null,
-          })
-          .eq('id', registroExistente.id)
+          },
+        })
 
-        if (updateError) throw updateError
+        if (updateError) {
+          setSaving(false)
+          const msg = updateError.message || 'No se pudieron guardar los cambios.'
+          if (typeof window !== 'undefined' && window.alert) window.alert(`⚠️ No se pudo actualizar\n\n${msg}`)
+          else Alert.alert('No se pudo actualizar', msg)
+          return
+        }
 
         Alert.alert('Actualizado', 'Tus datos fueron actualizados correctamente.', [
           { text: 'OK', onPress: () => router.push('/') }
         ])
       } else {
-        // Modo creación: verificar duplicados y crear nuevo registro
-        const { data: existente, error: checkError } = await supabase
+        // Modo creación: verificar duplicados (solo del año vigente) y crear nuevo registro
+        const añoVigente = await (await import("../../src/lib/api")).fetchAñoActivo()
+        const { data: existentes, error: checkError } = await supabase
           .from('registros')
           .select('id, nombres, apellidos')
           .eq('ci', ciNormalizado)
+          .eq('año', añoVigente)
           .is('deleted_at', null)
-          .maybeSingle()
+          .limit(1)
+        const existente = existentes?.[0]
 
         if (checkError) {
           throw new Error('No se pudo verificar la cédula: ' + checkError.message)
@@ -734,14 +743,16 @@ export default function Inscribir() {
 
         // Verificar duplicado por nombre+apellido+email (cubre tipeos de cédula)
         const emailCheck = (inscribiendoOtro ? normEmail(email) : (user?.email || normEmail(email))).toLowerCase()
-        const { data: existePersona } = await supabase
+        const { data: existePersonas } = await supabase
           .from('registros')
           .select('id, ci, nombres, apellidos')
           .ilike('nombres', nombres.trim())
           .ilike('apellidos', apellidos.trim())
           .ilike('email', emailCheck)
+          .eq('año', añoVigente)
           .is('deleted_at', null)
-          .maybeSingle()
+          .limit(1)
+        const existePersona = existePersonas?.[0]
 
         if (existePersona) {
           setSaving(false)
@@ -809,13 +820,8 @@ export default function Inscribir() {
             console.warn('admin-send-access falló', e)
             accesoMsg = `\n\n⚠️ La inscripción se creó, pero no se pudo enviar el email de acceso (${e?.message ?? 'error'}). Podés reenviarlo desde la lista de inscriptos.`
           }
-        } else {
-          // Flujo normal: actualizar pueblo_id del perfil del usuario
-          await supabase
-            .from('profiles')
-            .update({ pueblo_id: puebloId })
-            .eq('id', user.id)
         }
+        // El pueblo_id del perfil lo sincroniza un trigger en la BD.
 
         // Copiar código al portapapeles
         try {

@@ -16,6 +16,8 @@ import { shareOrDownload } from '../../src/lib/sharing'
 import { supabase } from '../../src/lib/supabase'
 import { s } from '../../src/lib/theme'
 import { Picker } from '@react-native-picker/picker'
+import { documentosCompletos, documentosFaltantes } from '../../src/lib/documentos'
+import { fetchAñoActivo } from '../../src/lib/api'
 
 export default function PuebloInscriptosScreen() {
   const params = useLocalSearchParams<{ id: string; hideCi?: string }>()
@@ -74,24 +76,11 @@ export default function PuebloInscriptosScreen() {
     return age
   }
 
-  function requiredDocKey(age: number | null, rol?: string): 'ficha' | 'autorizacion' | null {
-    // Hijo goes with parents - no permission document needed, only aceptacion if adult
-    if (rol === 'Hijo') return age != null && age >= 18 ? 'autorizacion' : null
-    if (age == null) return null
-    return age < 18 ? 'ficha' : 'autorizacion'
+  function requiredDocLabel(_age: number | null, _rol?: string): string {
+    return 'Documentos'
   }
-  function requiredDocLabel(age: number | null, rol?: string): string {
-    const k = requiredDocKey(age, rol)
-    if (k === 'ficha') return 'Permiso del Menor'
-    if (k === 'autorizacion') return 'Aceptación de Protocolo'
-    if (rol === 'Hijo' && age != null && age < 18) return 'No requiere (Hijo)'
-    return 'Documento requerido'
-  }
-  function hasRequiredDoc(r: any, age: number | null): boolean | null {
-    const k = requiredDocKey(age, r.rol)
-    if (k === 'ficha') return !!r.ficha_medica_url
-    if (k === 'autorizacion') return !!r.autorizacion_url
-    return null
+  function hasRequiredDoc(r: any, _age: number | null): boolean | null {
+    return documentosCompletos(r)
   }
   const normalize = (v: string) =>
     (v || '')
@@ -130,6 +119,7 @@ export default function PuebloInscriptosScreen() {
         `)
         .eq('pueblo_id', puebloId)
         .is('deleted_at', null)
+        .eq('año', await fetchAñoActivo())
         .order('created_at', { ascending: true })
       if (error) throw error
 
@@ -192,14 +182,14 @@ export default function PuebloInscriptosScreen() {
            'rol', 'es_jefe', 'talle_remera', 'misiono_antes',
            'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
            'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
-           'doc_requerido', 'estado_doc',
+           'documentos_faltantes', 'estado_doc',
            'autorizacion_url', 'ficha_medica_url', 'firma_url', 'cedula_frente_url', 'cedula_dorso_url',
            'created_at']
         : ['ci', 'edad', 'email', 'telefono', 'direccion', 'ciudad', 'emergencia_nombre', 'emergencia_telefono',
            'rol', 'es_jefe', 'talle_remera', 'misiono_antes',
            'tratamiento_especial', 'tratamiento_detalle', 'alimentacion_especial', 'alimentacion_detalle',
            'padre_nombre', 'padre_telefono', 'madre_nombre', 'madre_telefono',
-           'doc_requerido', 'estado_doc',
+           'documentos_faltantes', 'estado_doc',
            'autorizacion_url', 'ficha_medica_url', 'firma_url', 'cedula_frente_url', 'cedula_dorso_url',
            'created_at']
 
@@ -208,7 +198,6 @@ export default function PuebloInscriptosScreen() {
       for (const r of filtered) {
         const d = parseNacimientoToDate(r.nacimiento)
         const age = getAge(d)
-        const req = requiredDocLabel(age, r.rol)
         const ok = hasRequiredDoc(r, age)
 
         const base = [r.id, r.nombres ?? '', r.apellidos ?? '']
@@ -232,8 +221,8 @@ export default function PuebloInscriptosScreen() {
           r.padre_telefono ?? '',
           r.madre_nombre ?? '',
           r.madre_telefono ?? '',
-          req,
-          ok == null ? '' : ok ? 'Cargada' : 'Falta',
+          documentosFaltantes(r).join(', '),
+          ok ? 'Completos' : 'Faltan',
           r.autorizacion_url ?? '',
           r.ficha_medica_url ?? '',
           r.firma_url ?? '',
@@ -350,11 +339,11 @@ export default function PuebloInscriptosScreen() {
             </View>
           ) : ok ? (
             <View style={{ backgroundColor: '#21a179', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
-              <Text style={{ color: 'white', fontSize: 12 }}>Cargada</Text>
+              <Text style={{ color: 'white', fontSize: 12 }}>Completos</Text>
             </View>
           ) : (
             <View style={{ backgroundColor: '#d94646', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
-              <Text style={{ color: 'white', fontSize: 12 }}>Falta</Text>
+              <Text style={{ color: 'white', fontSize: 12 }}>Falta: {documentosFaltantes(item).join(', ')}</Text>
             </View>
           )}
         </View>

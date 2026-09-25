@@ -2,10 +2,9 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, ActivityIndicator } from 'react-native'
 import { supabase } from '../lib/supabase'
-import { fetchAsesoresConfirmados, type AsesorRow } from '../lib/api'
+import { fetchAsesoresConfirmados, fetchAñoActivo, type AsesorRow } from '../lib/api'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
 
-const AÑO = 2026
 
 const TIPO_LABEL: Record<string, string> = {
   padre_schoenstatt: 'Padre de Schoenstatt',
@@ -15,6 +14,7 @@ const TIPO_LABEL: Record<string, string> = {
 
 export function AsesoresAnioCard() {
   const [loading, setLoading] = useState(true)
+  const [AÑO, setAÑO] = useState<number | null>(null)
   const [asesores, setAsesores] = useState<AsesorRow[]>([])
   const [pueblosMap, setPueblosMap] = useState<Record<string, string>>({})
 
@@ -22,8 +22,10 @@ export function AsesoresAnioCard() {
     let active = true
     ;(async () => {
       try {
+        const año = await fetchAñoActivo()
+        if (active) setAÑO(año)
         const [list, { data: pueblos }] = await Promise.all([
-          fetchAsesoresConfirmados(AÑO),
+          fetchAsesoresConfirmados(año),
           supabase.from('pueblos').select('id, nombre'),
         ])
         if (!active) return
@@ -50,7 +52,7 @@ export function AsesoresAnioCard() {
       width: '100%',
     }}>
       <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
-        🙏 Asesores espirituales {AÑO}
+        🙏 Asesores espirituales {AÑO ?? ''}
       </Text>
       {asesores.map((a) => {
         const pueblos = (a.pueblos_acompana ?? []).map(id => pueblosMap[id]).filter(Boolean)

@@ -16,6 +16,10 @@ import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { generateExcelBase64, fileStamp, humanDate, safeFileName, type ExcelOptions } from '../../src/lib/excel'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
+import { estadoDocumentos, edadDe } from '../../src/lib/documentos'
+import { fetchAñoActivo } from '../../src/lib/api'
+
+const añoRef = { current: new Date().getFullYear() }
 
 type Row = {
   id: string
@@ -30,6 +34,8 @@ type Row = {
   autorizacion_url: string | null     // Aceptación (adultos)
   ficha_medica_url: string | null     // Permiso (menores)
   firma_url: string | null
+  cedula_frente_url: string | null
+  cedula_dorso_url: string | null
 }
 
 type Pueblo = { id: string; nombre: string }
@@ -83,8 +89,10 @@ export default function Buscador() {
     let query = supabase
       .from('registros')
       .select(
-        'id,created_at,nombres,apellidos,ci,email,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url'
+        'id,created_at,nombres,apellidos,ci,email,pueblo_id,rol,nacimiento,autorizacion_url,ficha_medica_url,firma_url,cedula_frente_url,cedula_dorso_url'
       )
+      .is('deleted_at', null)
+      .eq('año', añoRef.current)
       .order('created_at', { ascending: false })
 
     const term = q.trim()
@@ -105,28 +113,10 @@ export default function Buscador() {
     return query
   }, [q, puebloId, rol, isPuebloAdmin, isSuperAdmin, userPuebloId])
 
-  function calcAge(iso?: string | null): number | null {
-    if (!iso) return null
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return null
-    const today = new Date()
-    let age = today.getFullYear() - d.getFullYear()
-    const m = today.getMonth() - d.getMonth()
-    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--
-    return age
-  }
-
+  const calcAge = edadDe
   function requiredDocsOk(r: Row) {
-    const age = calcAge(r.nacimiento)
-    const isAdult = age === null ? true : age >= 18 // si no hay fecha, tratamos como adulto
-    const okFirma = !!r.firma_url
-    if (isAdult) {
-      const okAcept = !!r.autorizacion_url
-      return { isAdult, age, okRequeridos: okAcept && okFirma, okAcept, okPerm: !!r.ficha_medica_url, okFirma }
-    } else {
-      const okPerm = !!r.ficha_medica_url
-      return { isAdult, age, okRequeridos: okPerm && okFirma, okAcept: !!r.autorizacion_url, okPerm, okFirma }
-    }
+    const st = estadoDocumentos(r)
+    return { ...st, age: edadDe(r.nacimiento) }
   }
 
   const runSearch = useCallback(
@@ -138,6 +128,7 @@ export default function Buscador() {
         setMoreLoading(true)
       }
       try {
+        añoRef.current = await fetchAñoActivo()
         const query = buildQuery()
         const from = offsetRef.current
         const to = from + PAGE - 1
@@ -225,7 +216,7 @@ export default function Buscador() {
     };
   }
   function mapRowToCsvArray(r: Row) {
-    const { age, okRequeridos, okAcept, okPerm, okFirma } = requiredDocsOk(r)
+    const { age, okRequeridos, faltantes } = requiredDocsOk(r)
     return [
       r.id,
       r.nombres ?? '',
@@ -235,8 +226,7 @@ export default function Buscador() {
       age == null ? '' : String(age),
       r.email ?? '',
       // Documentos (solo etiquetas, no URLs)
-      okFirma ? 'Firma OK' : 'Firma Falta',
-      (age === null || age >= 18) ? (okAcept ? 'Aceptación OK' : 'Aceptación Falta') : (okPerm ? 'Permiso OK' : 'Permiso Falta'),
+      faltantes.join(', '),
       okRequeridos ? 'Completo' : 'Incompleto',
       new Date(r.created_at).toISOString(),
     ]
@@ -250,8 +240,7 @@ export default function Buscador() {
       'rol',
       'edad',
       'email',
-      'firma',
-      'doc_requerido',      // Aceptación (adultos) o Permiso (menores)
+      'documentos_faltantes',
       'estado_documentos',  // Completo / Incompleto
       'created_at',
     ];
@@ -284,6 +273,7 @@ export default function Buscador() {
       setExporting('all')
       const all: Row[] = []
       let from = 0
+      añoRef.current = await fetchAñoActivo()
 
       // Traemos TODO respetando filtros del servidor + docStatus en cliente
       while (true) {
@@ -449,7 +439,7 @@ export default function Buscador() {
             const pueblo = pueblosMap[r.pueblo_id] || r.pueblo_id
             const age = calcAge(r.nacimiento)
             const isAdult = age === null ? true : age >= 18
-            const { okAcept, okPerm, okFirma } = requiredDocsOk(r)
+            const st = requiredDocsOk(r)
 
             return (
               <View key={r.id} style={[s.card, { marginBottom: 10 }]}>
@@ -469,8 +459,12 @@ export default function Buscador() {
 
                 {/* Chips: solo los requeridos según edad */}
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  {isAdult ? <Chip ok={okAcept} label="Aceptación" /> : <Chip ok={okPerm} label="Permiso" />}
-                  <Chip ok={okFirma} label="Firma" />
+                  <Chip ok={st.okCedulaFrente} label="Céd. frente" />
+                  <Chip ok={st.okCedulaDorso} label="Céd. dorso" />
+                  <Chip ok={st.okFirma} label="Firma" />
+                  {st.necesitaPermiso && <Chip ok={st.okPermiso} label="Permiso menor" />}
+                  {st.necesitaAceptacion && <Chip ok={st.okAceptacion} label="Aceptación" />}
+                  <Chip ok={st.okRequeridos} label="Completos" />
                 </View>
 
                 <Text style={[s.small, { color: '#666', marginTop: 6 }]}>
