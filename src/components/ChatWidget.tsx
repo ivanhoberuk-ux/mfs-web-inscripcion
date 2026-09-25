@@ -1,6 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image, Animated } from 'react-native';
 import { colors, spacing, radius, shadows } from '../lib/designSystem';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CHAT_SESSION_KEY = 'mfs_chat_session_id';
+let _chatSessionId: string | null = null;
+
+function nuevoId(): string {
+  try {
+    const c: any = (globalThis as any).crypto;
+    if (c?.randomUUID) return c.randomUUID();
+  } catch {}
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** Id de sesión de chat por navegador/dispositivo (persistido). */
+async function getChatSessionId(): Promise<string> {
+  if (_chatSessionId) return _chatSessionId;
+  let id: string | null = null;
+  try {
+    if (Platform.OS === 'web') {
+      id = typeof localStorage !== 'undefined' ? localStorage.getItem(CHAT_SESSION_KEY) : null;
+      if (!id) { id = nuevoId(); if (typeof localStorage !== 'undefined') localStorage.setItem(CHAT_SESSION_KEY, id); }
+    } else {
+      id = await AsyncStorage.getItem(CHAT_SESSION_KEY);
+      if (!id) { id = nuevoId(); await AsyncStorage.setItem(CHAT_SESSION_KEY, id); }
+    }
+  } catch {
+    id = id || nuevoId();
+  }
+  _chatSessionId = id!;
+  return _chatSessionId;
+}
 
 const N8N_WEBHOOK_URL = 'https://elviajero80.app.n8n.cloud/webhook/6e841b5c-79dd-46fe-baa0-d55c57ec50c0/chat';
 const MISIONERITO_AVATAR = 'https://npekpdkywsneylddzzuu.supabase.co/storage/v1/object/public/logos/ChatGPT%20Image%202%20dic%202025%2C%2018_23_38.png';
@@ -75,6 +106,7 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
+      const sessionId = 'mfs-' + (await getChatSessionId());
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -82,7 +114,7 @@ export function ChatWidget() {
         },
         body: JSON.stringify({
           chatInput: userMessage.text,
-          sessionId: 'mfs-chat-' + (Platform.OS === 'web' ? 'web' : 'app'),
+          sessionId,
         }),
       });
 
@@ -91,7 +123,10 @@ export function ChatWidget() {
       
       // n8n puede devolver la respuesta en varios formatos
       let responseText = 'Lo siento, no pude procesar tu mensaje.';
-      if (typeof data === 'string') {
+      const first = Array.isArray(data) ? data[0] : data;
+      if (first && typeof first === 'object' && first.blocked && first.message) {
+        responseText = String(first.message);
+      } else if (typeof data === 'string') {
         responseText = data;
       } else if (Array.isArray(data) && data.length > 0) {
         // n8n a veces devuelve un array

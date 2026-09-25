@@ -83,9 +83,12 @@ export default function Home() {
       if (!user?.id) { setRole(null); return }
       setLoadingRole(true)
       const { data, error } = await supabase
-        .from('user_roles').select('role').eq('user_id', user.id).maybeSingle()
+        .from('user_roles').select('role').eq('user_id', user.id)
       if (!mounted) return
-      if (error) { setRole(null) } else { setRole((data as UserRoleRow | null)?.role ?? null) }
+      if (error) { setRole(null) } else {
+        const roles = ((data ?? []) as UserRoleRow[]).map((r) => r.role)
+        setRole(roles.includes('admin') ? 'admin' : (roles[0] ?? null))
+      }
       setLoadingRole(false)
     })()
     return () => { mounted = false }

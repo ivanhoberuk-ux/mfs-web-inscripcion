@@ -80,7 +80,10 @@ export default function Login() {
         password: pass,
       })
       if (error) {
-        setErr(error.message)
+        const m = (error.message || '').toLowerCase()
+        setErr(m.includes('email not confirmed')
+          ? 'Todavía no confirmaste tu email. Revisá tu correo o volvé a crear la cuenta para reenviar el link.'
+          : error.message)
         return
       }
       setMeEmail(data.user?.email ?? null)
@@ -132,7 +135,7 @@ export default function Login() {
         setErr((data as any).error)
         return
       }
-      setMsg('¡Cuenta creada! Ya podés iniciar sesión con tu email y contraseña.')
+      setMsg(`¡Listo! Te enviamos un email a ${cleanEmail} para confirmar tu cuenta. Abrilo y tocá 'Confirmar mi email' (revisá también spam). Después podés iniciar sesión.`)
       setPass('')
     } catch (e: any) {
       setErr(e?.message ?? String(e))
