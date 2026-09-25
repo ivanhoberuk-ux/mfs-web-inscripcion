@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -474,6 +474,8 @@ export type Database = {
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
+          promocion_notificada_at: string | null
+          promovido_at: string | null
           pueblo_id: string
           pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
@@ -521,6 +523,8 @@ export type Database = {
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
+          promocion_notificada_at?: string | null
+          promovido_at?: string | null
           pueblo_id: string
           pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
@@ -568,6 +572,8 @@ export type Database = {
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
+          promocion_notificada_at?: string | null
+          promovido_at?: string | null
           pueblo_id?: string
           pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
@@ -1242,6 +1248,64 @@ export type Database = {
         }
         Returns: undefined
       }
+      actualizar_registro: {
+        Args: { p_datos: Json; p_registro_id: string }
+        Returns: {
+          acepta_terminos: boolean
+          acepta_terminos_at: string | null
+          alimentacion_detalle: string | null
+          alimentacion_especial: boolean
+          año: number
+          apellidos: string
+          autorizacion_url: string | null
+          cedula_dorso_url: string | null
+          cedula_frente_url: string | null
+          ci: string
+          ciudad: string | null
+          created_at: string
+          deleted_at: string | null
+          direccion: string | null
+          email: string
+          emergencia_nombre: string | null
+          emergencia_telefono: string | null
+          es_jefe: boolean
+          estado: Database["public"]["Enums"]["estado_registro"]
+          external_id: string | null
+          ficha_medica_url: string | null
+          firma_url: string | null
+          id: string
+          madre_nombre: string | null
+          madre_telefono: string | null
+          misiono_antes: boolean
+          nacimiento: string
+          no_clasificado_at: string | null
+          no_clasificado_motivo: string | null
+          no_clasificado_por: string | null
+          no_clasifico: boolean
+          nombres: string
+          padre_nombre: string | null
+          padre_telefono: string | null
+          pertenece_schoenstatt: boolean
+          promocion_notificada_at: string | null
+          promovido_at: string | null
+          pueblo_id: string
+          pueblos_acompana: string[] | null
+          rama_schoenstatt: string | null
+          rol: string
+          source: string | null
+          talle_remera: string | null
+          telefono: string
+          tipo_asesor: string | null
+          tratamiento_detalle: string | null
+          tratamiento_especial: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "registros"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       anio_activo: { Args: never; Returns: number }
       assign_co_admin_pueblo: {
         Args: { p_pueblo_id: string; p_user_id: string }
@@ -1282,6 +1346,10 @@ export type Database = {
       desmarcar_asistencia: {
         Args: { p_misionero_id: string; p_reunion_id: string }
         Returns: boolean
+      }
+      documentos_faltantes: {
+        Args: { r: Database["public"]["Tables"]["registros"]["Row"] }
+        Returns: string[]
       }
       editar_reunion: {
         Args: {
@@ -1693,6 +1761,8 @@ export type Database = {
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
+          promocion_notificada_at: string | null
+          promovido_at: string | null
           pueblo_id: string
           pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
@@ -1734,6 +1804,7 @@ export type Database = {
           pueblo_nombre: string
         }[]
       }
+      verify_cron_secret: { Args: { p_secret: string }; Returns: boolean }
     }
     Enums: {
       estado_registro:
@@ -1757,12 +1828,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1786,11 +1857,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1811,11 +1882,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1836,11 +1907,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1853,11 +1924,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
