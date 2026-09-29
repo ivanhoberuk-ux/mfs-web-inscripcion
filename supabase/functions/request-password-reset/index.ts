@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -143,6 +144,7 @@ Deno.serve(async (req) => {
     return json({ success: true })
   } catch (error) {
     console.error('request-password-reset failed', error)
+    await alertar(null, 'edge:request-password-reset', 'Error en request-password-reset', errorMsg(error), 'edge:request-password-reset')
     return json({ error: 'No se pudo enviar el link. Intentá de nuevo más tarde.' }, 500)
   }
 })

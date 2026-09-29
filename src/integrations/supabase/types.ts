@@ -14,70 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      admins: {
+      ajustes: {
         Row: {
-          created_at: string | null
-          email: string | null
-          user_id: string
+          clave: string
+          updated_at: string | null
+          valor: string | null
         }
         Insert: {
-          created_at?: string | null
-          email?: string | null
-          user_id: string
+          clave: string
+          updated_at?: string | null
+          valor?: string | null
         }
         Update: {
-          created_at?: string | null
-          email?: string | null
-          user_id?: string
+          clave?: string
+          updated_at?: string | null
+          valor?: string | null
         }
         Relationships: []
       }
-      asistencias: {
+      alertas: {
         Row: {
+          clave: string | null
           created_at: string
-          id_misionero: string
-          id_reunion: string
+          detalle: string | null
+          enviada_at: string | null
+          id: number
+          origen: string
+          titulo: string
         }
         Insert: {
+          clave?: string | null
           created_at?: string
-          id_misionero: string
-          id_reunion: string
+          detalle?: string | null
+          enviada_at?: string | null
+          id?: number
+          origen: string
+          titulo: string
         }
         Update: {
+          clave?: string | null
           created_at?: string
-          id_misionero?: string
-          id_reunion?: string
+          detalle?: string | null
+          enviada_at?: string | null
+          id?: number
+          origen?: string
+          titulo?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["id_reunion"]
-            isOneToOne: false
-            referencedRelation: "reuniones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["id_reunion"]
-            isOneToOne: false
-            referencedRelation: "v_historial_reuniones"
-            referencedColumns: ["reunion_id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["id_reunion"]
-            isOneToOne: false
-            referencedRelation: "v_reporte_misionero"
-            referencedColumns: ["reunion_id"]
-          },
-          {
-            foreignKeyName: "asistencias_id_reunion_fkey"
-            columns: ["id_reunion"]
-            isOneToOne: false
-            referencedRelation: "v_reuniones"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      auditoria: {
+        Row: {
+          accion: string
+          actor: string | null
+          actor_email: string | null
+          cambios: Json | null
+          created_at: string
+          id: number
+          registro_id: string | null
+          resumen: string | null
+          tabla: string
+        }
+        Insert: {
+          accion: string
+          actor?: string | null
+          actor_email?: string | null
+          cambios?: Json | null
+          created_at?: string
+          id?: number
+          registro_id?: string | null
+          resumen?: string | null
+          tabla: string
+        }
+        Update: {
+          accion?: string
+          actor?: string | null
+          actor_email?: string | null
+          cambios?: Json | null
+          created_at?: string
+          id?: number
+          registro_id?: string | null
+          resumen?: string | null
+          tabla?: string
+        }
+        Relationships: []
       }
       configuracion_inscripcion: {
         Row: {
@@ -87,6 +106,7 @@ export type Database = {
           apertura_general: string
           cierre: string
           created_at: string
+          horas_confirmar_promocion: number | null
           lista_espera_vence_at: string | null
           modo: string
           updated_at: string
@@ -98,6 +118,7 @@ export type Database = {
           apertura_general: string
           cierre: string
           created_at?: string
+          horas_confirmar_promocion?: number | null
           lista_espera_vence_at?: string | null
           modo?: string
           updated_at?: string
@@ -109,98 +130,10 @@ export type Database = {
           apertura_general?: string
           cierre?: string
           created_at?: string
+          horas_confirmar_promocion?: number | null
           lista_espera_vence_at?: string | null
           modo?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      configuracion_puntajes: {
-        Row: {
-          pueblo_id: string
-          puntaje: number
-          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
-        }
-        Insert: {
-          pueblo_id: string
-          puntaje: number
-          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
-        }
-        Update: {
-          pueblo_id?: string
-          puntaje?: number
-          tipo_reunion?: Database["public"]["Enums"]["tipo_reunion"]
-        }
-        Relationships: []
-      }
-      document_metadata: {
-        Row: {
-          created_at: string | null
-          id: string
-          schema: string | null
-          title: string | null
-          url: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          schema?: string | null
-          title?: string | null
-          url?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          schema?: string | null
-          title?: string | null
-          url?: string | null
-        }
-        Relationships: []
-      }
-      document_rows: {
-        Row: {
-          dataset_id: string | null
-          id: number
-          row_data: Json | null
-        }
-        Insert: {
-          dataset_id?: string | null
-          id?: number
-          row_data?: Json | null
-        }
-        Update: {
-          dataset_id?: string | null
-          id?: number
-          row_data?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_rows_dataset_id_fkey"
-            columns: ["dataset_id"]
-            isOneToOne: false
-            referencedRelation: "document_metadata"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      documents: {
-        Row: {
-          content: string | null
-          embedding: string | null
-          id: number
-          metadata: Json | null
-        }
-        Insert: {
-          content?: string | null
-          embedding?: string | null
-          id?: number
-          metadata?: Json | null
-        }
-        Update: {
-          content?: string | null
-          embedding?: string | null
-          id?: number
-          metadata?: Json | null
         }
         Relationships: []
       }
@@ -254,71 +187,7 @@ export type Database = {
             referencedRelation: "registros"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "email_reminder_logs_registro_id_fkey"
-            columns: ["registro_id"]
-            isOneToOne: false
-            referencedRelation: "v_registros_unificados"
-            referencedColumns: ["registro_id"]
-          },
         ]
-      }
-      indexed_files: {
-        Row: {
-          file_id: string
-          file_name: string | null
-          file_type: string | null
-          indexed_at: string | null
-          last_modified: string | null
-          status: string | null
-        }
-        Insert: {
-          file_id: string
-          file_name?: string | null
-          file_type?: string | null
-          indexed_at?: string | null
-          last_modified?: string | null
-          status?: string | null
-        }
-        Update: {
-          file_id?: string
-          file_name?: string | null
-          file_type?: string | null
-          indexed_at?: string | null
-          last_modified?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      misioneros_extra: {
-        Row: {
-          created_at: string
-          documento: string | null
-          email: string | null
-          id: string
-          nombre: string
-          pueblo_id: string | null
-          telefono: string | null
-        }
-        Insert: {
-          created_at?: string
-          documento?: string | null
-          email?: string | null
-          id?: string
-          nombre: string
-          pueblo_id?: string | null
-          telefono?: string | null
-        }
-        Update: {
-          created_at?: string
-          documento?: string | null
-          email?: string | null
-          id?: string
-          nombre?: string
-          pueblo_id?: string | null
-          telefono?: string | null
-        }
-        Relationships: []
       }
       password_reset_rate_limits: {
         Row: {
@@ -474,7 +343,9 @@ export type Database = {
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
+          promocion_confirmada_at: string | null
           promocion_notificada_at: string | null
+          promocion_vence_at: string | null
           promovido_at: string | null
           pueblo_id: string
           pueblos_acompana: string[] | null
@@ -523,7 +394,9 @@ export type Database = {
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
+          promocion_confirmada_at?: string | null
           promocion_notificada_at?: string | null
+          promocion_vence_at?: string | null
           promovido_at?: string | null
           pueblo_id: string
           pueblos_acompana?: string[] | null
@@ -572,7 +445,9 @@ export type Database = {
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
+          promocion_confirmada_at?: string | null
           promocion_notificada_at?: string | null
+          promocion_vence_at?: string | null
           promovido_at?: string | null
           pueblo_id?: string
           pueblos_acompana?: string[] | null
@@ -602,30 +477,27 @@ export type Database = {
           },
         ]
       }
-      reuniones: {
+      tareas_log: {
         Row: {
-          cerrada: boolean | null
-          fecha: string
-          id: string
-          pueblo_id: string
-          puntaje_override: number | null
-          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+          created_at: string
+          detalle: Json | null
+          id: number
+          ok: boolean
+          tarea: string
         }
         Insert: {
-          cerrada?: boolean | null
-          fecha: string
-          id?: string
-          pueblo_id: string
-          puntaje_override?: number | null
-          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"]
+          created_at?: string
+          detalle?: Json | null
+          id?: number
+          ok: boolean
+          tarea: string
         }
         Update: {
-          cerrada?: boolean | null
-          fecha?: string
-          id?: string
-          pueblo_id?: string
-          puntaje_override?: number | null
-          tipo_reunion?: Database["public"]["Enums"]["tipo_reunion"]
+          created_at?: string
+          detalle?: Json | null
+          id?: number
+          ok?: boolean
+          tarea?: string
         }
         Relationships: []
       }
@@ -1104,115 +976,6 @@ export type Database = {
         Row: {}
         Relationships: []
       }
-      v_historial_reuniones: {
-        Row: {
-          asistentes: number | null
-          estado: string | null
-          fecha: string | null
-          pueblo_id: string | null
-          pueblo_nombre: string | null
-          reunion_id: string | null
-          tipo: Database["public"]["Enums"]["tipo_reunion"] | null
-        }
-        Relationships: []
-      }
-      v_misioneros_busqueda: {
-        Row: {
-          id: string | null
-          nombre: string | null
-          pueblo_id: string | null
-        }
-        Relationships: []
-      }
-      v_misioneros_total: {
-        Row: {
-          created_at: string | null
-          documento: string | null
-          email: string | null
-          id: string | null
-          nombre: string | null
-          pueblo_id: string | null
-          telefono: string | null
-        }
-        Relationships: []
-      }
-      v_puntaje_asistencias: {
-        Row: {
-          id_misionero: string | null
-          pueblo_id: string | null
-          reuniones_asistidas: number | null
-          total_puntos: number | null
-          ultima_asistencia: string | null
-        }
-        Relationships: []
-      }
-      v_ranking_pueblo: {
-        Row: {
-          id_misionero: string | null
-          misionero_nombre: string | null
-          pos: number | null
-          pueblo_id: string | null
-          pueblo_nombre: string | null
-          reuniones_asistidas: number | null
-          total_puntos: number | null
-          ultima_asistencia: string | null
-        }
-        Relationships: []
-      }
-      v_registros_unificados: {
-        Row: {
-          documento: string | null
-          email: string | null
-          nombre: string | null
-          pueblo_id: string | null
-          pueblo_nombre: string | null
-          registro_id: string | null
-          telefono: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "pueblos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "registros_pueblo_id_fkey"
-            columns: ["pueblo_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ocupacion"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_reporte_misionero: {
-        Row: {
-          asistencia: number | null
-          fecha: string | null
-          marcada_el: string | null
-          misionero_id: string | null
-          misionero_nombre: string | null
-          pueblo_id: string | null
-          pueblo_nombre: string | null
-          reunion_id: string | null
-          tipo: Database["public"]["Enums"]["tipo_reunion"] | null
-        }
-        Relationships: []
-      }
-      v_reuniones: {
-        Row: {
-          fecha: string | null
-          id: string | null
-          pueblo_id: string | null
-          pueblo_nombre: string | null
-          puntaje_config: number | null
-          puntaje_efectivo: number | null
-          puntaje_override: number | null
-          tipo_reunion: Database["public"]["Enums"]["tipo_reunion"] | null
-        }
-        Relationships: []
-      }
       vw_ocupacion: {
         Row: {
           activo: boolean | null
@@ -1233,11 +996,6 @@ export type Database = {
       }
     }
     Functions: {
-      _cp_tipo_column: { Args: never; Returns: string }
-      _puntaje_reunion: {
-        Args: { r: Database["public"]["Tables"]["reuniones"]["Row"] }
-        Returns: number
-      }
       abrir_anio: {
         Args: {
           p_año: number
@@ -1286,7 +1044,9 @@ export type Database = {
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
+          promocion_confirmada_at: string | null
           promocion_notificada_at: string | null
+          promocion_vence_at: string | null
           promovido_at: string | null
           pueblo_id: string
           pueblos_acompana: string[] | null
@@ -1321,116 +1081,31 @@ export type Database = {
         Args: { p_motivo?: string; p_registro_id: string }
         Returns: Json
       }
-      count_reuniones: {
+      confirmar_promocion: { Args: { p_registro_id: string }; Returns: Json }
+      crear_alerta: {
         Args: {
-          p_desde?: string
-          p_hasta?: string
-          p_pueblo_id: string
-          p_tipo?: Database["public"]["Enums"]["tipo_reunion"]
+          p_clave?: string
+          p_detalle: string
+          p_origen: string
+          p_titulo: string
         }
-        Returns: number
-      }
-      crear_reunion: {
-        Args: {
-          p_fecha: string
-          p_pueblo_id: string
-          p_puntaje_override: number
-          p_tipo: Database["public"]["Enums"]["tipo_reunion"]
-        }
-        Returns: {
-          id: string
-          msg: string
-        }[]
+        Returns: undefined
       }
       current_user_email_confirmed: { Args: never; Returns: boolean }
-      desmarcar_asistencia: {
-        Args: { p_misionero_id: string; p_reunion_id: string }
-        Returns: boolean
+      diagnostico_temporada: {
+        Args: { p_año?: number }
+        Returns: {
+          chequeo: string
+          detalle: string
+          estado: string
+          orden: number
+        }[]
       }
       documentos_faltantes: {
         Args: { r: Database["public"]["Tables"]["registros"]["Row"] }
         Returns: string[]
       }
-      editar_reunion: {
-        Args: {
-          p_fecha: string
-          p_id: string
-          p_pueblo_id: string
-          p_puntaje_override: number
-          p_tipo: Database["public"]["Enums"]["tipo_reunion"]
-        }
-        Returns: {
-          id: string
-          msg: string
-        }[]
-      }
       estado_inscripcion: { Args: { p_año: number }; Returns: string }
-      fn_check_misionero_exists: { Args: { m_id: string }; Returns: boolean }
-      fn_check_pueblo_exists: { Args: { p_id: string }; Returns: boolean }
-      get_asistentes: {
-        Args: { p_reunion_id: string }
-        Returns: {
-          id_misionero: string
-          nombre: string
-        }[]
-      }
-      get_dashboard_por_pueblo: {
-        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
-        Returns: {
-          asistencias: number
-          pueblo_id: string
-          pueblo_nombre: string
-          puntos: number
-          reuniones: number
-        }[]
-      }
-      get_dashboard_por_tipo: {
-        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
-        Returns: {
-          asistencias: number
-          puntos: number
-          reuniones: number
-          tipo: string
-        }[]
-      }
-      get_dashboard_tendencia_semanal: {
-        Args: {
-          p_desde?: string
-          p_hasta?: string
-          p_pueblo_id?: string
-          p_weeks?: number
-        }
-        Returns: {
-          asistencias: number
-          puntos: number
-          reuniones: number
-          semana: string
-        }[]
-      }
-      get_dashboard_top_asistencia: {
-        Args: {
-          p_desde?: string
-          p_hasta?: string
-          p_limit?: number
-          p_pueblo_id?: string
-        }
-        Returns: {
-          id_misionero: string
-          nombre: string
-          puntos: number
-          total_asistencias: number
-        }[]
-      }
-      get_dashboard_totales: {
-        Args: { p_desde?: string; p_hasta?: string; p_pueblo_id?: string }
-        Returns: {
-          total_asistencias: number
-          total_misioneros: number
-          total_pueblos: number
-          total_puntos: number
-          total_reuniones: number
-        }[]
-      }
       get_lista_espera_position: {
         Args: { p_registro_id: string }
         Returns: number
@@ -1445,124 +1120,29 @@ export type Database = {
           telefono: string
         }[]
       }
-      get_pueblos_with_cupos: {
-        Args: never
-        Returns: {
-          cupo_max: number
-          id: string
-          inscritos_2025: number
-          lugares_disponibles: number
-          nombre: string
-          porcentaje_ocupacion: number
-        }[]
-      }
       get_registro_id_from_path: { Args: { path: string }; Returns: string }
-      get_reporte_misionero: {
-        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
-        Returns: {
-          documento: string
-          fecha: string
-          misionero_id: string
-          misionero_nombre: string
-          pueblo_id: string
-          pueblo_nombre: string
-          puntaje: number
-          reunion_id: string
-          tipo: string
-        }[]
-      }
-      get_reporte_misionero_totales_v1: {
-        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
-        Returns: {
-          asistencias: number
-          puntos: number
-        }[]
-      }
-      get_reporte_misionero_v2: {
-        Args: { p_desde?: string; p_hasta?: string; p_misionero_id: string }
-        Returns: {
-          fecha: string
-          pueblo_id: string
-          pueblo_nombre: string
-          puntaje: number
-          reunion_id: string
-          tipo: string
-        }[]
-      }
       get_user_pueblo_id: { Args: never; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
-      importar_registro_a_misioneros: {
-        Args: { p_pueblo_id: string; p_registro_id: string }
-        Returns: {
-          misionero_id: string
-          origen: string
-        }[]
-      }
-      importar_registros_masivo: {
-        Args: { p_pueblo_id: string }
-        Returns: {
-          misionero_id: string
-        }[]
-      }
-      is_admin: { Args: never; Returns: boolean }
       is_operador: { Args: never; Returns: boolean }
       is_pueblo_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
-      kpi_asistencias: {
-        Args: {
-          p_desde?: string
-          p_hasta?: string
-          p_pueblo_id?: string
-          p_tipo?: string
-        }
+      listar_archivos_huerfanos: {
+        Args: { p_limite?: number }
         Returns: {
-          asistencias: number
-          pueblo_id: string
-          pueblo_nombre: string
-          reuniones: number
-          tipo: string
+          name: string
+          size: number
         }[]
-      }
-      marcar_asistencia: {
-        Args: { p_misionero_id: string; p_reunion_id: string }
-        Returns: boolean
       }
       marcar_no_clasificado: {
         Args: { p_motivo?: string; p_registro_id: string }
         Returns: Json
       }
-      match_documents: {
-        Args: { filter?: Json; match_count?: number; query_embedding: string }
-        Returns: {
-          content: string
-          id: number
-          metadata: Json
-          similarity: number
-        }[]
-      }
+      mismo_pueblo_que_yo: { Args: { p_user_id: string }; Returns: boolean }
       ocupa_cupo: {
         Args: { p_año: number; p_nacimiento: string; p_rol: string }
         Returns: boolean
       }
       only_digits: { Args: { txt: string }; Returns: string }
-      preview_ranking_por_puntajes: {
-        Args: {
-          p_comision: number
-          p_general: number
-          p_pueblo_id: string
-          p_varias: number
-        }
-        Returns: {
-          id_misionero: string
-          misionero_nombre: string
-          pos: number
-          pueblo_id: string
-          pueblo_nombre: string
-          reuniones_asistidas: number
-          total_puntos: number
-          ultima_asistencia: string
-        }[]
-      }
       promover_siguiente_en_lista: {
         Args: { p_pueblo_id: string }
         Returns: Json
@@ -1613,46 +1193,10 @@ export type Database = {
         Args: { p_registro_id: string }
         Returns: Json
       }
-      search_misioneros: {
-        Args: { p_limit?: number; p_q?: string }
-        Returns: {
-          documento: string
-          id: string
-          nombre: string
-          pueblo_id: string
-          pueblo_nombre: string
-        }[]
-      }
-      search_misioneros_por_pueblo: {
-        Args: { p_limit?: number; p_pueblo_id: string; p_q?: string }
-        Returns: {
-          documento: string
-          id: string
-          nombre: string
-          pueblo_id: string
-          pueblo_nombre: string
-        }[]
-      }
+      revisar_salud: { Args: never; Returns: number }
       set_modo_temporada: {
         Args: { p_año: number; p_modo: string }
         Returns: undefined
-      }
-      set_puntajes_por_pueblo: {
-        Args: {
-          p_comision: number
-          p_general: number
-          p_pueblo_id: string
-          p_varias: number
-        }
-        Returns: {
-          msg: string
-        }[]
-      }
-      toggle_asistencia: {
-        Args: { p_misionero_id: string; p_reunion_id: string }
-        Returns: {
-          accion: string
-        }[]
       }
       torneo_correr_horarios: {
         Args: {
@@ -1761,7 +1305,9 @@ export type Database = {
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
+          promocion_confirmada_at: string | null
           promocion_notificada_at: string | null
+          promocion_vence_at: string | null
           promovido_at: string | null
           pueblo_id: string
           pueblos_acompana: string[] | null
@@ -1781,21 +1327,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      upsert_reunion: {
-        Args: {
-          p_fecha: string
-          p_id: string
-          p_pueblo_id: string
-          p_puntaje_override: number
-          p_tipo: string
-        }
-        Returns: string
-      }
       validar_asesor: { Args: { p_registro_id: string }; Returns: Json }
       vencer_listas_espera: {
         Args: never
         Returns: {
           año: number
+          apellidos: string
+          email: string
+          id: string
+          nombres: string
+          pueblo_id: string
+          pueblo_nombre: string
+        }[]
+      }
+      vencer_promociones_no_confirmadas: {
+        Args: never
+        Returns: {
           apellidos: string
           email: string
           id: string
@@ -1812,7 +1359,6 @@ export type Database = {
         | "lista_espera"
         | "cancelado"
         | "pendiente_validacion"
-      tipo_reunion: "general" | "comision" | "varias"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1946,7 +1492,6 @@ export const Constants = {
         "cancelado",
         "pendiente_validacion",
       ],
-      tipo_reunion: ["general", "comision", "varias"],
     },
   },
 } as const

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { fechaAsuncion } from './monitoreo.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
 const FROM = 'MFS Inscripciones <noreply@mfspy.org.py>'
@@ -32,7 +33,7 @@ export async function notificarPromocionesPendientes(
 ): Promise<Promovido[]> {
   let q = supabase
     .from('registros')
-    .select('id, email, nombres, apellidos, pueblo_id, pueblos(nombre)')
+    .select('id, email, nombres, apellidos, pueblo_id, promocion_vence_at, pueblos(nombre)')
     .not('promovido_at', 'is', null)
     .is('promocion_notificada_at', null)
     .is('deleted_at', null)
@@ -61,6 +62,25 @@ export async function notificarPromocionesPendientes(
     }
 
     const puebloNombre = r.pueblos?.nombre || 'tu pueblo'
+    const vence = r.promocion_vence_at ? fechaAsuncion(r.promocion_vence_at) : null
+    const html = vence
+      ? `
+            <h2>¡Buenas noticias!</h2>
+            <p>Hola ${escapeHtml(r.nombres)},</p>
+            <p>Se ha liberado un lugar en <strong>${escapeHtml(puebloNombre)}</strong> y fuiste promovido de la lista de espera.</p>
+            <p>Tenés hasta el <strong>${escapeHtml(vence)}</strong> para <strong>CONFIRMAR</strong> tu lugar. Entrá a https://mfspy.org.py con tu cuenta y tocá 'Confirmar mi lugar'. Si no confirmás a tiempo, el lugar pasa a la siguiente persona.</p>
+            <p style="margin:24px 0"><a href="https://mfspy.org.py/" style="background:#0a7ea4;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">✅ Confirmar mi lugar</a></p>
+          `
+      : `
+            <h2>¡Buenas noticias!</h2>
+            <p>Hola ${escapeHtml(r.nombres)},</p>
+            <p>Te informamos que se ha liberado un lugar en <strong>${escapeHtml(puebloNombre)}</strong> y has sido promovido automáticamente de la lista de espera.</p>
+            <p>Tu inscripción está ahora <strong>confirmada</strong>.</p>
+            <p>¡Nos vemos pronto!</p>
+          `
+    const text = vence
+      ? `Hola ${r.nombres}. Se liberó un lugar en ${puebloNombre}. Tenés hasta el ${vence} para CONFIRMAR tu lugar. Entrá a https://mfspy.org.py con tu cuenta y tocá 'Confirmar mi lugar'. Si no confirmás a tiempo, el lugar pasa a la siguiente persona.`
+      : `Hola ${r.nombres}. Se liberó un lugar en ${puebloNombre} y tu inscripción está ahora confirmada.`
     try {
       await sendLovableEmail(
         {
@@ -68,14 +88,8 @@ export async function notificarPromocionesPendientes(
           sender_domain: SENDER_DOMAIN,
           to: r.email,
           subject: '¡Has sido promovido de la lista de espera!',
-          html: `
-            <h2>¡Buenas noticias!</h2>
-            <p>Hola ${escapeHtml(r.nombres)},</p>
-            <p>Te informamos que se ha liberado un lugar en <strong>${escapeHtml(puebloNombre)}</strong> y has sido promovido automáticamente de la lista de espera.</p>
-            <p>Tu inscripción está ahora <strong>confirmada</strong>.</p>
-            <p>¡Nos vemos pronto!</p>
-          `,
-          text: `Hola ${r.nombres}. Se liberó un lugar en ${puebloNombre} y tu inscripción está ahora confirmada.`,
+          html,
+          text,
           purpose: 'transactional',
           idempotency_key: `promocion-${r.id}`,
         },

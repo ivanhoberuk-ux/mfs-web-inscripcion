@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendLovableEmail } from "npm:@lovable.dev/email-js";
 import { escapeHtml, notificarPromocionesPendientes } from "../_shared/promociones.ts";
 import { isCronOrSuperAdmin } from "../_shared/cron-auth.ts";
+import { alertar, errorMsg, registrarTarea } from "../_shared/monitoreo.ts";
 
 const SENDER_DOMAIN = "notify.mfspy.org.py";
 const FROM_DOMAIN = "mfspy.org.py";
@@ -21,17 +22,19 @@ const json = (body: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  let supabase: any = null;
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     if (!(await isCronOrSuperAdmin(req, supabase))) {
       return json({ error: "No autorizado" }, 401);
     }
 
+    // 1. Listas de espera vencidas
     const { data: afectados, error } = await supabase.rpc("vencer_listas_espera");
     if (error) throw error;
 
@@ -79,22 +82,75 @@ Deno.serve(async (req) => {
         enviados++;
       } catch (e) {
         fallos++;
-        errores.push(`${r.email}: ${(e as Error).message}`);
+        errores.push(`${r.email}: ${errorMsg(e)}`);
       }
     }
 
+    // 2. Promociones no confirmadas a tiempo
+    const { data: vencidas, error: promErr } = await supabase.rpc("vencer_promociones_no_confirmadas");
+    if (promErr) throw promErr;
+    const promo = (vencidas ?? []) as Array<{
+      id: string; email: string; nombres: string; apellidos: string;
+      pueblo_id: string; pueblo_nombre: string;
+    }>;
+
+    for (const r of promo) {
+      if (!LOVABLE_API_KEY || !r.email) { fallos++; continue; }
+      try {
+        const pueblo = r.pueblo_nombre || "tu pueblo";
+        const html = `
+<!DOCTYPE html>
+<html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;">
+  <h2 style="color: #0a7ea4;">⏳ Tu lugar fue liberado</h2>
+  <p>Hola <strong>${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</strong>,</p>
+  <p>Tu lugar en <strong>${escapeHtml(pueblo)}</strong> fue liberado porque no confirmaste dentro del plazo.</p>
+  <p>Si todavía querés misionar, podés inscribirte en otro pueblo con lugares disponibles: <a href="https://mfspy.org.py/pueblos">https://mfspy.org.py/pueblos</a></p>
+  <p style="margin: 24px 0;">
+    <a href="https://mfspy.org.py/pueblos" style="background: #0a7ea4; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 700;">
+      🏠 Ver pueblos con cupo
+    </a>
+  </p>
+  <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">— Movimiento Familias de Schoenstatt Paraguay</p>
+</body></html>`;
+        await sendLovableEmail(
+          {
+            to: r.email,
+            from: `Misiones MFS <noreply@${FROM_DOMAIN}>`,
+            sender_domain: SENDER_DOMAIN,
+            subject: `⏳ Tu lugar en ${pueblo} fue liberado`,
+            html,
+            text: `Hola ${r.nombres}. Tu lugar en ${pueblo} fue liberado porque no confirmaste dentro del plazo. Si todavía querés misionar, podés inscribirte en otro pueblo con lugares disponibles: https://mfspy.org.py/pueblos`,
+            purpose: "transactional",
+            idempotency_key: `promocion-vencida-${r.id}`,
+          },
+          { apiKey: LOVABLE_API_KEY },
+        );
+        enviados++;
+      } catch (e) {
+        fallos++;
+        errores.push(`${r.email}: ${errorMsg(e)}`);
+      }
+    }
+
+    // 3. Avisar a los nuevos promovidos
     const promovidos = await notificarPromocionesPendientes(supabase, LOVABLE_API_KEY);
 
-    return json({
+    const res = {
       ok: true,
       cancelados: list.length,
+      promociones_vencidas: promo.length,
       emails_enviados: enviados,
       emails_fallidos: fallos,
       errores: errores.slice(0, 10),
       promociones_notificadas: promovidos.length,
-    });
+    };
+    await registrarTarea(supabase, "vencer-lista-espera", true, res);
+    return json(res);
   } catch (e) {
+    const msg = errorMsg(e);
     console.error("[vencer-lista-espera] error:", e);
-    return json({ error: (e as Error).message }, 500);
+    await registrarTarea(supabase, "vencer-lista-espera", false, { error: msg });
+    await alertar(supabase, "edge:vencer-lista-espera", "Falló vencer-lista-espera", msg, "edge:vencer-lista-espera");
+    return json({ error: msg }, 500);
   }
 });

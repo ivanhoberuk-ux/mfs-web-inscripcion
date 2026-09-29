@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,6 +79,7 @@ Deno.serve(async (req: any) => {
     return json({ success: true, message: 'Usuario promovido a administrador exitosamente' })
   } catch (error: any) {
     console.error('Error in promote-to-admin function:', error)
+    await alertar(null, 'edge:promote-to-admin', 'Error en promote-to-admin', errorMsg(error), 'edge:promote-to-admin')
     return json({ error: 'Error interno del servidor' }, 500)
   }
 })

@@ -15,3 +15,7 @@ project_id = "npekpdkywsneylddzzuu"
     verify_jwt = false
   [functions.mcp]
     verify_jwt = false
+  [functions.enviar-alertas]
+    verify_jwt = false
+  [functions.limpiar-archivos-huerfanos]
+    verify_jwt = false

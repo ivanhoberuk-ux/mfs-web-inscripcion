@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -163,6 +164,7 @@ Deno.serve(async (req) => {
     return json({ needsConfirmation: true })
   } catch (error) {
     console.error('create-account failed', error)
+    await alertar(null, 'edge:create-account', 'Error en create-account', errorMsg(error), 'edge:create-account')
     return json({ error: 'No se pudo crear la cuenta. Intentá de nuevo.' }, 500)
   }
 })
