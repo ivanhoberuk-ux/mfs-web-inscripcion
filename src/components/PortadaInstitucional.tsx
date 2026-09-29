@@ -3,8 +3,9 @@
 // y todavía no se abrieron las inscripciones del próximo año.
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { colors, radius, spacing, shadows } from '../lib/designSystem';
+import { colors, radius, spacing, shadows, typography } from '../lib/designSystem';
 
 type Resumen = { misioneros: number; pueblos: number };
 
@@ -62,14 +63,16 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
           padding: 20,
           borderRadius: radius.xl,
           backgroundColor: colors.primary[50],
-          borderWidth: 2,
+          borderWidth: 1,
           borderColor: colors.secondary[400],
           gap: 12,
           ...shadows.md,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Text style={{ fontSize: 40 }}>🙏</Text>
+          <View style={{ width: 46, height: 46, borderRadius: radius.full, backgroundColor: colors.surface.light, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="heart-outline" size={23} color={colors.primary[600]} />
+          </View>
           <View style={{ flex: 1, gap: 4 }}>
             <View
               style={{
@@ -80,15 +83,15 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
                 borderRadius: 999,
               }}
             >
-              <Text style={{ color: colors.primary[800], fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+              <Text style={{ color: colors.primary[900], fontSize: 11, fontFamily: typography.family.bold, letterSpacing: 0.8 }}>
                 MISIÓN FINALIZADA
               </Text>
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary[700], lineHeight: 25 }}>
-              ¡Gracias por las Misiones {año ?? ''}! 💛
+            <Text style={{ fontSize: 20, fontFamily: typography.family.extrabold, color: colors.primary[700], lineHeight: 25 }}>
+              ¡Gracias por las Misiones {año ?? ''}!
             </Text>
             <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 18 }}>
-              Con María, de la mano del Padre, llevamos el Evangelio a cada pueblo. Hasta la próxima misión 🌹
+              Con María, de la mano del Padre, llevamos el Evangelio a cada pueblo. Hasta la próxima misión.
             </Text>
           </View>
         </View>
@@ -97,8 +100,8 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
           <ActivityIndicator color={colors.primary[500]} />
         ) : resumen ? (
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-            <Stat emoji="🧑‍🤝‍🧑" valor={String(resumen.misioneros)} label="misioneros" />
-            <Stat emoji="🏕️" valor={String(resumen.pueblos)} label="pueblos" />
+            <Stat icon="people-outline" valor={String(resumen.misioneros)} label="misioneros" />
+            <Stat icon="map-outline" valor={String(resumen.pueblos)} label="pueblos" />
           </View>
         ) : null}
       </View>
@@ -110,19 +113,19 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
           padding: 20,
           borderRadius: radius.xl,
           backgroundColor: colors.surface.light,
-          borderWidth: 2,
+          borderWidth: 1,
           borderColor: colors.primary[100],
           gap: 8,
           ...shadows.sm,
         }}
       >
-        <Text style={{ fontSize: 34 }}>📅</Text>
+        <Ionicons name="calendar-outline" size={30} color={colors.primary[600]} />
         <Text style={{ fontSize: 18, fontWeight: '800', color: colors.primary[700] }}>
           Inscripciones {proximo ?? ''} próximamente
         </Text>
         <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 19 }}>
           Todavía no están abiertas las inscripciones para la próxima misión. Cuando se habiliten, vas a poder
-          inscribirte desde acá y te avisamos por nuestras redes. ¡Seguí atento! ✨
+          inscribirte desde acá y te avisamos por nuestras redes. ¡Seguí atento!
         </Text>
       </View>
 
@@ -140,7 +143,7 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
         }}
       >
         <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary[700] }}>
-          ¿Querés más información? 💬
+          ¿Querés más información?
         </Text>
         <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 19 }}>
           Escribinos a mfspy.org.py o contactate con el coordinador de tu pueblo. También podés seguirnos en
@@ -151,7 +154,7 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
   );
 }
 
-function Stat({ emoji, valor, label }: { emoji: string; valor: string; label: string }) {
+function Stat({ icon, valor, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; valor: string; label: string }) {
   return (
     <View
       style={{
@@ -164,7 +167,7 @@ function Stat({ emoji, valor, label }: { emoji: string; valor: string; label: st
         paddingVertical: 10,
       }}
     >
-      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+      <Ionicons name={icon} size={21} color={colors.primary[600]} />
       <View>
         <Text style={{ fontSize: 18, fontWeight: '800', color: colors.primary[700] }}>{valor}</Text>
         <Text style={{ fontSize: 11, color: colors.text.secondary.light, textTransform: 'uppercase', letterSpacing: 0.4 }}>

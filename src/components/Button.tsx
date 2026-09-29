@@ -1,13 +1,14 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, TouchableOpacityProps, ViewStyle, TextStyle } from 'react-native';
+import { Pressable, Text, ActivityIndicator, PressableProps, ViewStyle, TextStyle, Platform } from 'react-native';
 import { s, colors } from '../lib/theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'outline';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
 
-interface ButtonProps extends TouchableOpacityProps {
+interface ButtonProps extends PressableProps {
   variant?: ButtonVariant;
   loading?: boolean;
   children: React.ReactNode;
+  textStyle?: TextStyle;
 }
 
 export function Button({ 
@@ -15,7 +16,7 @@ export function Button({
   loading = false, 
   disabled, 
   children, 
-  style,
+  style, textStyle,
   ...props 
 }: ButtonProps) {
   const getVariantStyle = (): ViewStyle => {
@@ -28,25 +29,28 @@ export function Button({
         return s.buttonDanger;
       case 'outline':
         return s.buttonOutline;
+      case 'ghost':
+        return s.buttonGhost;
       default:
         return s.buttonSecondary;
     }
   };
 
   const getTextStyle = (): TextStyle => {
-    if (variant === 'outline') {
+    if (variant === 'secondary') return s.buttonTextSecondary;
+    if (variant === 'outline' || variant === 'ghost') {
       return s.buttonTextOutline;
     }
     return s.buttonText;
   };
 
   return (
-    <TouchableOpacity
-      style={[
-        s.button,
-        getVariantStyle(),
-        disabled && s.buttonDisabled,
-        style,
+    <Pressable
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+        s.button, getVariantStyle(), disabled && s.buttonDisabled,
+        Platform.OS === 'web' && hovered && { opacity: 0.92 },
+        pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+        typeof style === 'function' ? style({ pressed, hovered } as any) : style,
       ]}
       disabled={disabled || loading}
       {...props}
@@ -54,8 +58,8 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? colors.primary[500] : colors.surface.light} />
       ) : (
-        <Text style={getTextStyle()}>{children}</Text>
+        <Text style={[getTextStyle(), textStyle]}>{children}</Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

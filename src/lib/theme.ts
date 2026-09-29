@@ -16,70 +16,88 @@ export const s = StyleSheet.create({
     fontWeight: typography.weight.extrabold,
     color: colors.text.primary.light,
     marginBottom: spacing.sm,
+    fontFamily: typography.family.extrabold,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: typography.size.xl,
     fontWeight: typography.weight.bold,
     color: colors.text.primary.light,
     marginBottom: spacing.sm,
+    fontFamily: typography.family.bold,
+    letterSpacing: -0.3,
   },
   text: {
     fontSize: typography.size.base,
     color: colors.text.secondary.light,
+    fontFamily: typography.family.regular,
   },
   small: {
     fontSize: typography.size.sm,
     color: colors.text.tertiary.light,
+    fontFamily: typography.family.regular,
   },
   label: {
     fontSize: typography.size.base,
     fontWeight: typography.weight.medium,
     color: colors.text.primary.light,
     marginBottom: spacing.xs,
+    fontFamily: typography.family.medium,
   },
   
   // Cards
   card: {
     backgroundColor: colors.surface.light,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
+    padding: spacing.xl,
+    borderRadius: radius.xl,
     marginBottom: spacing.md,
-    ...shadows.md,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.primary[50],
   },
   cardTitle: {
     fontSize: typography.size.lg,
     fontWeight: typography.weight.bold,
     color: colors.text.primary.light,
     marginBottom: spacing.xs,
+    fontFamily: typography.family.bold,
   },
   
   // Inputs
   input: {
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: '#E3E6F3',
     backgroundColor: colors.surface.light,
     borderRadius: radius.md,
-    padding: spacing.md,
+    minHeight: 50,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     marginBottom: spacing.sm,
     fontSize: typography.size.base,
     color: colors.text.primary.light,
+    fontFamily: typography.family.regular,
   },
   inputFocused: {
     borderColor: colors.primary[500],
     borderWidth: 2,
+    shadowColor: colors.primary[500],
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   
   // Botones
   button: {
     backgroundColor: colors.secondary[500],
+    minHeight: 48,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.sm,
   },
   buttonPrimary: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.primary[600],
   },
   buttonSecondary: {
     backgroundColor: colors.secondary[500],
@@ -92,6 +110,9 @@ export const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary[500],
   },
+  buttonGhost: {
+    backgroundColor: 'transparent',
+  },
   buttonDisabled: {
     opacity: opacity.disabled,
   },
@@ -99,9 +120,15 @@ export const s = StyleSheet.create({
     color: colors.surface.light,
     fontWeight: typography.weight.bold,
     fontSize: typography.size.base,
+    fontFamily: typography.family.semibold,
   },
   buttonTextOutline: {
     color: colors.primary[500],
+    fontFamily: typography.family.semibold,
+  },
+  buttonTextSecondary: {
+    color: colors.text.primary.light,
+    fontFamily: typography.family.semibold,
   },
   
   // Layouts
@@ -158,4 +185,4 @@ export const s = StyleSheet.create({
 });
 
 // Re-exportar tokens para uso directo
-export { colors, typography, spacing, radius, shadows, opacity, animation } from './designSystem';
+export { colors, typography, spacing, radius, shadows, opacity, animation, gradients } from './designSystem';
