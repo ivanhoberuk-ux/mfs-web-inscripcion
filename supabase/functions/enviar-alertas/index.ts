@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { enviarEmail } from '../_shared/email.ts'
 import { escapeHtml } from '../_shared/promociones.ts'
 import { isCronOrSuperAdmin } from '../_shared/cron-auth.ts'
 import { errorMsg, fechaAsuncion, registrarTarea } from '../_shared/monitoreo.ts'
@@ -54,15 +54,15 @@ Deno.serve(async (req) => {
     const text = alertas.map((a) => `[${fechaAsuncion(a.created_at)}] ${a.origen} - ${a.titulo}: ${a.detalle ?? ''}`).join('\n')
     const ids = alertas.map((a) => a.id)
 
-    await sendLovableEmail({
+    // Un email por destinatario (token de baja por destinatario) y key única por intento
+    await enviarEmail({
       from: 'Alertas MFS <noreply@mfspy.org.py>',
-      sender_domain: 'notify.mfspy.org.py',
-      to: destinatarios.length === 1 ? destinatarios[0] : destinatarios,
+      to: destinatarios,
       subject: `⚠️ MFS: ${n} alerta(s) técnica(s)`,
       html, text,
-      purpose: 'transactional',
-      idempotency_key: `alertas-${ids[0]}-${ids[ids.length - 1]}`,
-    }, { apiKey: LOVABLE_API_KEY })
+      idempotencyKey: `alertas-${ids[0]}-${ids[ids.length - 1]}`,
+      apiKey: LOVABLE_API_KEY,
+    })
 
     const { error: updErr } = await supabase
       .from('alertas').update({ enviada_at: new Date().toISOString() }).in('id', ids)
