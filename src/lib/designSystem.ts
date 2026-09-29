@@ -1,34 +1,19 @@
-// Sistema de diseño MFS Paraguay - Inspirado en Schoenstatt
-// Colores, tipografía, espaciado y tokens semánticos para React Native
+// Sistema de diseño MFS Paraguay — fresco, luminoso y multiplataforma.
 
 export const colors = {
-  // Paleta primaria - Azul marino MFS (logo 10 pueblos)
   primary: {
-    50: '#eef2fb',
-    100: '#d6def4',
-    200: '#aebde9',
-    300: '#7e94d8',
-    400: '#4d6cc4',
-    500: '#2848aa',  // Primary base - Azul MFS
-    600: '#0E2A6B',  // Azul marino oficial logo
-    700: '#0b2057',
-    800: '#091944',
-    900: '#06122f',
+    50: '#EEF2FF', 100: '#E0E7FF', 200: '#C7D2FE', 300: '#A5B4FC',
+    400: '#818CF8', 500: '#6366F1', 600: '#4F46E5', 700: '#4338CA',
+    800: '#3730A3', 900: '#1E1B4B',
   },
   
-  // Paleta secundaria - Amarillo sol MFS
   secondary: {
-    50: '#fffbea',
-    100: '#fff3c4',
-    200: '#fce588',
-    300: '#fadb5f',
-    400: '#f7c948',
-    500: '#F5C518',  // Amarillo sol oficial logo
-    600: '#d4a90f',
-    700: '#a8850b',
-    800: '#7c6208',
-    900: '#574505',
+    50: '#FFFBEB', 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D',
+    400: '#FBBF24', 500: '#FFC83D', 600: '#F59E0B', 700: '#B45309',
+    800: '#92400E', 900: '#78350F',
   },
+  accent: { 50: '#FFF1EC', 100: '#FFE0D5', 300: '#FFA98C', 500: '#FF7A59', 600: '#F25C3A', 700: '#C8401F' },
+  mint: { 100: '#CCFBF1', 500: '#14B8A6', 600: '#0D9488' },
   
   // Celeste suave - acento Mater
   sky: {
@@ -58,12 +43,12 @@ export const colors = {
   success: '#10b981',  // Verde esmeralda
   warning: '#f59e0b',  // Naranja
   error: '#ef4444',    // Rojo vibrante
-  info: '#3b82f6',     // Azul cielo
+  info: '#6366F1',
   
   // Fondos modernos - blanco cálido con tinte celeste
   background: {
-    light: '#f7faff',
-    dark: '#0a1428',
+    light: '#F7F8FD',
+    dark: '#17172A',
   },
   
   // Superficie (cards, modales) con más contraste
@@ -75,15 +60,15 @@ export const colors = {
   // Texto con mejor contraste
   text: {
     primary: {
-      light: '#18181b',
+      light: '#1F2140',
       dark: '#fafafa',
     },
     secondary: {
-      light: '#3f3f46',
+      light: '#4B4F6B',
       dark: '#e4e4e7',
     },
     tertiary: {
-      light: '#71717a',
+      light: '#8A8FA8',
       dark: '#a1a1aa',
     },
     disabled: {
@@ -93,13 +78,21 @@ export const colors = {
   },
 };
 
+export const gradients = {
+  hero: ['#4F46E5', '#7C6CF6', '#FF7A59'] as const,
+  suave: ['#EEF2FF', '#FFF1EC'] as const,
+  sol: ['#FFC83D', '#FF7A59'] as const,
+};
+
 // Tipografía moderna y juvenil
 export const typography = {
   // Familia de fuente (React Native usa system fonts)
   family: {
     regular: 'System',
     medium: 'System',
+    semibold: 'System',
     bold: 'System',
+    extrabold: 'System',
   },
   
   // Tamaños más generosos y modernos
@@ -147,44 +140,53 @@ export const spacing = {
 // Border radius más redondeados y modernos
 export const radius = {
   sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 24,
-  '2xl': 28,
+  md: 18,
+  lg: 24,
+  xl: 28,
+  '2xl': 36,
   full: 999,
 };
 
-// Sombras con tinte azul marino MFS
+// Sombras amplias con tinte índigo tenue.
 export const shadows = {
   sm: {
-    shadowColor: '#0E2A6B',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     elevation: 2,
   },
   md: {
-    shadowColor: '#0E2A6B',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
     elevation: 4,
   },
   lg: {
-    shadowColor: '#0E2A6B',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowOpacity: 0.12,
+    shadowRadius: 28,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#0E2A6B',
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
+    shadowOpacity: 0.14,
+    shadowRadius: 40,
     elevation: 12,
   },
 };
+
+export function setTypographyFontsReady(ready: boolean) {
+  const family = typography.family;
+  family.regular = ready ? 'PlusJakartaSans_400Regular' : 'System';
+  family.medium = ready ? 'PlusJakartaSans_500Medium' : 'System';
+  family.semibold = ready ? 'PlusJakartaSans_600SemiBold' : 'System';
+  family.bold = ready ? 'PlusJakartaSans_700Bold' : 'System';
+  family.extrabold = ready ? 'PlusJakartaSans_800ExtraBold' : 'System';
+}
 
 // Opacidades
 export const opacity = {
