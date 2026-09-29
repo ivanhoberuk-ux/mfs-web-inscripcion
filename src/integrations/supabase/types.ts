@@ -667,7 +667,10 @@ export type Database = {
           anio: number
           created_at: string
           descripcion: string | null
+          finalizada: boolean
           id: string
+          inscripcion_equipos_desde: string | null
+          inscripcion_equipos_hasta: string | null
           nombre: string
           updated_at: string
           visible_en_inicio: boolean
@@ -677,7 +680,10 @@ export type Database = {
           anio?: number
           created_at?: string
           descripcion?: string | null
+          finalizada?: boolean
           id?: string
+          inscripcion_equipos_desde?: string | null
+          inscripcion_equipos_hasta?: string | null
           nombre: string
           updated_at?: string
           visible_en_inicio?: boolean
@@ -687,7 +693,10 @@ export type Database = {
           anio?: number
           created_at?: string
           descripcion?: string | null
+          finalizada?: boolean
           id?: string
+          inscripcion_equipos_desde?: string | null
+          inscripcion_equipos_hasta?: string | null
           nombre?: string
           updated_at?: string
           visible_en_inicio?: boolean
@@ -698,10 +707,11 @@ export type Database = {
         Row: {
           activo: boolean
           created_at: string
-          delegado_nombre: string | null
-          delegado_telefono: string | null
           disciplina_id: string
+          estado_inscripcion: string
           id: string
+          inscripto_por: string | null
+          motivo_rechazo: string | null
           nombre: string | null
           pueblo_id: string
           updated_at: string
@@ -710,10 +720,11 @@ export type Database = {
         Insert: {
           activo?: boolean
           created_at?: string
-          delegado_nombre?: string | null
-          delegado_telefono?: string | null
           disciplina_id: string
+          estado_inscripcion?: string
           id?: string
+          inscripto_por?: string | null
+          motivo_rechazo?: string | null
           nombre?: string | null
           pueblo_id: string
           updated_at?: string
@@ -722,10 +733,11 @@ export type Database = {
         Update: {
           activo?: boolean
           created_at?: string
-          delegado_nombre?: string | null
-          delegado_telefono?: string | null
           disciplina_id?: string
+          estado_inscripcion?: string
           id?: string
+          inscripto_por?: string | null
+          motivo_rechazo?: string | null
           nombre?: string | null
           pueblo_id?: string
           updated_at?: string
@@ -755,50 +767,70 @@ export type Database = {
           },
         ]
       }
-      torneo_eventos: {
+      torneo_equipos_contacto: {
         Row: {
-          cantidad: number
-          created_at: string
+          delegado_nombre: string | null
+          delegado_telefono: string | null
           equipo_id: string
-          id: string
-          jugador: string
-          minuto: number | null
-          partido_id: string
-          tipo: string
+          updated_at: string
         }
         Insert: {
-          cantidad?: number
-          created_at?: string
+          delegado_nombre?: string | null
+          delegado_telefono?: string | null
           equipo_id: string
-          id?: string
-          jugador: string
-          minuto?: number | null
-          partido_id: string
-          tipo?: string
+          updated_at?: string
         }
         Update: {
-          cantidad?: number
-          created_at?: string
+          delegado_nombre?: string | null
+          delegado_telefono?: string | null
           equipo_id?: string
-          id?: string
-          jugador?: string
-          minuto?: number | null
-          partido_id?: string
-          tipo?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "torneo_eventos_equipo_id_fkey"
+            foreignKeyName: "torneo_equipos_contacto_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: true
+            referencedRelation: "torneo_equipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torneo_jugadores: {
+        Row: {
+          created_at: string
+          equipo_id: string
+          id: string
+          nombre: string
+          registro_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          equipo_id: string
+          id?: string
+          nombre: string
+          registro_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          equipo_id?: string
+          id?: string
+          nombre?: string
+          registro_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "torneo_jugadores_equipo_id_fkey"
             columns: ["equipo_id"]
             isOneToOne: false
             referencedRelation: "torneo_equipos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "torneo_eventos_partido_id_fkey"
-            columns: ["partido_id"]
+            foreignKeyName: "torneo_jugadores_registro_id_fkey"
+            columns: ["registro_id"]
             isOneToOne: false
-            referencedRelation: "torneo_partidos"
+            referencedRelation: "registros"
             referencedColumns: ["id"]
           },
         ]
@@ -828,6 +860,8 @@ export type Database = {
           mvp_equipo_id: string | null
           mvp_nombre: string | null
           observaciones: string | null
+          penales_a: number | null
+          penales_b: number | null
           ronda: number
           updated_at: string
           zona: string | null
@@ -856,6 +890,8 @@ export type Database = {
           mvp_equipo_id?: string | null
           mvp_nombre?: string | null
           observaciones?: string | null
+          penales_a?: number | null
+          penales_b?: number | null
           ronda?: number
           updated_at?: string
           zona?: string | null
@@ -884,6 +920,8 @@ export type Database = {
           mvp_equipo_id?: string | null
           mvp_nombre?: string | null
           observaciones?: string | null
+          penales_a?: number | null
+          penales_b?: number | null
           ronda?: number
           updated_at?: string
           zona?: string | null
@@ -996,6 +1034,10 @@ export type Database = {
       }
     }
     Functions: {
+      _torneo_resolver_avances: {
+        Args: { p_disciplina_id: string }
+        Returns: Json
+      }
       abrir_anio: {
         Args: {
           p_año: number
@@ -1206,22 +1248,35 @@ export type Database = {
         }
         Returns: Json
       }
+      torneo_crear_edicion: {
+        Args: { p_anio: number; p_copiar_de?: string; p_nombre?: string }
+        Returns: Json
+      }
+      torneo_ganador: {
+        Args: { p: Database["public"]["Tables"]["torneo_partidos"]["Row"] }
+        Returns: string
+      }
       torneo_generar_fixture: {
         Args: { p_disciplina_id: string }
         Returns: Json
       }
-      torneo_goleadores: {
-        Args: { p_disciplina_id: string; p_tipo?: string }
-        Returns: {
-          equipo_id: string
-          equipo_nombre: string
-          jugador: string
-          total: number
-        }[]
+      torneo_inscripcion_abierta: {
+        Args: { p_edicion_id: string }
+        Returns: boolean
       }
       torneo_limpiar_horarios: {
         Args: { p_edicion_id: string; p_incluir_finalizados?: boolean }
         Returns: Json
+      }
+      torneo_operador_agregar: { Args: { p_email: string }; Returns: Json }
+      torneo_operador_quitar: { Args: { p_user_id: string }; Returns: Json }
+      torneo_operadores_listar: {
+        Args: never
+        Returns: {
+          desde: string
+          email: string
+          user_id: string
+        }[]
       }
       torneo_programar:
         | {
@@ -1244,6 +1299,45 @@ export type Database = {
       torneo_sortear_zonas: {
         Args: { p_disciplina_id: string; p_num_zonas?: number }
         Returns: Json
+      }
+      torneo_sumar: {
+        Args: { p_delta: number; p_lado: string; p_partido_id: string }
+        Returns: {
+          avanza_ganador_partido_id: string | null
+          avanza_ganador_slot: string | null
+          avanza_perdedor_partido_id: string | null
+          avanza_perdedor_slot: string | null
+          cancha_id: string | null
+          created_at: string
+          detalle_sets: string | null
+          disciplina_id: string
+          equipo_a_id: string | null
+          equipo_b_id: string | null
+          estado: string
+          etiqueta_a: string | null
+          etiqueta_b: string | null
+          fase: string
+          fase_orden: number
+          fin: string | null
+          id: string
+          inicio: string | null
+          marcador_a: number | null
+          marcador_b: number | null
+          mvp_equipo_id: string | null
+          mvp_nombre: string | null
+          observaciones: string | null
+          penales_a: number | null
+          penales_b: number | null
+          ronda: number
+          updated_at: string
+          zona: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "torneo_partidos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       torneo_suspender_desde: {
         Args: { p_desde: string; p_edicion_id: string }
