@@ -1294,6 +1294,7 @@ export type Database = {
         Returns: undefined
       }
       remove_pueblo_admin: { Args: { p_user_id: string }; Returns: undefined }
+      resumen_publico_temporada: { Args: { p_año?: number }; Returns: Json }
       revertir_no_clasificado: {
         Args: { p_registro_id: string }
         Returns: Json
