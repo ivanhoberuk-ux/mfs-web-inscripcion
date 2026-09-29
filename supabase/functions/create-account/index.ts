@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from '../_shared/email.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
 const FROM_DOMAIN = 'mfspy.org.py'
@@ -63,6 +64,8 @@ async function enviarConfirmacion(apiKey: string, email: string, link: string) {
       `,
       text: `Confirmá tu cuenta de MFS Paraguay: ${link}`,
       purpose: 'transactional',
+      unsubscribe_token: await unsubscribeToken(email),
+
       idempotency_key: `signup-confirm-${email}-${Date.now()}`,
     },
     { apiKey },
