@@ -19,3 +19,5 @@ project_id = "npekpdkywsneylddzzuu"
     verify_jwt = false
   [functions.limpiar-archivos-huerfanos]
     verify_jwt = false
+  [functions.notificar-seleccion]
+    verify_jwt = false
