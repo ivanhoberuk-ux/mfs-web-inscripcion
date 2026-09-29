@@ -12,7 +12,7 @@ import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
 import { MiInscripcionCard } from '../../src/components/MiInscripcionCard';
 import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard';
 import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard';
-import { PortadaInstitucional } from '../../src/components/PortadaInstitucional';
+import { PortadaInstitucional, useResumenPublicoTemporada } from '../../src/components/PortadaInstitucional';
 import { useTemporada } from '../../src/hooks/useTemporada';
 import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo';
 // @ts-ignore
@@ -64,6 +64,7 @@ export default function Home() {
   const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([]);
   const [torneoVisible, setTorneoVisible] = useState(false);
   const { esInstitucional, año: añoTemporada } = useTemporada();
+  const { resumen: resumenPublico, loading: loadingResumen } = useResumenPublicoTemporada(añoTemporada);
 
   useEffect(() => {
     let mounted = true;
@@ -149,9 +150,13 @@ export default function Home() {
                     </Pressable>
                   </View>
                 </View>
-                <View style={{ width: desktop ? '42%' : '100%', height: desktop ? 350 : 245, alignSelf: 'flex-end', justifyContent: 'flex-end', alignItems: 'center', marginTop: desktop ? 0 : 8 }}>
-                  <Image source={familiaImg} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} accessibilityLabel="Familia misionera" />
-                  <Image source={banderaPy} style={{ position: 'absolute', right: 4, bottom: 0, width: 62, height: 40, resizeMode: 'contain', opacity: 0.9 }} accessibilityLabel="Bandera de Paraguay" />
+                <View style={{ width: desktop ? '42%' : '100%', height: desktop ? 350 : 250, alignSelf: 'flex-end', justifyContent: 'center', alignItems: 'center', marginTop: desktop ? 0 : 24 }}>
+                  <View style={{ width: '96%', height: desktop ? 330 : 230, padding: compact ? 10 : 14, borderRadius: radius['2xl'], backgroundColor: colors.surface.light, transform: [{ rotate: '-2deg' }], ...shadows.lg }}>
+                    <Image source={familiaImg} style={{ width: '100%', height: '100%', borderRadius: radius.xl, resizeMode: 'contain' }} accessibilityLabel="Familia misionera" />
+                    <View style={{ position: 'absolute', right: 16, bottom: 14, width: 48, height: 32, padding: 4, borderRadius: radius.sm, backgroundColor: colors.surface.light, ...shadows.sm }}>
+                      <Image source={banderaPy} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} accessibilityLabel="Bandera de Paraguay" />
+                    </View>
+                  </View>
                 </View>
               </View>
             </LinearGradient>
@@ -160,12 +165,13 @@ export default function Home() {
           <FadeIn delay={80} style={{ marginTop: desktop ? -56 : -42, paddingHorizontal: compact ? 10 : 30, zIndex: 4 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               <Stat icon="calendar-outline" value={String(año)} label="Año de misión" />
-              <Stat icon="people-outline" value="En familia" label="Una misión compartida" />
-              <Stat icon="heart-outline" value="Servir" label="Con alegría y fe" />
+              <Stat icon="people-outline" value={loadingResumen ? '—' : String(resumenPublico?.misioneros ?? 0)} label="Misioneros" />
+              <Stat icon="map-outline" value={loadingResumen ? '—' : String(resumenPublico?.pueblos ?? 0)} label="Pueblos" />
+              <Stat icon="calendar-number-outline" value={String(año + 1)} label="Inscripciones próximamente" />
             </View>
           </FadeIn>
 
-          <FadeIn delay={120}>{esInstitucional ? <PortadaInstitucional año={añoTemporada} /> : <InscripcionAvisoCard />}</FadeIn>
+          <FadeIn delay={120}>{esInstitucional ? <PortadaInstitucional año={añoTemporada} resumen={resumenPublico} loading={loadingResumen} /> : <InscripcionAvisoCard />}</FadeIn>
 
           {torneoVisible ? (
             <FadeIn delay={160}>
