@@ -8,19 +8,25 @@ import { useUserRoles } from '../../src/hooks/useUserRoles';
 import { TorneoAdminPanel } from '../../src/components/TorneoAdminPanel';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
 import { shareOrDownload } from '../../src/lib/sharing';
-import { supabase } from '../../src/lib/supabase';
+import { useTorneoPartidosLive } from '../../src/hooks/useTorneoPartidosLive';
+import { TorneoMisEquipos } from '../../src/components/TorneoMisEquipos';
+import { Llaves } from '../../src/components/TorneoLlaves';
 
 import {
-  type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla, type TorneoGoleador,
+  type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoFilaTabla,
   type TorneoEquipo,
-  fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchTabla, fetchGoleadores, fetchEquipos,
-  nombreEquipo, fmtDia, fmtHora, claveDia, FASE_LABEL, ESTADO_LABEL,
+  fetchEdiciones, fetchDisciplinas, fetchPartidos, fetchTabla, fetchEquipos, inscripcionEquiposAbierta,
+  nombreEquipo, fmtDia, fmtHora, claveDia, FASE_LABEL, ESTADO_LABEL, marcadorTexto,
 } from '../../src/lib/torneo';
 
-type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'goleadores' | 'admin';
+type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'llaves' | 'misequipos' | 'admin';
 
 export default function Torneo() {
-  const { isSuperAdmin, puebloId } = useUserRoles();
+  const { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId } = useUserRoles();
+  const esCoordinador = isPuebloAdmin || isCoAdmin;
+  const [ediciones, setEdiciones] = useState<TorneoEdicion[]>([]);
+  const [edicionSel, setEdicionSel] = useState<string | null>(null);
+  const [inscAbierta, setInscAbierta] = useState(false);
   const [vista, setVista] = useState<Vista>('fixture');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,14 +35,17 @@ export default function Torneo() {
   const [partidos, setPartidos] = useState<TorneoPartido[]>([]);
   const [filtroDisc, setFiltroDisc] = useState<string | 'todas'>('todas');
   const [tabla, setTabla] = useState<TorneoFilaTabla[]>([]);
-  const [goleadores, setGoleadores] = useState<TorneoGoleador[]>([]);
   const [equipos, setEquipos] = useState<TorneoEquipo[]>([]);
   const [puebloSel, setPuebloSel] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const ed = await fetchEdicionActiva();
+      const eds = await fetchEdiciones();
+      setEdiciones(eds);
+      const ed = eds.find((e) => e.id === edicionSel) ?? eds.find((e) => e.activo) ?? eds[0] ?? null;
       setEdicion(ed);
+      if (ed && !edicionSel) setEdicionSel(ed.id);
+      setInscAbierta(ed && !ed.finalizada ? await inscripcionEquiposAbierta(ed.id).catch(() => false) : false);
       if (!ed) { setDisciplinas([]); setPartidos([]); setEquipos([]); return; }
       const ds = await fetchDisciplinas(ed.id);
       const activas = ds.filter((d) => d.activa);
@@ -47,7 +56,7 @@ export default function Torneo() {
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? String(e));
     }
-  }, []);
+  }, [edicionSel]);
 
   // Pueblos que participan del torneo
   const pueblos = useMemo(() => {
@@ -85,15 +94,10 @@ export default function Torneo() {
 
   useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, [load]);
 
-  // Actualización en vivo de marcadores/estados
-  useEffect(() => {
-    const channel = supabase
-      .channel('torneo-partidos-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'torneo_partidos' }, () => { load(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [load]);
+  // Actualización en vivo eficiente (solo el partido que cambió)
+  useTorneoPartidosLive({ enabled: true, channel: 'torneo-partidos-live', setPartidos, reloadAll: load });
 
+  const enJuego = useMemo(() => partidos.filter((p) => p.estado === 'en_juego'), [partidos]);
 
   // Disciplina concreta para posiciones/goleadores
   const discSel = useMemo(() => {
@@ -104,9 +108,8 @@ export default function Torneo() {
   // Se recalcula también cuando cambian los partidos (p.ej. por un evento en vivo),
   // así la tabla de posiciones y los goleadores se actualizan en tiempo real.
   useEffect(() => {
-    if (!discSel) { setTabla([]); setGoleadores([]); return; }
+    if (!discSel) { setTabla([]); return; }
     if (vista === 'posiciones') fetchTabla(discSel.id).then(setTabla).catch(() => setTabla([]));
-    if (vista === 'goleadores') fetchGoleadores(discSel.id).then(setGoleadores).catch(() => setGoleadores([]));
   }, [vista, discSel?.id, partidos]);
 
   const partidosFiltrados = useMemo(
@@ -141,7 +144,7 @@ export default function Torneo() {
           p.cancha?.nombre ?? '',
           p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? ''),
           p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? ''),
-          p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : '',
+          marcadorTexto(p) ?? '',
           p.estado,
         ]);
       }
@@ -172,7 +175,7 @@ export default function Torneo() {
           p.cancha?.nombre ?? '',
           p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? ''),
           p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? ''),
-          p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : '',
+          marcadorTexto(p) ?? '',
           p.estado,
         ]);
       }
@@ -202,13 +205,77 @@ export default function Torneo() {
         {edicion ? `${edicion.nombre}` : 'Todavía no hay una edición activa del torneo.'}
       </Text>
 
+      {/* Selector de edición (histórico) */}
+      {ediciones.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
+          {ediciones.map((e) => {
+            const sel = edicion?.id === e.id;
+            return (
+              <Pressable key={e.id} onPress={() => { setEdicionSel(e.id); setPuebloSel(null); setFiltroDisc('todas'); if (vista === 'misequipos') setVista('fixture'); }} style={{
+                paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, borderRadius: radius.full,
+                backgroundColor: sel ? colors.primary[700] : colors.neutral[100],
+              }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: sel ? '#fff' : colors.neutral[700] }}>
+                  {e.activo ? '⭐ ' : '📜 '}{e.anio}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {edicion?.finalizada && (
+        <View style={[s.card, { marginBottom: spacing.md, backgroundColor: colors.neutral[100] }]}>
+          <Text style={{ fontWeight: '800', color: colors.neutral[700] }}>📜 Edición finalizada (histórico)</Text>
+        </View>
+      )}
+
+      {/* En juego ahora */}
+      {enJuego.length > 0 && vista !== 'admin' && (
+        <View style={[s.card, { marginBottom: spacing.md, borderWidth: 2, borderColor: colors.error }]}>
+          <Text style={{ fontWeight: '900', color: colors.error, marginBottom: 8, fontSize: 16 }}>🔴 En juego ahora</Text>
+          {enJuego.map((p) => {
+            const d = discNombre(p.disciplina_id);
+            return (
+              <View key={p.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500], textAlign: 'center' }}>
+                  {d ? `${d.emoji} ${d.nombre}` : ''} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Text style={{ flex: 1, fontWeight: '800', textAlign: 'right', color: colors.neutral[800] }} numberOfLines={2}>
+                    {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
+                  </Text>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: colors.primary[700], marginHorizontal: 14 }}>
+                    {p.marcador_a ?? 0} - {p.marcador_b ?? 0}
+                  </Text>
+                  <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
+                    {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
+                  </Text>
+                </View>
+                {p.detalle_sets ? <Text style={{ fontSize: 11, textAlign: 'center', color: colors.neutral[500] }}>{p.detalle_sets}</Text> : null}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {esCoordinador && inscAbierta && vista !== 'misequipos' && (
+        <Pressable onPress={() => setVista('misequipos')} style={{
+          backgroundColor: colors.success, paddingVertical: 12, paddingHorizontal: 16,
+          borderRadius: radius.md, marginBottom: spacing.md, alignItems: 'center',
+        }}>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>📝 Inscribir equipos de mi pueblo</Text>
+        </Pressable>
+      )}
+
       {/* Vistas */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
           ['fixture', '📅 Fixture'],
           ['pueblo', '🏘️ Mi pueblo'],
           ['posiciones', '📊 Posiciones'],
-          ['goleadores', '🥇 Goleadores'],
+          ['llaves', '🏆 Llaves'],
+          ...(esCoordinador ? [['misequipos', '📝 Mis equipos'] as [Vista, string]] : []),
           ...(isSuperAdmin ? [['admin', '⚙️ Administrar'] as [Vista, string]] : []),
         ] as [Vista, string][]).map(([k, label]) => (
           <Pressable key={k} onPress={() => setVista(k)} style={{
@@ -225,13 +292,21 @@ export default function Torneo() {
         <TorneoAdminPanel edicion={edicion} onChanged={load} />
       )}
 
-      {vista !== 'admin' && disciplinas.length === 0 && (
+      {vista === 'misequipos' && esCoordinador && edicion && (
+        <TorneoMisEquipos edicion={edicion} disciplinas={disciplinas} puebloId={puebloId} />
+      )}
+
+      {vista === 'llaves' && disciplinas.length > 0 && (
+        <Llaves disciplinas={disciplinas} partidos={partidos} />
+      )}
+
+      {vista !== 'admin' && vista !== 'misequipos' && disciplinas.length === 0 && (
         <View style={s.card}>
           <Text style={s.text}>Todavía no hay disciplinas lanzadas. Volvé más tarde 🏐⚽🏀</Text>
         </View>
       )}
 
-      {vista !== 'admin' && vista !== 'pueblo' && disciplinas.length > 0 && (
+      {(vista === 'fixture' || vista === 'posiciones') && disciplinas.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
           {(vista === 'fixture' ? [{ id: 'todas', emoji: '🎯', nombre: 'Todas' } as any, ...disciplinas] : disciplinas).map((d: any) => {
             const sel = vista === 'fixture' ? filtroDisc === d.id : discSel?.id === d.id;
@@ -315,7 +390,7 @@ export default function Torneo() {
                         borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
                       }}>
                         <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : fmtHora(p.inicio)}
+                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
                         </Text>
                       </View>
                       <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
@@ -381,7 +456,7 @@ export default function Torneo() {
                         borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
                       }}>
                         <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {p.marcador_a != null ? `${p.marcador_a} - ${p.marcador_b}` : fmtHora(p.inicio)}
+                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
                         </Text>
                       </View>
                       <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
@@ -429,26 +504,6 @@ export default function Torneo() {
         </View>
       )}
 
-      {/* GOLEADORES */}
-      {vista === 'goleadores' && discSel && (
-        <View style={s.card}>
-          <Text style={[s.cardTitle, { marginBottom: 10 }]}>🥇 Goleadores — {discSel.nombre}</Text>
-          {goleadores.length === 0 && <Text style={s.small}>Todavía no se cargaron goles.</Text>}
-          {goleadores.map((g, i) => (
-            <View key={`${g.jugador}-${g.equipo_id}`} style={{
-              flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
-              borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
-            }}>
-              <Text style={{ width: 28, fontWeight: '900', color: colors.secondary[600] }}>{i + 1}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{g.jugador}</Text>
-                <Text style={s.small}>{g.equipo_nombre}</Text>
-              </View>
-              <Text style={{ fontWeight: '900', color: colors.primary[700], fontSize: 16 }}>{g.total}</Text>
-            </View>
-          ))}
-        </View>
-      )}
     </ScrollView>
   );
 }
