@@ -435,10 +435,13 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
   lista_espera_pos: number | null;
   promocion_vence_at: string | null;
   promocion_confirmada_at: string | null;
+  seleccion: 'seleccionado' | 'suplente' | null;
+  orden_suplente: number | null;
+  seleccion_publicada: boolean;
 }>> {
   const { data, error } = await supabase
     .from('registros')
-    .select('id, nombres, apellidos, rol, estado, pueblo_id, año, tipo_asesor, promocion_vence_at, promocion_confirmada_at, pueblos(nombre)')
+    .select('id, nombres, apellidos, rol, estado, pueblo_id, año, tipo_asesor, promocion_vence_at, promocion_confirmada_at, seleccion, orden_suplente, pueblos(nombre)')
     .eq('email', email)
     .is('deleted_at', null)
     .order('created_at', { ascending: true });
@@ -450,7 +453,17 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
     lista_espera_pos: null as number | null,
     promocion_vence_at: (r.promocion_vence_at ?? null) as string | null,
     promocion_confirmada_at: (r.promocion_confirmada_at ?? null) as string | null,
+    seleccion: (r.seleccion ?? null) as 'seleccionado' | 'suplente' | null,
+    orden_suplente: (r.orden_suplente ?? null) as number | null,
+    seleccion_publicada: false,
   }));
+  const pueblosIds = Array.from(new Set(rows.map((r) => r.pueblo_id)));
+  if (pueblosIds.length) {
+    const { data: pubs } = await supabase.from('seleccion_publicaciones' as any)
+      .select('pueblo_id, año').in('pueblo_id', pueblosIds);
+    const set = new Set((pubs ?? []).map((p: any) => `${p.pueblo_id}|${p.año}`));
+    rows.forEach((r) => { r.seleccion_publicada = set.has(`${r.pueblo_id}|${r.año}`); });
+  }
   await Promise.all(rows.map(async (row) => {
     if (row.estado !== 'lista_espera') return;
     const { data: pos } = await supabase.rpc('get_lista_espera_position' as any, { p_registro_id: row.id });

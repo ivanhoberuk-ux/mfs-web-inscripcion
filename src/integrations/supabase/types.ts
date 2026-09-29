@@ -289,18 +289,21 @@ export type Database = {
         Row: {
           activo: boolean
           cupo_max: number
+          cupo_mision: number | null
           id: string
           nombre: string
         }
         Insert: {
           activo?: boolean
           cupo_max?: number
+          cupo_mision?: number | null
           id?: string
           nombre: string
         }
         Update: {
           activo?: boolean
           cupo_max?: number
+          cupo_mision?: number | null
           id?: string
           nombre?: string
         }
@@ -340,6 +343,7 @@ export type Database = {
           no_clasificado_por: string | null
           no_clasifico: boolean
           nombres: string
+          orden_suplente: number | null
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
@@ -351,6 +355,10 @@ export type Database = {
           pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
           rol: string
+          seleccion: string | null
+          seleccion_at: string | null
+          seleccion_notificada_at: string | null
+          seleccion_por: string | null
           source: string | null
           talle_remera: string | null
           telefono: string
@@ -391,6 +399,7 @@ export type Database = {
           no_clasificado_por?: string | null
           no_clasifico?: boolean
           nombres: string
+          orden_suplente?: number | null
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
@@ -402,6 +411,10 @@ export type Database = {
           pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
           rol: string
+          seleccion?: string | null
+          seleccion_at?: string | null
+          seleccion_notificada_at?: string | null
+          seleccion_por?: string | null
           source?: string | null
           talle_remera?: string | null
           telefono: string
@@ -442,6 +455,7 @@ export type Database = {
           no_clasificado_por?: string | null
           no_clasifico?: boolean
           nombres?: string
+          orden_suplente?: number | null
           padre_nombre?: string | null
           padre_telefono?: string | null
           pertenece_schoenstatt?: boolean
@@ -453,6 +467,10 @@ export type Database = {
           pueblos_acompana?: string[] | null
           rama_schoenstatt?: string | null
           rol?: string
+          seleccion?: string | null
+          seleccion_at?: string | null
+          seleccion_notificada_at?: string | null
+          seleccion_por?: string | null
           source?: string | null
           talle_remera?: string | null
           telefono?: string
@@ -470,6 +488,42 @@ export type Database = {
           },
           {
             foreignKeyName: "registros_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ocupacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seleccion_publicaciones: {
+        Row: {
+          año: number
+          publicada_at: string
+          publicada_por: string | null
+          pueblo_id: string
+        }
+        Insert: {
+          año: number
+          publicada_at?: string
+          publicada_por?: string | null
+          pueblo_id: string
+        }
+        Update: {
+          año?: number
+          publicada_at?: string
+          publicada_por?: string | null
+          pueblo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seleccion_publicaciones_pueblo_id_fkey"
+            columns: ["pueblo_id"]
+            isOneToOne: false
+            referencedRelation: "pueblos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seleccion_publicaciones_pueblo_id_fkey"
             columns: ["pueblo_id"]
             isOneToOne: false
             referencedRelation: "vw_ocupacion"
@@ -1034,6 +1088,10 @@ export type Database = {
       }
     }
     Functions: {
+      _puede_gestionar_seleccion: {
+        Args: { p_pueblo_id: string }
+        Returns: boolean
+      }
       _torneo_resolver_avances: {
         Args: { p_disciplina_id: string }
         Returns: Json
@@ -1083,6 +1141,7 @@ export type Database = {
           no_clasificado_por: string | null
           no_clasifico: boolean
           nombres: string
+          orden_suplente: number | null
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
@@ -1094,6 +1153,10 @@ export type Database = {
           pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
           rol: string
+          seleccion: string | null
+          seleccion_at: string | null
+          seleccion_notificada_at: string | null
+          seleccion_por: string | null
           source: string | null
           talle_remera: string | null
           telefono: string
@@ -1236,6 +1299,26 @@ export type Database = {
         Returns: Json
       }
       revisar_salud: { Args: never; Returns: number }
+      seleccion_despublicar: {
+        Args: { p_año?: number; p_pueblo_id: string }
+        Returns: Json
+      }
+      seleccion_marcar: {
+        Args: { p_estado: string; p_registro_ids: string[] }
+        Returns: Json
+      }
+      seleccion_mover_suplente: {
+        Args: { p_nuevo_orden: number; p_registro_id: string }
+        Returns: Json
+      }
+      seleccion_publicar: {
+        Args: { p_año?: number; p_pueblo_id: string }
+        Returns: Json
+      }
+      seleccion_resumen: {
+        Args: { p_año?: number; p_pueblo_id: string }
+        Returns: Json
+      }
       set_modo_temporada: {
         Args: { p_año: number; p_modo: string }
         Returns: undefined
@@ -1396,6 +1479,7 @@ export type Database = {
           no_clasificado_por: string | null
           no_clasifico: boolean
           nombres: string
+          orden_suplente: number | null
           padre_nombre: string | null
           padre_telefono: string | null
           pertenece_schoenstatt: boolean
@@ -1407,6 +1491,10 @@ export type Database = {
           pueblos_acompana: string[] | null
           rama_schoenstatt: string | null
           rol: string
+          seleccion: string | null
+          seleccion_at: string | null
+          seleccion_notificada_at: string | null
+          seleccion_por: string | null
           source: string | null
           talle_remera: string | null
           telefono: string

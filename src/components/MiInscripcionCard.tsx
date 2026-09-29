@@ -182,6 +182,20 @@ export function MiInscripcionCard() {
                   </Pressable>
                 </View>
               )}
+              {r.seleccion_publicada && r.estado === 'confirmado' && r.seleccion === 'seleccionado' && (
+                <View style={{ marginTop: 8, padding: 12, backgroundColor: '#dcfce7', borderRadius: radius.sm, borderWidth: 2, borderColor: '#16a34a' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#15803d' }}>
+                    🎉 ¡Fuiste seleccionado/a para misionar en {r.pueblo_nombre}!
+                  </Text>
+                </View>
+              )}
+              {r.seleccion_publicada && r.estado === 'confirmado' && r.seleccion === 'suplente' && (
+                <View style={{ marginTop: 8, padding: 10, backgroundColor: '#fef3c7', borderRadius: radius.sm, borderLeftWidth: 4, borderLeftColor: '#d97706' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400e' }}>
+                    🕒 Quedaste como suplente N° {r.orden_suplente ?? '—'}. Si se libera un lugar te avisamos por email.
+                  </Text>
+                </View>
+              )}
               {confirmado && (
                 <View style={{
                   marginTop: 8, padding: 10, backgroundColor: '#dcfce7', borderRadius: radius.sm,
