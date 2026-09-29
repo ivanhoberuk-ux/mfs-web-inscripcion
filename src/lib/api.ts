@@ -92,9 +92,10 @@ export type ConfiguracionInscripcion = {
   activo: boolean;
   lista_espera_vence_at?: string | null; // ISO o null
   modo?: ModoTemporada;
+  horas_confirmar_promocion?: number | null;
 };
 
-const CFG_COLS = 'año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at, modo';
+const CFG_COLS = 'año, apertura_anticipada, apertura_general, cierre, activo, lista_espera_vence_at, modo, horas_confirmar_promocion';
 
 /** Obtiene la configuración del año activo + el estado actual evaluado por la BD. */
 export async function fetchEstadoInscripcionActivo(): Promise<{

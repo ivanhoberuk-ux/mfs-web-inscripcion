@@ -297,6 +297,7 @@ type DraftRow = {
   apertura_general: DateTimeParts | null;
   cierre: DateTimeParts | null;
   lista_espera_vence_at: DateTimeParts | null;
+  horas: string;
   activo: boolean;
 };
 
@@ -310,8 +311,36 @@ const emptyDraft = (año: number): DraftRow => ({
   apertura_general: null,
   cierre: null,
   lista_espera_vence_at: null,
+  horas: '72',
   activo: false,
 });
+
+function parseHoras(v: string): number | null {
+  const n = Number(String(v).trim());
+  if (!Number.isInteger(n) || n < 1 || n > 720) {
+    Alert.alert('Horas inválidas', 'Las horas para confirmar deben ser un número entero entre 1 y 720.');
+    return null;
+  }
+  return n;
+}
+
+const HORAS_HELP = 'Horas que tiene una persona promovida desde la lista de espera para confirmar su lugar. Si no confirma, el lugar pasa al siguiente.';
+
+function HorasField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1F2937' }}>⏱️ Horas para confirmar promoción</Text>
+      <TextInput
+        value={value}
+        onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ''))}
+        keyboardType="number-pad"
+        maxLength={3}
+        style={{ borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: 'white', width: 120 }}
+      />
+      <Text style={{ fontSize: 11, color: '#6B7280' }}>{HORAS_HELP} (1 a 720)</Text>
+    </View>
+  );
+}
 
 export function InscripcionConfigPanel() {
   const [items, setItems] = useState<ConfiguracionInscripcion[]>([]);
@@ -335,6 +364,7 @@ export function InscripcionConfigPanel() {
           apertura_general: isoToParts(c.apertura_general),
           cierre: isoToParts(c.cierre),
           lista_espera_vence_at: isoToParts(c.lista_espera_vence_at ?? null),
+          horas: String(c.horas_confirmar_promocion ?? 72),
           activo: c.activo,
         };
       });
@@ -368,9 +398,12 @@ export function InscripcionConfigPanel() {
       Alert.alert('Fechas inválidas', 'La apertura general debe ser anterior al cierre.');
       return;
     }
+    const horas = parseHoras(d.horas);
+    if (horas == null) return;
     try {
       setSavingId(año);
       await upsertConfiguracionInscripcion({
+        horas_confirmar_promocion: horas,
         año,
         apertura_anticipada: ant,
         apertura_general: gen,
@@ -414,9 +447,12 @@ export function InscripcionConfigPanel() {
       Alert.alert('Faltan fechas', 'Completá las tres fechas.');
       return;
     }
+    const horas = parseHoras(newDraft.horas);
+    if (horas == null) return;
     try {
       setCreating(true);
       await upsertConfiguracionInscripcion({
+        horas_confirmar_promocion: horas,
         año,
         apertura_anticipada: partsToIso(newDraft.apertura_anticipada),
         apertura_general: partsToIso(newDraft.apertura_general),
@@ -447,6 +483,7 @@ export function InscripcionConfigPanel() {
       apertura_general: defaultPartsForYear(año, 1, 15, 8, 0),
       cierre: defaultPartsForYear(año, 6, 30, 23, 59),
       lista_espera_vence_at: drafts[año]?.lista_espera_vence_at ?? null,
+      horas: drafts[año]?.horas ?? '72',
       activo: drafts[año]?.activo ?? false,
     };
     setDrafts((prev) => ({ ...prev, [año]: d }));
@@ -587,6 +624,7 @@ export function InscripcionConfigPanel() {
                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>🗑️ Quitar fecha de vencimiento</Text>
               </Pressable>
             )}
+            <HorasField value={d.horas} onChange={(v) => setDraftField(año, 'horas', v)} />
 
             <Pressable
               onPress={() => onSave(año)}
@@ -686,6 +724,7 @@ export function InscripcionConfigPanel() {
             defaultValue={defaultPartsForYear(newDraft.año, 3, 1, 23, 59)}
             onChange={(p) => setNewDraft((prev) => ({ ...prev, lista_espera_vence_at: p }))}
           />
+          <HorasField value={newDraft.horas} onChange={(v) => setNewDraft((prev) => ({ ...prev, horas: v }))} />
 
           <Pressable
             onPress={() => setNewDraft((p) => ({ ...p, activo: !p.activo }))}
