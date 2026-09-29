@@ -1,659 +1,256 @@
-// FILE: app/(tabs)/index.tsx
-import React, { useEffect, useState, useRef } from 'react'
-import { ScrollView, View, Image, Text, Pressable, Animated } from 'react-native'
-import { colors, spacing, shadows, radius, typography } from '../../src/lib/designSystem'
-import { useRouter } from 'expo-router'
-import { useAuth } from '../../src/context/AuthProvider'
-import { supabase } from '../../src/lib/supabase'
-import { Button } from '../../src/components/Button'
-import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard'
-import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard'
-import { MiInscripcionCard } from '../../src/components/MiInscripcionCard'
-import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard'
-import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard'
-import { PortadaInstitucional } from '../../src/components/PortadaInstitucional'
-import { useTemporada } from '../../src/hooks/useTemporada'
-import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo'
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { colors, gradients, radius, shadows, spacing, typography } from '../../src/lib/designSystem';
+import { useAuth } from '../../src/context/AuthProvider';
+import { supabase } from '../../src/lib/supabase';
+import { Button } from '../../src/components/Button';
+import { InscripcionAvisoCard } from '../../src/components/InscripcionAvisoCard';
+import { DocumentosEstadoCard } from '../../src/components/DocumentosEstadoCard';
+import { MiInscripcionCard } from '../../src/components/MiInscripcionCard';
+import { AsesoresAnioCard } from '../../src/components/AsesoresAnioCard';
+import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard';
+import { PortadaInstitucional } from '../../src/components/PortadaInstitucional';
+import { useTemporada } from '../../src/hooks/useTemporada';
+import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo';
 // @ts-ignore
-import familiaImg from '../../src/assets/familia-misionera.png'
+import familiaImg from '../../src/assets/familia-misionera.png';
 // @ts-ignore
-import capillitaImg from '../../src/assets/capillita-hero.png'
+import logoMfs from '../../src/assets/mfs-logo.png';
 // @ts-ignore
-import logoMfs from '../../src/assets/mfs-logo.png'
+import banderaPy from '../../src/assets/bandera-paraguay.png';
 // @ts-ignore
-import banderaPy from '../../src/assets/bandera-paraguay.png'
+import materParaguay from '../../src/assets/mater-paraguay.png';
 // @ts-ignore
-import materIcono from '../../src/assets/mater-icono.png'
+import santuarioImg from '../../src/assets/santuario.png';
 // @ts-ignore
-import materParaguay from '../../src/assets/mater-paraguay.png'
+import torneoFutbolImg from '../../src/assets/torneo-futbol.jpg';
 // @ts-ignore
-import santuarioImg from '../../src/assets/santuario.png'
+import torneoVoleyImg from '../../src/assets/torneo-voley.jpg';
 // @ts-ignore
-import torneoFutbolImg from '../../src/assets/torneo-futbol.jpg'
+import torneoBasquetImg from '../../src/assets/torneo-basquet.jpg';
 // @ts-ignore
-import torneoVoleyImg from '../../src/assets/torneo-voley.jpg'
+import torneoTodosImg from '../../src/assets/torneo-todos.jpg';
 // @ts-ignore
-import torneoBasquetImg from '../../src/assets/torneo-basquet.jpg'
-// @ts-ignore
-import torneoTodosImg from '../../src/assets/torneo-todos.jpg'
-// @ts-ignore
-import torneoFutbolVoleyImg from '../../src/assets/torneo-futbol-voley.jpg'
+import torneoFutbolVoleyImg from '../../src/assets/torneo-futbol-voley.jpg';
 
+type UserRoleRow = { role: 'admin' | 'user' };
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-type UserRoleRow = { role: 'admin' | 'user' }
+function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(18)).current;
+  useEffect(() => {
+    const reduceMotion = Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) { opacity.setValue(1); translateY.setValue(0); return; }
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 450, delay, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 450, delay, useNativeDriver: true }),
+    ]).start();
+  }, [delay, opacity, translateY]);
+  return <Animated.View style={[style, { opacity, transform: [{ translateY }] }]}>{children}</Animated.View>;
+}
 
 export default function Home() {
-  const router = useRouter()
-  const { user, signOut } = useAuth()
-
-  const fadeAnim = useRef(new Animated.Value(0)).current
-  const slideAnim = useRef(new Animated.Value(30)).current
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ]).start()
-  }, [])
-
-  const [role, setRole] = useState<'admin' | 'user' | null>(null)
-  const [loadingRole, setLoadingRole] = useState(false)
-  const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([])
-  const [torneoVisible, setTorneoVisible] = useState(false)
-  const { esInstitucional, año: añoTemporada } = useTemporada()
-
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  const desktop = width >= 900;
+  const compact = width < 600;
+  const { user, signOut } = useAuth();
+  const [role, setRole] = useState<'admin' | 'user' | null>(null);
+  const [loadingRole, setLoadingRole] = useState(false);
+  const [disciplinas, setDisciplinas] = useState<TorneoDisciplina[]>([]);
+  const [torneoVisible, setTorneoVisible] = useState(false);
+  const { esInstitucional, año: añoTemporada } = useTemporada();
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
+    let mounted = true;
+    (async () => {
       try {
-        const ed = await fetchEdicionActiva()
-        if (!mounted || !ed) return
-        setTorneoVisible(ed.visible_en_inicio !== false)
-        const d = await fetchDisciplinas(ed.id)
-        if (mounted) setDisciplinas(d)
+        const ed = await fetchEdicionActiva();
+        if (!mounted || !ed) return;
+        setTorneoVisible(ed.visible_en_inicio !== false);
+        const list = await fetchDisciplinas(ed.id);
+        if (mounted) setDisciplinas(list);
       } catch {}
-    })()
-    return () => { mounted = false }
-  }, [])
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      if (!user?.id) { setRole(null); return }
-      setLoadingRole(true)
-      const { data, error } = await supabase
-        .from('user_roles').select('role').eq('user_id', user.id)
-      if (!mounted) return
-      if (error) { setRole(null) } else {
-        const roles = ((data ?? []) as UserRoleRow[]).map((r) => r.role)
-        setRole(roles.includes('admin') ? 'admin' : (roles[0] ?? null))
+    let mounted = true;
+    (async () => {
+      if (!user?.id) { setRole(null); return; }
+      setLoadingRole(true);
+      const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+      if (!mounted) return;
+      if (error) setRole(null);
+      else {
+        const roles = ((data ?? []) as UserRoleRow[]).map(item => item.role);
+        setRole(roles.includes('admin') ? 'admin' : (roles[0] ?? null));
       }
-      setLoadingRole(false)
-    })()
-    return () => { mounted = false }
-  }, [user?.id])
+      setLoadingRole(false);
+    })();
+    return () => { mounted = false; };
+  }, [user?.id]);
 
-  async function onLogout() {
-    try { await signOut() } catch {}
-  }
+  const activas = disciplinas.filter(item => item.activa);
+  const matchDisc = (item: { codigo?: string | null; nombre?: string | null }, re: RegExp) => re.test(item.codigo ?? '') || re.test(item.nombre ?? '');
+  const hayFutbol = activas.some(item => matchDisc(item, /f[uú]tbol|futbol|soccer/i));
+  const hayVoley = activas.some(item => matchDisc(item, /v[oó]ley|volley/i));
+  const hayBasquet = activas.some(item => matchDisc(item, /b[aá]squet|basket/i));
+  const torneoHero = useMemo(() => {
+    const total = [hayFutbol, hayVoley, hayBasquet].filter(Boolean).length;
+    if (total === 1) return hayFutbol ? torneoFutbolImg : hayVoley ? torneoVoleyImg : torneoBasquetImg;
+    if (total === 2 && hayFutbol && hayVoley) return torneoFutbolVoleyImg;
+    return torneoTodosImg;
+  }, [hayFutbol, hayVoley, hayBasquet]);
+  const torneoTitle = activas.length === 1 ? `Torneo de ${activas[0].nombre}` : 'Torneo Interpueblos';
+  const torneoSubtitle = activas.length ? `${activas.map(item => item.nombre).join(' · ')} — fixture, horarios y posiciones` : 'Fútbol, vóley y básquet — fixture, horarios y posiciones';
+  const año = añoTemporada ?? new Date().getFullYear();
 
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return '¡Buenos días! ☀️'
-    if (hour < 18) return '¡Buenas tardes! 🌤️'
-    return '¡Buenas noches! 🌙'
-  }
-
-  const activas = disciplinas.filter(d => d.activa)
-  const matchDisc = (d: { codigo?: string | null; nombre?: string | null }, re: RegExp) =>
-    re.test(d.codigo ?? '') || re.test(d.nombre ?? '')
-  const hayFutbol = activas.some(d => matchDisc(d, /f[uú]tbol|futbol|soccer/i))
-  const hayVoley = activas.some(d => matchDisc(d, /v[oó]ley|volley/i))
-  const hayBasquet = activas.some(d => matchDisc(d, /b[aá]squet|basket/i))
-
-  const torneoHero = React.useMemo(() => {
-    const n = [hayFutbol, hayVoley, hayBasquet].filter(Boolean).length
-    if (n === 1) {
-      if (hayFutbol) return torneoFutbolImg
-      if (hayVoley) return torneoVoleyImg
-      if (hayBasquet) return torneoBasquetImg
-    }
-    if (n === 2 && hayFutbol && hayVoley) return torneoFutbolVoleyImg
-    return torneoTodosImg
-  }, [hayFutbol, hayVoley, hayBasquet])
-
-  const torneoTitle = React.useMemo(() => {
-    if (activas.length === 0) return '🏆 Torneo Interpueblos'
-    if (activas.length === 1) return `🏆 Torneo de ${activas[0].nombre}`
-    const nombres = activas.map(d => d.nombre)
-    if (nombres.length === 2) return `🏆 Torneo de ${nombres[0]} y ${nombres[1]}`
-    return `🏆 Torneo de ${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
-  }, [activas])
-
-  const torneoSubtitle = React.useMemo(() => {
-    if (activas.length === 0) return 'Fútbol, vóley y básquet ⚽🏐🏀 — mirá el fixture, los horarios y las posiciones'
-    const emojis = activas.map(d => d.emoji).join('')
-    const nombres = activas.map(d => d.nombre).join(', ')
-    return `${nombres} ${emojis} — mirá el fixture, los horarios y las posiciones`
-  }, [activas])
-
-  const torneoAlt = React.useMemo(() => {
-    if (activas.length === 0) return 'Torneo Interpueblos de fútbol, vóley y básquet'
-    return `Torneo Interpueblos de ${activas.map(d => d.nombre).join(', ')}`
-  }, [activas])
+  const quickItems = [
+    ...(!esInstitucional ? [
+      { title: 'Inscribirme', description: 'Sumate a la próxima misión', icon: 'create-outline' as IconName, color: colors.primary[600], tint: colors.primary[50], path: '/inscribir' },
+      { title: 'Documentos', description: 'Completá tu legajo', icon: 'document-text-outline' as IconName, color: colors.mint[600], tint: colors.mint[100], path: '/documentos' },
+    ] : []),
+    { title: 'Pueblos', description: 'Conocé cada comunidad', icon: 'map-outline' as IconName, color: colors.accent[600], tint: colors.accent[50], path: '/pueblos' },
+    ...(role === 'admin' ? [{ title: 'Administración', description: 'Gestión y seguimiento', icon: 'settings-outline' as IconName, color: colors.secondary[700], tint: colors.secondary[100], path: '/admin' }] : []),
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light }}>
-      {/* Bandera de Paraguay esfumada de fondo (toda la pantalla) */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          opacity: 0.28,
-        }}
-      >
-        <Image
-          source={banderaPy}
-          style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-        />
-      </View>
-      {/* Velo blanco para suavizar la bandera */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(247, 250, 255, 0.55)',
-        }}
-      />
-      {/* Logo MFS difuminado en esquina */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute', top: 60, right: -40,
-          opacity: 0.10,
-        }}
-      >
-        <Image source={logoMfs} style={{ width: 260, height: 260, resizeMode: 'contain' }} />
-      </View>
-
-      <ScrollView
-        style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{
-          paddingVertical: 20,
-          paddingHorizontal: 16,
-          alignItems: 'center',
-          gap: 20,
-          paddingBottom: 120,
-          maxWidth: 700,
-          alignSelf: 'center',
-          width: '100%',
-        }}
-      >
-        {/* Logo MFS destacado */}
-        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', marginTop: 4 }}>
-          <View style={{
-            width: 110, height: 110, borderRadius: radius.full,
-            backgroundColor: '#ffffff',
-            alignItems: 'center', justifyContent: 'center',
-            borderWidth: 4, borderColor: colors.secondary[500],
-            ...shadows.lg,
-          }}>
-            <Image source={logoMfs} style={{ width: 88, height: 88, resizeMode: 'contain' }} accessibilityLabel="Logo MFS" />
-          </View>
-        </Animated.View>
-
-        {/* Saludo */}
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%' }}>
-          <Text style={{
-            fontSize: 26,
-            fontWeight: '800',
-            textAlign: 'center',
-            color: colors.primary[700],
-          }}>
-            {getGreeting()}
-          </Text>
-          <Text style={{
-            fontSize: 15,
-            textAlign: 'center',
-            color: colors.text.secondary.light,
-            marginTop: 4,
-          }}>
-            Bienvenido a las MFS Paraguay 💛
-          </Text>
-        </Animated.View>
-
-        {/* HERO con familia misionera */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-            width: '100%',
-            backgroundColor: colors.surface.light,
-            borderRadius: radius.xl,
-            padding: spacing.lg,
-            ...shadows.lg,
-            borderWidth: 2,
-            borderColor: colors.secondary[200],
-            overflow: 'hidden',
-          }}
-        >
-          {/* Decoración esquina */}
-          <View style={{
-            position: 'absolute', top: -20, right: -20,
-            width: 100, height: 100, borderRadius: 50,
-            backgroundColor: colors.secondary[100],
-            opacity: 0.5,
-          }} />
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <Image
-              source={familiaImg}
-              style={{ width: 130, height: 130, resizeMode: 'contain' }}
-              accessibilityLabel="Familia misionera"
-            />
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '800',
-                color: colors.primary[700],
-                lineHeight: 24,
-              }}>
-                Juntos formamos una familia 🤗
-              </Text>
-              <Text style={{
-                fontSize: 13,
-                color: colors.text.secondary.light,
-                lineHeight: 18,
-              }}>
-                Encendé tu corazón. La misión arranca acá 🔥
-              </Text>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Aviso de fechas / portada institucional entre temporadas */}
-        <View style={{ width: '100%' }}>
-          {esInstitucional ? <PortadaInstitucional año={añoTemporada} /> : <InscripcionAvisoCard />}
-        </View>
-
-        {/* Torneo Interpueblos */}
-        {torneoVisible ? (
-        <Pressable
-          onPress={() => router.push('/torneo')}
-          style={({ pressed }) => ({
-            width: '100%',
-            borderRadius: radius.xl,
-            overflow: 'hidden',
-            backgroundColor: colors.primary[600],
-            borderWidth: 3,
-            borderColor: colors.secondary[500],
-            opacity: pressed ? 0.9 : 1,
-            transform: [{ scale: pressed ? 0.99 : 1 }],
-            ...shadows.lg,
-          })}
-          accessibilityRole="button"
-          accessibilityLabel="Ir al Torneo Interpueblos"
-        >
-          <Image
-            source={torneoHero}
-            style={{ width: '100%', height: 190, resizeMode: 'contain', backgroundColor: colors.primary[700] }}
-            accessibilityLabel={torneoAlt}
-          />
-          <View style={{ padding: spacing.lg, gap: 4 }}>
-            <Text style={{
-              fontSize: typography.size.xl,
-              fontWeight: typography.weight.extrabold,
-              color: '#ffffff',
-            }}>
-              {torneoTitle}
-            </Text>
-            <Text style={{
-              fontSize: typography.size.sm,
-              color: colors.secondary[200],
-              fontWeight: typography.weight.medium,
-            }}>
-              {torneoSubtitle}
-            </Text>
-            <View style={{
-              marginTop: spacing.sm,
-              alignSelf: 'flex-start',
-              backgroundColor: colors.secondary[500],
-              paddingHorizontal: spacing.lg,
-              paddingVertical: spacing.sm,
-              borderRadius: radius.full,
-            }}>
-              <Text style={{
-                color: colors.primary[800],
-                fontWeight: typography.weight.bold,
-                fontSize: typography.size.sm,
-              }}>
-                Ver el torneo →
-              </Text>
-            </View>
-          </View>
-        </Pressable>
-        ) : null}
-
-
-
-        {/* Estado de documentos del usuario */}
-        {user && !esInstitucional ? (
-          <View style={{ width: '100%', gap: 12 }}>
-            <MiInscripcionCard />
-            <ContactosPuebloCard />
-            <DocumentosEstadoCard />
-          </View>
-        ) : null}
-
-        {/* Asesores espirituales del año */}
-        {!esInstitucional ? <AsesoresAnioCard /> : null}
-
-        {/* Accesos rápidos */}
-        <View style={{ width: '100%' }}>
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '700',
-            color: colors.primary[700],
-            marginBottom: spacing.md,
-            paddingLeft: 4,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}>
-            ✨ Accesos rápidos
-          </Text>
-
-          <View style={{
-            gap: 12,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-          }}>
-            {!esInstitucional ? (
-              <>
-                <QuickButton
-                  label="Inscribirme"
-                  emoji="✍️"
-                  bg={colors.primary[600]}
-                  onPress={() => router.push('/inscribir')}
-                  delay={100}
-                />
-                <QuickButton
-                  label="Documentos"
-                  emoji="📄"
-                  bg={colors.sky[500]}
-                  onPress={() => router.push('/documentos')}
-                  delay={200}
-                />
-              </>
-            ) : null}
-            <QuickButton
-              label="Pueblos"
-              emoji="🏠"
-              bg={colors.secondary[500]}
-              textColor={colors.primary[800]}
-              onPress={() => router.push('/pueblos')}
-              delay={300}
-            />
-            {loadingRole ? (
-              <SkeletonButton />
-            ) : role === 'admin' ? (
-              <QuickButton
-                label="Admin"
-                emoji="⚙️"
-                bg={colors.primary[800]}
-                onPress={() => router.push('/admin')}
-                delay={400}
-              />
-            ) : null}
-          </View>
-        </View>
-
-        {/* Banda con Santuario y Mater Paraguay */}
-        <View style={{
-          width: '100%',
-          flexDirection: 'row',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}>
-          <View style={{
-            flex: 1, minWidth: 220,
-            backgroundColor: colors.surface.light,
-            borderRadius: radius.lg,
-            overflow: 'hidden',
-            ...shadows.md,
-            borderWidth: 2, borderColor: colors.primary[100],
-          }}>
-            <Image
-              source={santuarioImg}
-              style={{ width: '100%', height: 140, resizeMode: 'cover' }}
-              accessibilityLabel="Santuario de Schoenstatt"
-            />
-            <View style={{ padding: spacing.md }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
-                Nuestro Santuario ⛪
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2 }}>
-                Lugar de gracia y misión
-              </Text>
-            </View>
-          </View>
-          <View style={{
-            flex: 1, minWidth: 220,
-            backgroundColor: colors.surface.light,
-            borderRadius: radius.lg,
-            padding: spacing.md,
-            flexDirection: 'row', alignItems: 'center', gap: 12,
-            ...shadows.md,
-            borderWidth: 2, borderColor: colors.secondary[200],
-          }}>
-            <Image
-              source={materParaguay}
-              style={{ width: 80, height: 110, resizeMode: 'contain' }}
-              accessibilityLabel="Mater Paraguay"
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700] }}>
-                Mater Paraguay 💛
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2, lineHeight: 16 }}>
-                Madre y reina de nuestras misiones
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Card capillita decorativa */}
-        <View style={{
-          width: '100%',
-          backgroundColor: colors.surface.light,
-          borderRadius: radius.lg,
-          padding: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          ...shadows.sm,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.secondary[500],
-        }}>
-          <Image
-            source={capillitaImg}
-            style={{ width: 80, height: 80, resizeMode: 'contain' }}
-            accessibilityLabel="Capillita peregrina"
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={{
-              fontSize: 15,
-              fontWeight: '700',
-              color: colors.primary[700],
-              marginBottom: 2,
-            }}>
-              Servus Mariae nunquam peribit ⛪
-            </Text>
-            <Text style={{
-              fontSize: 12,
-              color: colors.text.secondary.light,
-              fontStyle: 'italic',
-            }}>
-              "El servidor de María nunca perecerá"
-            </Text>
-          </View>
-        </View>
-
-        {/* Sección de sesión */}
-        {user ? (
-          <View style={{
-            width: '100%',
-            backgroundColor: colors.primary[50],
-            borderRadius: radius.lg,
-            padding: 20,
-            gap: 12,
-            alignItems: 'center',
-            borderWidth: 2,
-            borderColor: colors.primary[200],
-          }}>
-            <Text style={{ fontSize: 28 }}>👋</Text>
-            <Text style={{
-              fontSize: 15,
-              textAlign: 'center',
-              color: colors.text.secondary.light,
-            }}>
-              Hola, <Text style={{ fontWeight: '800', color: colors.primary[700] }}>{user.email?.split('@')[0]}</Text>
-            </Text>
-            {role && (
-              <View style={{
-                backgroundColor: role === 'admin' ? colors.secondary[500] : colors.primary[100],
-                paddingHorizontal: 14,
-                paddingVertical: 5,
-                borderRadius: radius.full,
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  fontWeight: '700',
-                  color: role === 'admin' ? colors.primary[800] : colors.primary[700],
-                }}>
-                  {role === 'admin' ? '👑 Administrador' : '👤 Usuario'}
-                </Text>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: compact ? 14 : 24, paddingTop: compact ? 14 : 28, gap: desktop ? 34 : 24 }}>
+          <FadeIn>
+            <LinearGradient colors={[...gradients.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius['2xl'], overflow: 'hidden', minHeight: desktop ? 430 : 560, ...shadows.xl }}>
+              <View pointerEvents="none" style={{ position: 'absolute', width: 240, height: 240, borderRadius: 120, right: -60, top: -70, backgroundColor: 'rgba(255,200,61,0.22)' }} />
+              <View pointerEvents="none" style={{ position: 'absolute', width: 190, height: 190, borderRadius: 95, left: '36%', bottom: -110, backgroundColor: 'rgba(255,122,89,0.28)' }} />
+              <View style={{ flex: 1, flexDirection: desktop ? 'row' : 'column', padding: compact ? 24 : 42, alignItems: 'center' }}>
+                <View style={{ flex: 1, width: '100%', zIndex: 2, alignItems: compact ? 'center' : 'flex-start' }}>
+                  <View style={{ width: 70, height: 70, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', marginBottom: 22, ...shadows.md }}>
+                    <Image source={logoMfs} style={{ width: 54, height: 54, resizeMode: 'contain' }} accessibilityLabel="Logo MFS" />
+                  </View>
+                  <Text style={{ maxWidth: 620, color: colors.surface.light, fontFamily: typography.family.extrabold, fontSize: compact ? 34 : 50, lineHeight: compact ? 40 : 57, letterSpacing: -1.2, textAlign: compact ? 'center' : 'left' }}>
+                    Misiones Familiares de Schoenstatt
+                  </Text>
+                  <Text style={{ marginTop: 14, color: colors.secondary[100], fontFamily: typography.family.bold, fontSize: 16 }}>Misiones {año}</Text>
+                  <Text style={{ maxWidth: 520, marginTop: 7, color: colors.surface.light, opacity: 0.92, fontFamily: typography.family.regular, fontSize: compact ? 15 : 17, lineHeight: 25, textAlign: compact ? 'center' : 'left' }}>
+                    Encendé tu corazón. La misión arranca acá.
+                  </Text>
+                  <View style={{ marginTop: 25, width: compact ? '100%' : undefined, flexDirection: compact ? 'column' : 'row', gap: 10 }}>
+                    <Pressable onPress={() => router.push(esInstitucional ? '/pueblos' : '/inscribir')} style={({ pressed }) => ({ minHeight: 50, paddingHorizontal: 24, borderRadius: radius.full, backgroundColor: colors.secondary[500], alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.86 : 1 })}>
+                      <Text style={{ color: colors.text.primary.light, fontFamily: typography.family.bold, fontSize: 14 }}>{esInstitucional ? 'Conocé más' : 'Inscribirme'}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => router.push('/pueblos')} style={({ pressed }) => ({ minHeight: 50, paddingHorizontal: 24, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}>
+                      <Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 14 }}>Ver pueblos</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={{ width: desktop ? '42%' : '100%', height: desktop ? 350 : 245, alignSelf: 'flex-end', justifyContent: 'flex-end', alignItems: 'center', marginTop: desktop ? 0 : 8 }}>
+                  <Image source={familiaImg} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} accessibilityLabel="Familia misionera" />
+                  <Image source={banderaPy} style={{ position: 'absolute', right: 4, bottom: 0, width: 62, height: 40, resizeMode: 'contain', opacity: 0.9 }} accessibilityLabel="Bandera de Paraguay" />
+                </View>
               </View>
-            )}
-            <Button variant="danger" onPress={onLogout} style={{ alignSelf: 'stretch', marginTop: 8 }}>
-              Cerrar sesión 👋
-            </Button>
-          </View>
-        ) : (
-          <View style={{ width: '100%', gap: 12 }}>
-            <View style={{
-              backgroundColor: colors.surface.light,
-              borderRadius: radius.lg,
-              padding: 20,
-              gap: 10,
-              borderWidth: 2,
-              borderColor: colors.secondary[300],
-              ...shadows.md,
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 36 }}>🎉</Text>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '800',
-                textAlign: 'center',
-                color: colors.primary[700],
-              }}>
-                ¿Ya te inscribiste?
-              </Text>
-              <Text style={{
-                fontSize: 13,
-                textAlign: 'center',
-                color: colors.text.secondary.light,
-              }}>
-                Creá tu cuenta para ver tus documentos y más info 📱
-              </Text>
-              <Button variant="primary" onPress={() => router.push('/login?mode=signup')} style={{ alignSelf: 'stretch' }}>
-                Crear cuenta ✨
-              </Button>
-            </View>
-            <Button variant="outline" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }}>
-              Ya tengo cuenta 🔑
-            </Button>
-          </View>
-        )}
+            </LinearGradient>
+          </FadeIn>
 
-        <Text style={{
-          fontSize: 12,
-          color: colors.text.tertiary.light,
-          textAlign: 'center',
-          marginTop: 8,
-        }}>
-          Hecho con 💛 para las MFS Paraguay
-        </Text>
+          <FadeIn delay={80} style={{ marginTop: desktop ? -56 : -42, paddingHorizontal: compact ? 10 : 30, zIndex: 4 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              <Stat icon="calendar-outline" value={String(año)} label="Año de misión" />
+              <Stat icon="people-outline" value="En familia" label="Una misión compartida" />
+              <Stat icon="heart-outline" value="Servir" label="Con alegría y fe" />
+            </View>
+          </FadeIn>
+
+          <FadeIn delay={120}>{esInstitucional ? <PortadaInstitucional año={añoTemporada} /> : <InscripcionAvisoCard />}</FadeIn>
+
+          {torneoVisible ? (
+            <FadeIn delay={160}>
+              <Pressable onPress={() => router.push('/torneo')} style={({ pressed }) => ({ borderRadius: radius.xl, overflow: 'hidden', minHeight: desktop ? 360 : 310, opacity: pressed ? 0.94 : 1, transform: [{ scale: pressed ? 0.995 : 1 }], ...shadows.lg })} accessibilityRole="button">
+                <Image source={torneoHero} style={{ position: 'absolute', width: '100%', height: '100%', resizeMode: 'cover' }} accessibilityLabel={torneoTitle} />
+                <LinearGradient colors={['transparent', 'rgba(20,18,49,0.92)']} style={{ position: 'absolute', inset: 0 }} />
+                <View style={{ flex: 1, justifyContent: 'flex-end', padding: compact ? 22 : 30 }}>
+                  <View style={{ alignSelf: 'flex-start', backgroundColor: colors.secondary[500], paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full }}>
+                    <Text style={{ color: colors.text.primary.light, fontFamily: typography.family.bold, fontSize: 11 }}>🏆 TORNEO INTERPUEBLOS</Text>
+                  </View>
+                  <Text style={{ marginTop: 12, color: colors.surface.light, fontFamily: typography.family.extrabold, fontSize: compact ? 26 : 34, letterSpacing: -0.5 }}>{torneoTitle}</Text>
+                  <Text style={{ marginTop: 5, color: colors.primary[100], fontFamily: typography.family.medium, fontSize: 13 }}>{torneoSubtitle}</Text>
+                  <Text style={{ marginTop: 14, color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 13 }}>Ver torneo  →</Text>
+                </View>
+              </Pressable>
+            </FadeIn>
+          ) : null}
+
+          {user && !esInstitucional ? (
+            <FadeIn delay={200}>
+              <SectionHeading eyebrow="TU MISIÓN" title="Todo lo importante, en un solo lugar" />
+              <View style={{ flexDirection: desktop ? 'row' : 'column', alignItems: 'flex-start', gap: 14 }}>
+                <View style={{ flex: 1, width: '100%', gap: 14 }}><MiInscripcionCard /><ContactosPuebloCard /></View>
+                <View style={{ flex: 1, width: '100%', gap: 14 }}><DocumentosEstadoCard /><AsesoresAnioCard /></View>
+              </View>
+            </FadeIn>
+          ) : !esInstitucional ? <AsesoresAnioCard /> : null}
+
+          <FadeIn delay={240}>
+            <SectionHeading eyebrow="ACCESOS RÁPIDOS" title="Tu próximo paso" />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+              {quickItems.map(item => <QuickCard key={item.title} {...item} onPress={() => router.push(item.path as never)} desktop={desktop} />)}
+              {loadingRole ? <View style={{ flexBasis: desktop ? '23%' : '47%', flexGrow: 1, minHeight: 130, borderRadius: radius.xl, backgroundColor: colors.neutral[100] }} /> : null}
+            </View>
+          </FadeIn>
+
+          <FadeIn delay={280}>
+            <LinearGradient colors={[...gradients.suave]} style={{ borderRadius: radius['2xl'], padding: compact ? 20 : 34, overflow: 'hidden' }}>
+              <SectionHeading eyebrow="NUESTRA ESPIRITUALIDAD" title="Con María, salimos al encuentro" />
+              <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 16 }}>
+                <Image source={santuarioImg} style={{ flex: desktop ? 1.1 : undefined, width: '100%', height: desktop ? 280 : 210, resizeMode: 'cover', borderRadius: radius.xl }} accessibilityLabel="Santuario de Schoenstatt" />
+                <View style={{ flex: 1, minHeight: 230, backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: radius.xl, padding: 24, justifyContent: 'center', alignItems: compact ? 'center' : 'flex-start' }}>
+                  <Image source={materParaguay} style={{ width: 88, height: 120, resizeMode: 'contain' }} accessibilityLabel="Mater Paraguay" />
+                  <Text style={{ marginTop: 10, color: colors.primary[900], fontFamily: typography.family.extrabold, fontSize: 21, textAlign: compact ? 'center' : 'left' }}>Mater Paraguay</Text>
+                  <Text style={{ marginTop: 6, color: colors.text.secondary.light, fontFamily: typography.family.regular, fontSize: 13, lineHeight: 20, textAlign: compact ? 'center' : 'left' }}>Madre y reina de nuestras misiones.</Text>
+                  <Text style={{ marginTop: 18, color: colors.primary[700], fontFamily: typography.family.bold, fontSize: 14, fontStyle: 'italic', textAlign: compact ? 'center' : 'left' }}>“Servus Mariae nunquam peribit”</Text>
+                  <Text style={{ color: colors.text.tertiary.light, fontFamily: typography.family.regular, fontSize: 11, marginTop: 3 }}>El servidor de María nunca perecerá.</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </FadeIn>
+
+          <FadeIn delay={320}>
+            <View style={{ borderRadius: radius['2xl'], padding: compact ? 24 : 34, backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.primary[50], ...shadows.sm, alignItems: 'center' }}>
+              <View style={{ width: 48, height: 48, borderRadius: radius.full, backgroundColor: user ? colors.mint[100] : colors.secondary[100], alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={user ? 'person-outline' : 'sparkles-outline'} size={23} color={user ? colors.mint[600] : colors.secondary[700]} />
+              </View>
+              <Text style={{ marginTop: 14, color: colors.primary[900], fontFamily: typography.family.extrabold, fontSize: 21, textAlign: 'center' }}>{user ? `Hola, ${user.email?.split('@')[0]}` : '¿Ya te inscribiste?'}</Text>
+              <Text style={{ marginTop: 6, maxWidth: 520, color: colors.text.secondary.light, fontFamily: typography.family.regular, fontSize: 13, lineHeight: 20, textAlign: 'center' }}>{user ? 'Desde tu cuenta podés seguir tu inscripción y mantener tus documentos al día.' : 'Creá tu cuenta para ver tu inscripción, tus documentos y toda la información de tu misión.'}</Text>
+              <View style={{ marginTop: 18, width: compact ? '100%' : 320, gap: 8 }}>
+                {user ? <Button variant="ghost" onPress={async () => { try { await signOut(); } catch {} }}><Text>Cerrar sesión</Text></Button> : <><Button variant="primary" onPress={() => router.push('/login?mode=signup')}>Crear cuenta</Button><Button variant="outline" onPress={() => router.push('/login')}>Ya tengo cuenta</Button></>}
+              </View>
+            </View>
+          </FadeIn>
+
+          <View style={{ paddingVertical: 22, flexDirection: compact ? 'column' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, borderTopWidth: 1, borderTopColor: colors.primary[100] }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><Image source={logoMfs} style={{ width: 28, height: 28, resizeMode: 'contain' }} /><Text style={{ color: colors.text.secondary.light, fontFamily: typography.family.semibold, fontSize: 12 }}>Misiones Familiares de Schoenstatt · Paraguay</Text></View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 15 }}>
+              {[['Pueblos', '/pueblos'], ['Torneo', '/torneo'], ['Inscribirme', '/inscribir']].map(([label, path]) => <Pressable key={path} onPress={() => router.push(path as never)}><Text style={{ color: colors.primary[600], fontFamily: typography.family.semibold, fontSize: 12 }}>{label}</Text></Pressable>)}
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </View>
-  )
+  );
 }
 
-type QuickProps = {
-  label: string
-  emoji: string
-  bg: string
-  textColor?: string
-  onPress: () => void
-  delay?: number
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return <View style={{ marginBottom: 15 }}><Text style={{ color: colors.accent[600], fontFamily: typography.family.bold, fontSize: 11, letterSpacing: 1 }}>{eyebrow}</Text><Text style={{ marginTop: 4, color: colors.primary[900], fontFamily: typography.family.extrabold, fontSize: 25, letterSpacing: -0.5 }}>{title}</Text></View>;
 }
 
-function QuickButton({ label, emoji, bg, textColor = '#ffffff', onPress, delay = 0 }: QuickProps) {
-  const scaleAnim = useRef(new Animated.Value(0.8)).current
-  const opacityAnim = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
-      Animated.timing(opacityAnim, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
-    ]).start()
-  }, [])
-
-  return (
-    <Animated.View style={{
-      transform: [{ scale: scaleAnim }],
-      opacity: opacityAnim,
-      minWidth: 145,
-      flexGrow: 1,
-      maxWidth: 200,
-    }}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [{
-          backgroundColor: bg,
-          borderRadius: radius.lg,
-          paddingVertical: 20,
-          paddingHorizontal: 16,
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          opacity: pressed ? 0.85 : 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-          ...shadows.md,
-        }]}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Text style={{ fontSize: 32 }}>{emoji}</Text>
-        <Text style={{ color: textColor, fontWeight: '800', fontSize: 14 }}>
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  )
+function Stat({ icon, value, label }: { icon: IconName; value: string; label: string }) {
+  return <View style={{ flex: 1, minWidth: 130, minHeight: 90, padding: 15, borderRadius: radius.xl, backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.primary[50], ...shadows.sm, flexDirection: 'row', alignItems: 'center', gap: 11 }}><View style={{ width: 38, height: 38, borderRadius: radius.full, backgroundColor: colors.primary[50], alignItems: 'center', justifyContent: 'center' }}><Ionicons name={icon} size={19} color={colors.primary[600]} /></View><View style={{ flex: 1 }}><Text style={{ color: colors.primary[900], fontFamily: typography.family.extrabold, fontSize: 16 }}>{value}</Text><Text style={{ marginTop: 2, color: colors.text.tertiary.light, fontFamily: typography.family.medium, fontSize: 10, lineHeight: 14 }}>{label}</Text></View></View>;
 }
 
-function SkeletonButton() {
-  return (
-    <View style={{
-      minWidth: 145,
-      flexGrow: 1,
-      maxWidth: 200,
-      height: 100,
-      borderRadius: radius.lg,
-      backgroundColor: colors.neutral[200],
-    }} />
-  )
+function QuickCard({ title, description, icon, color, tint, onPress, desktop }: { title: string; description: string; icon: IconName; color: string; tint: string; onPress: () => void; desktop: boolean }) {
+  return <Pressable onPress={onPress} style={({ pressed, hovered }: any) => ({ flexBasis: desktop ? '23%' : '46%', flexGrow: 1, minWidth: 150, minHeight: 142, padding: 18, borderRadius: radius.xl, backgroundColor: colors.surface.light, borderWidth: 1, borderColor: hovered ? colors.primary[200] : colors.primary[50], opacity: pressed ? 0.86 : 1, transform: [{ scale: pressed ? 0.98 : 1 }], ...shadows.sm })}><View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={icon} size={22} color={color} /></View><Text style={{ marginTop: 14, color: colors.primary[900], fontFamily: typography.family.bold, fontSize: 15 }}>{title}</Text><Text style={{ marginTop: 4, color: colors.text.tertiary.light, fontFamily: typography.family.regular, fontSize: 11, lineHeight: 16 }}>{description}</Text></Pressable>;
 }
