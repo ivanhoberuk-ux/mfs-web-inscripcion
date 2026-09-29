@@ -167,7 +167,7 @@ export default function Home() {
               <Stat icon="calendar-outline" value={String(año)} label="Año de misión" />
               <Stat icon="people-outline" value={loadingResumen ? '—' : String(resumenPublico?.misioneros ?? 0)} label="Misioneros" />
               <Stat icon="map-outline" value={loadingResumen ? '—' : String(resumenPublico?.pueblos ?? 0)} label="Pueblos" />
-              <Stat icon="calendar-number-outline" value={`Inscripciones ${año + 1}`} label="Próximamente" />
+              <Stat icon="calendar-number-outline" value={String(año + 1)} label="Inscripciones próximamente" />
             </View>
           </FadeIn>
 
