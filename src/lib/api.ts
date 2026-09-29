@@ -433,10 +433,12 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
   estado: string; pueblo_id: string; pueblo_nombre: string; año: number;
   tipo_asesor: string | null;
   lista_espera_pos: number | null;
+  promocion_vence_at: string | null;
+  promocion_confirmada_at: string | null;
 }>> {
   const { data, error } = await supabase
     .from('registros')
-    .select('id, nombres, apellidos, rol, estado, pueblo_id, año, tipo_asesor, pueblos(nombre)')
+    .select('id, nombres, apellidos, rol, estado, pueblo_id, año, tipo_asesor, promocion_vence_at, promocion_confirmada_at, pueblos(nombre)')
     .eq('email', email)
     .is('deleted_at', null)
     .order('created_at', { ascending: true });
@@ -446,6 +448,8 @@ export async function fetchMiInscripcion(email: string): Promise<Array<{
     estado: r.estado, pueblo_id: r.pueblo_id, año: r.año, tipo_asesor: r.tipo_asesor,
     pueblo_nombre: r.pueblos?.nombre ?? '—',
     lista_espera_pos: null as number | null,
+    promocion_vence_at: (r.promocion_vence_at ?? null) as string | null,
+    promocion_confirmada_at: (r.promocion_confirmada_at ?? null) as string | null,
   }));
   await Promise.all(rows.map(async (row) => {
     if (row.estado !== 'lista_espera') return;
