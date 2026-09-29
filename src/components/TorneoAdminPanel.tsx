@@ -7,17 +7,22 @@ import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
 import { fetchPueblos, type Pueblo } from '../lib/api';
 import { PartidoEditor } from './PartidoEditor';
+import { TorneoEquipoDetalle } from './TorneoEquipoDetalle';
+import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../lib/excel';
+import { shareOrDownload } from '../lib/sharing';
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoEquipo, type TorneoCancha,
-  type TorneoBloque, type TorneoPartido, type TorneoEvento,
+  type TorneoBloque, type TorneoPartido, type TorneoOperador,
   fetchDisciplinas, updateDisciplina, fetchEquipos, addEquipo, deleteEquipo, updateEquipo,
   fetchCanchas, addCancha, deleteCancha, renameCancha, fetchBloques, addBloque, deleteBloque, updateBloque,
-  fetchPartidos, updatePartido, fetchEventos, addEvento, deleteEvento,
+  fetchPartidos, fetchContactos, fetchJugadores, fetchOperadores, agregarOperador, quitarOperador,
+  crearEdicion, updateEdicion, isoAInputAsu, inputAsuAIso, fmtFechaHoraAsu, claveDia,
   sortearZonas, generarFixture, programarTorneo, resolverAvances, correrHorarios, limpiarHorarios, suspenderDesde,
   nombreEquipo, fmtDia, fmtHora, FASE_LABEL, setEdicionVisibleEnInicio,
 } from '../lib/torneo';
 
-type Seccion = 'disciplinas' | 'equipos' | 'horarios' | 'resultados';
+type Seccion = 'disciplinas' | 'equipos' | 'horarios' | 'resultados' | 'operadores';
+const ESTADO_INSC: Record<string, string> = { pendiente: '⏳ Pendiente', aprobado: '✅ Aprobado', rechazado: '❌ Rechazado' };
 
 function SectionCard({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
   return (
@@ -85,7 +90,9 @@ function actionMessage(result: any, fallback: string): string {
 }
 
 
-export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicion; onChanged?: () => void }) {
+export function TorneoAdminPanel({ edicion, onChanged, onEdicionCreada }: {
+  edicion: TorneoEdicion; onChanged?: () => void; onEdicionCreada?: (id: string | null) => void;
+}) {
   const [seccion, setSeccion] = useState<Seccion>('disciplinas');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -98,6 +105,9 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const [pueblos, setPueblos] = useState<Pueblo[]>([]);
   const [selDisc, setSelDisc] = useState<string | null>(null);
   const [ultimoProg, setUltimoProg] = useState<any>(null);
+  const [filtroEq, setFiltroEq] = useState<'todos' | 'pendientes'>('todos');
+  const [rechazo, setRechazo] = useState<{ id: string; motivo: string } | null>(null);
+  const [expandido, setExpandido] = useState<string | null>(null);
   const [visibleInicio, setVisibleInicio] = useState<boolean>(edicion.visible_en_inicio !== false);
 
   useEffect(() => { setVisibleInicio(edicion.visible_en_inicio !== false); }, [edicion.visible_en_inicio]);
@@ -145,6 +155,44 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
   const canchasDisc = canchas.filter((c) => c.disciplina_id === selDisc);
   const partidosDisc = partidos.filter((p) => p.disciplina_id === selDisc);
   const partidosProgramados = partidos.filter((p) => p.inicio != null).length;
+  const pendientesTotal = equipos.filter((e) => e.estado_inscripcion === 'pendiente').length;
+  const pendientesDisc = equiposDisc.filter((e) => e.estado_inscripcion === 'pendiente').length;
+  const equiposVisibles = filtroEq === 'pendientes' ? equiposDisc.filter((e) => e.estado_inscripcion === 'pendiente') : equiposDisc;
+
+  function borrarEquipo(e: TorneoEquipo) {
+    const n = partidos.filter((p) => p.equipo_a_id === e.id || p.equipo_b_id === e.id).length;
+    confirmAction(
+      'Borrar equipo',
+      `¿Borrar ${nombreEquipo(e as any)}?${n > 0 ? `\n\nEste equipo tiene ${n} partidos; quedarán como 'A definir'.` : ''}`,
+      () => run(() => deleteEquipo(e.id), 'Equipo eliminado'),
+    );
+  }
+
+  async function exportarEquipos() {
+    try {
+      const ids = equipos.map((e) => e.id);
+      const [cs, js] = await Promise.all([fetchContactos(ids), fetchJugadores(ids)]);
+      const rows: any[][] = [['Disciplina', 'Pueblo', 'Equipo', 'Estado', 'Zona', 'Delegado', 'Teléfono', 'Cant. jugadores', 'Jugadores']];
+      for (const d of disciplinas) {
+        for (const e of equipos.filter((x) => x.disciplina_id === d.id)) {
+          const c = cs.find((x) => x.equipo_id === e.id);
+          const jug = js.filter((j) => j.equipo_id === e.id);
+          rows.push([
+            `${d.emoji} ${d.nombre}`, e.pueblo?.nombre ?? '', e.nombre ?? '', e.estado_inscripcion, e.zona ?? '',
+            c?.delegado_nombre ?? '', c?.delegado_telefono ?? '', jug.length, jug.map((j) => j.nombre).join(', '),
+          ]);
+        }
+      }
+      const blob = generateExcelBlob(rows, {
+        title: `Equipos — ${edicion.nombre}`,
+        subtitle: `${equipos.length} equipos · Generado el ${humanDate()}`,
+        sheetName: 'Equipos',
+      });
+      await shareOrDownload(blob, `Torneo_equipos_${safeFileName(String(edicion.anio))}_${fileStamp()}.xlsx`);
+    } catch (e: any) {
+      notify('No se pudo exportar', e?.message ?? String(e));
+    }
+  }
 
   async function generarTodosLosFixtures() {
     const activas = disciplinas.filter((d) => d.activa);
@@ -221,6 +269,22 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
 
   return (
     <View>
+      {edicion.finalizada && (
+        <View style={[s.card, { marginBottom: spacing.md, backgroundColor: colors.neutral[100] }]}>
+          <Text style={{ fontWeight: '800', color: colors.neutral[700] }}>📜 Edición finalizada (histórico)</Text>
+        </View>
+      )}
+
+      <FechasInscripcion edicion={edicion} onSave={(desde, hasta) =>
+        run(() => updateEdicion(edicion.id, { inscripcion_equipos_desde: desde, inscripcion_equipos_hasta: hasta }), 'Fechas de inscripción guardadas')} />
+
+      <NuevaEdicion edicion={edicion} disabled={busy} onCrear={(anio, nombre) => run(async () => {
+        const r = await crearEdicion(anio, nombre, edicion.id);
+        if (r?.ok === false) return r;
+        onEdicionCreada?.(r?.edicion_id ?? null);
+        return { ok: true, msg: `Edición ${anio} creada${typeof r?.disciplinas === 'number' ? ` con ${r.disciplinas} disciplinas copiadas` : ''}.` };
+      }, 'Edición creada')} />
+
       {/* Visibilidad en el inicio */}
       <View style={[s.card, {
         marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center',
@@ -247,9 +311,10 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
         {([
           ['disciplinas', '⚙️ Disciplinas'],
-          ['equipos', '🏘️ Equipos y zonas'],
+          ['equipos', `🏘️ Equipos y zonas${pendientesTotal ? ` (${pendientesTotal} ⏳)` : ''}`],
           ['horarios', '🗓️ Horarios y canchas'],
           ['resultados', '📝 Resultados'],
+          ['operadores', '🎛️ Operadores'],
         ] as [Seccion, string][]).map(([k, label]) => (
           <Pressable
             key={k}
@@ -266,7 +331,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       </ScrollView>
 
       {/* Selector de disciplina */}
-      {seccion !== 'horarios' && (
+      {seccion !== 'horarios' && seccion !== 'operadores' && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
           {disciplinas.map((d) => (
             <Pressable
@@ -307,36 +372,75 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               ))}
           </View>
 
-          {equiposDisc.length === 0 ? (
-            <Text style={s.small}>Todavía no hay equipos anotados.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+            <MiniBtn label="Todos" color={filtroEq === 'todos' ? colors.primary[600] : colors.neutral[400]} onPress={() => setFiltroEq('todos')} />
+            <MiniBtn label={`⏳ Pendientes (${pendientesDisc})`} color={filtroEq === 'pendientes' ? colors.warning : colors.neutral[400]} onPress={() => setFiltroEq('pendientes')} />
+            <MiniBtn label="📥 Exportar equipos (Excel)" color={colors.success} onPress={exportarEquipos} />
+          </View>
+          <Text style={[s.small, { marginBottom: 8 }]}>Solo los equipos aprobados cuentan para sortear zonas y generar el fixture.</Text>
+
+          {equiposVisibles.length === 0 ? (
+            <Text style={s.small}>{filtroEq === 'pendientes' ? 'No hay equipos pendientes.' : 'Todavía no hay equipos anotados.'}</Text>
           ) : (
-            equiposDisc.map((e) => {
+            equiposVisibles.map((e) => {
               const zonas = Array.from({ length: Math.max(1, disc.num_zonas) }, (_, i) => String.fromCharCode(65 + i));
               return (
                 <View key={e.id} style={{
                   paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontWeight: '700', color: colors.neutral[800], flex: 1 }}>{nombreEquipo(e as any)}</Text>
-                    <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteEquipo(e.id), 'Equipo eliminado')} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{nombreEquipo(e as any)}{e.nombre && e.pueblo?.nombre ? ` (${e.pueblo.nombre})` : ''}</Text>
+                      <Text style={s.small}>{ESTADO_INSC[e.estado_inscripcion] ?? e.estado_inscripcion}{e.motivo_rechazo ? ` · ${e.motivo_rechazo}` : ''}</Text>
+                    </View>
+                    <MiniBtn label="🗑" color={colors.error} onPress={() => borrarEquipo(e)} />
                   </View>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
-                    <Text style={[s.small, { marginRight: 6 }]}>Zona:</Text>
-                    {zonas.map((z) => (
-                      <MiniBtn
-                        key={z}
-                        label={z}
-                        color={e.zona === z ? colors.success : colors.neutral[400]}
-                        onPress={() => run(() => updateEquipo(e.id, { zona: z }), `Zona ${z} asignada`)}
-                      />
-                    ))}
-                    <MiniBtn label="Sin zona" color={!e.zona ? colors.warning : colors.neutral[300]}
-                      onPress={() => run(() => updateEquipo(e.id, { zona: null }), 'Zona quitada')} />
-                  </View>
+                  {e.estado_inscripcion !== 'aprobado' && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+                      <MiniBtn label="✅ Aprobar" color={colors.success}
+                        onPress={() => run(() => updateEquipo(e.id, { estado_inscripcion: 'aprobado', motivo_rechazo: null } as any), 'Equipo aprobado')} />
+                      {e.estado_inscripcion === 'pendiente' && (
+                        <MiniBtn label="❌ Rechazar" color={colors.error} onPress={() => setRechazo({ id: e.id, motivo: '' })} />
+                      )}
+                    </View>
+                  )}
+                  {rechazo?.id === e.id && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                      <TextInput value={rechazo.motivo} onChangeText={(m) => setRechazo({ id: e.id, motivo: m })} placeholder="Motivo del rechazo"
+                        style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
+                      <MiniBtn label="Confirmar" color={colors.error} disabled={!rechazo.motivo.trim()} onPress={() => {
+                        const motivo = rechazo.motivo.trim(); setRechazo(null);
+                        run(() => updateEquipo(e.id, { estado_inscripcion: 'rechazado', motivo_rechazo: motivo } as any), 'Equipo rechazado');
+                      }} />
+                      <MiniBtn label="✖" color={colors.neutral[500]} onPress={() => setRechazo(null)} />
+                    </View>
+                  )}
+                  {e.activo && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+                      <Text style={[s.small, { marginRight: 6 }]}>Zona:</Text>
+                      {zonas.map((z) => (
+                        <MiniBtn
+                          key={z}
+                          label={z}
+                          color={e.zona === z ? colors.success : colors.neutral[400]}
+                          onPress={() => run(() => updateEquipo(e.id, { zona: z }), `Zona ${z} asignada`)}
+                        />
+                      ))}
+                      <MiniBtn label="Sin zona" color={!e.zona ? colors.warning : colors.neutral[300]}
+                        onPress={() => run(() => updateEquipo(e.id, { zona: null }), 'Zona quitada')} />
+                    </View>
+                  )}
+                  <Pressable onPress={() => setExpandido(expandido === e.id ? null : e.id)}>
+                    <Text style={{ color: colors.primary[600], fontWeight: '700', fontSize: 12, marginTop: 4 }}>
+                      {expandido === e.id ? '▲ Ocultar delegado y jugadores' : '👥 Delegado y jugadores'}
+                    </Text>
+                  </Pressable>
+                  {expandido === e.id && (
+                    <TorneoEquipoDetalle equipo={e} anio={edicion.anio} editable permitirNombreLibre />
+                  )}
                 </View>
               );
             })
-
           )}
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md }}>
@@ -344,13 +448,14 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
               onPress={() => run(() => sortearZonas(disc.id, disc.num_zonas), 'Zonas sorteadas')} />
             <MiniBtn label="📋 Generar fixture" color={colors.success}
               onPress={() => {
-                const sinZona = equiposDisc.some((e) => !e.zona);
-                if (equiposDisc.length < 2) {
-                  notify('Faltan equipos', 'Esta disciplina necesita por lo menos dos equipos.');
+                const aprobados = equiposDisc.filter((e) => e.activo);
+                const sinZona = aprobados.some((e) => !e.zona);
+                if (aprobados.length < 2) {
+                  notify('Faltan equipos', 'Esta disciplina necesita por lo menos dos equipos aprobados.');
                   return;
                 }
                 if (sinZona) {
-                  notify('Faltan zonas', 'Todos los equipos deben tener una zona antes de generar el fixture.');
+                  notify('Faltan zonas', 'Todos los equipos aprobados deben tener una zona antes de generar el fixture.');
                   return;
                 }
                 confirmAction(
@@ -389,7 +494,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   <MiniBtn label="✏️" color={colors.primary[600]} onPress={() => setEditandoBloque(b.id)} />
-                  <MiniBtn label="🗑" color={colors.error} onPress={() => run(() => deleteBloque(b.id), 'Bloque eliminado')} />
+                  <MiniBtn label="🗑" color={colors.error} onPress={() => confirmAction('Borrar bloque', `¿Borrar el bloque ${b.etiqueta || b.fecha} (${b.hora_inicio.slice(0, 5)} a ${b.hora_fin.slice(0, 5)})?`, () => run(() => deleteBloque(b.id), 'Bloque eliminado'))} />
                 </View>
               </View>
               )
@@ -420,7 +525,7 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
                         key={c.id}
                         cancha={c}
                         onRename={(nombre) => run(() => renameCancha(c.id, nombre), 'Cancha actualizada')}
-                        onDelete={() => run(() => deleteCancha(c.id), 'Cancha eliminada')}
+                        onDelete={() => confirmAction('Borrar cancha', `¿Borrar la cancha ${c.nombre}? Los partidos asignados quedarán sin cancha.`, () => run(() => deleteCancha(c.id), 'Cancha eliminada'))}
                       />
                     )
                   ))}
@@ -526,16 +631,138 @@ export function TorneoAdminPanel({ edicion, onChanged }: { edicion: TorneoEdicio
       {seccion === 'resultados' && disc && (
         <SectionCard title={`Resultados — ${disc.nombre}`} emoji="📝">
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
+            <Text style={[s.small, { marginBottom: 6, width: '100%' }]}>Las llaves se completan solas al finalizar cada partido. Este botón es solo por si algo no se actualizó.</Text>
             <MiniBtn label="⏭️ Actualizar clasificados / llaves" color={colors.info}
               onPress={() => run(() => resolverAvances(disc.id), 'Llaves actualizadas')} />
           </View>
           {partidosDisc.length === 0 && <Text style={s.small}>No hay partidos generados.</Text>}
           {partidosDisc.map((p) => (
-            <PartidoEditor key={p.id} partido={p} onSaved={load} usaSets={disc.usa_sets} />
+            <PartidoEditor key={p.id} partido={p} onSaved={load} disciplina={disc} />
           ))}
         </SectionCard>
       )}
+
+      {seccion === 'operadores' && <OperadoresPanel />}
     </View>
+  );
+}
+
+// ---------- Fechas de inscripción de equipos ----------
+function FechasInscripcion({ edicion, onSave }: { edicion: TorneoEdicion; onSave: (desde: string | null, hasta: string | null) => void }) {
+  const [desde, setDesde] = useState(isoAInputAsu(edicion.inscripcion_equipos_desde));
+  const [hasta, setHasta] = useState(isoAInputAsu(edicion.inscripcion_equipos_hasta));
+  useEffect(() => {
+    setDesde(isoAInputAsu(edicion.inscripcion_equipos_desde));
+    setHasta(isoAInputAsu(edicion.inscripcion_equipos_hasta));
+  }, [edicion.id, edicion.inscripcion_equipos_desde, edicion.inscripcion_equipos_hasta]);
+  return (
+    <View style={[s.card, { marginBottom: spacing.md }]}>
+      <Text style={{ fontWeight: '800', color: colors.neutral[800], marginBottom: 4 }}>📝 Inscripción de equipos (coordinadores de pueblo)</Text>
+      <Text style={[s.small, { marginBottom: 8 }]}>
+        Hora de Asunción, formato AAAA-MM-DD HH:MM. Actual: {fmtFechaHoraAsu(edicion.inscripcion_equipos_desde)} → {fmtFechaHoraAsu(edicion.inscripcion_equipos_hasta)}
+      </Text>
+      <Text style={s.small}>Desde</Text>
+      <TextInput value={desde} onChangeText={setDesde} placeholder="2026-10-01 08:00" style={[s.input, { marginBottom: 6 }]} />
+      <Text style={s.small}>Hasta</Text>
+      <TextInput value={hasta} onChangeText={setHasta} placeholder="2026-10-20 23:59" style={[s.input, { marginBottom: 6 }]} />
+      <MiniBtn label="💾 Guardar fechas" color={colors.success} onPress={() => {
+        try {
+          const d = inputAsuAIso(desde), h = inputAsuAIso(hasta);
+          if (d && h && h <= d) { notify('Fechas inválidas', '"Hasta" debe ser posterior a "Desde".'); return; }
+          onSave(d, h);
+        } catch (e: any) { notify('Fecha inválida', e?.message ?? String(e)); }
+      }} />
+    </View>
+  );
+}
+
+// ---------- Crear nueva edición ----------
+function NuevaEdicion({ edicion, onCrear, disabled }: { edicion: TorneoEdicion; onCrear: (anio: number, nombre: string | null) => void; disabled?: boolean }) {
+  const [abierto, setAbierto] = useState(false);
+  const sugerido = Math.max(new Date().getFullYear() + 1, edicion.anio + 1);
+  const [anio, setAnio] = useState(String(sugerido));
+  const [nombre, setNombre] = useState('');
+  if (!abierto) {
+    return (
+      <View style={{ marginBottom: spacing.md, flexDirection: 'row' }}>
+        <MiniBtn label="🆕 Crear nueva edición" color={colors.primary[700]} disabled={disabled} onPress={() => setAbierto(true)} />
+      </View>
+    );
+  }
+  return (
+    <View style={[s.card, { marginBottom: spacing.md }]}>
+      <Text style={{ fontWeight: '800', color: colors.neutral[800], marginBottom: 6 }}>🆕 Nueva edición del torneo</Text>
+      <Text style={s.small}>Año</Text>
+      <TextInput value={anio} onChangeText={(t) => setAnio(t.replace(/[^0-9]/g, ''))} keyboardType="numeric" style={[s.input, { marginBottom: 6 }]} />
+      <Text style={s.small}>Nombre (opcional)</Text>
+      <TextInput value={nombre} onChangeText={setNombre} placeholder={`Torneo Interpueblos ${anio}`} style={[s.input, { marginBottom: 6 }]} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        <MiniBtn label="Crear" color={colors.success} disabled={disabled || anio.length !== 4} onPress={() => confirmAction(
+          'Crear nueva edición',
+          `Se creará la edición ${anio}. La edición actual quedará como finalizada/histórica; se copian disciplinas y canchas. ¿Continuar?`,
+          () => { setAbierto(false); onCrear(Number(anio), nombre.trim() || null); },
+        )} />
+        <MiniBtn label="Cancelar" color={colors.neutral[500]} onPress={() => setAbierto(false)} />
+      </View>
+    </View>
+  );
+}
+
+// ---------- Operadores de cancha ----------
+function OperadoresPanel() {
+  const [lista, setLista] = useState<TorneoOperador[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const cargar = useCallback(async () => {
+    try { setLista(await fetchOperadores()); }
+    catch (e: any) { notify('Error', e?.message ?? String(e)); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  async function agregar() {
+    setBusy(true);
+    try {
+      const r = await agregarOperador(email.trim().toLowerCase());
+      if (r?.ok === false) notify('No se pudo agregar', r?.msg || 'Revisá el email.');
+      else { setEmail(''); await cargar(); }
+    } catch (e: any) { notify('Error', e?.message ?? String(e)); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <SectionCard title="Operadores de cancha" emoji="🎛️">
+      <Text style={[s.small, { marginBottom: 8 }]}>
+        Cada operador usa su propia cuenta; la persona primero crea su cuenta en la web. Después la agregás acá con su email
+        y entra a cargar resultados desde /operador.
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <TextInput value={email} onChangeText={setEmail} placeholder="email@ejemplo.com" autoCapitalize="none" keyboardType="email-address"
+          style={[s.input, { flex: 1, marginBottom: 0, marginRight: 8 }]} />
+        <MiniBtn label="➕ Agregar" color={colors.success} disabled={busy || !email.includes('@')} onPress={agregar} />
+      </View>
+      {loading ? <ActivityIndicator /> : lista.length === 0 ? (
+        <Text style={s.small}>Todavía no hay operadores.</Text>
+      ) : lista.map((o) => (
+        <View key={o.user_id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{o.email}</Text>
+            <Text style={s.small}>Desde {fmtFechaHoraAsu(o.desde)}</Text>
+          </View>
+          <MiniBtn label="Quitar" color={colors.error} disabled={busy} onPress={() => confirmAction(
+            'Quitar operador', `¿Quitar el permiso de operador a ${o.email}?`,
+            async () => {
+              setBusy(true);
+              try { await quitarOperador(o.user_id); await cargar(); }
+              catch (e: any) { notify('Error', e?.message ?? String(e)); }
+              finally { setBusy(false); }
+            },
+          )} />
+        </View>
+      ))}
+    </SectionCard>
   );
 }
 
@@ -544,7 +771,7 @@ function PartidosPorDia({ partidos, disciplinas }: { partidos: TorneoPartido[]; 
   const dias = useMemo(() => {
     const map = new Map<string, { iso: string | null; total: number; porDisc: Map<string, number> }>();
     for (const p of partidos) {
-      const key = p.inicio ? new Date(p.inicio).toISOString().slice(0, 10) : 'zzz-sin-horario';
+      const key = claveDia(p.inicio);
       if (!map.has(key)) map.set(key, { iso: p.inicio, total: 0, porDisc: new Map() });
       const e = map.get(key)!;
       if (p.inicio && !e.iso) e.iso = p.inicio;
