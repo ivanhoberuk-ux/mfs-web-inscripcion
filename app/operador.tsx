@@ -6,10 +6,12 @@ import { supabase } from '../src/lib/supabase';
 import { s, colors } from '../src/lib/theme';
 import { radius, spacing } from '../src/lib/designSystem';
 import { PartidoEditor } from '../src/components/PartidoEditor';
+import { useTorneoPartidosLive } from '../src/hooks/useTorneoPartidosLive';
+import { avisar } from '../src/lib/dialogs';
 import {
   type TorneoEdicion, type TorneoDisciplina, type TorneoPartido, type TorneoCancha,
   fetchEdicionActiva, fetchDisciplinas, fetchPartidos, fetchCanchas,
-  fmtDia, fmtHora, claveDia,
+  fmtDia, fmtHora, claveDia, resolverAvances,
 } from '../src/lib/torneo';
 
 export default function Operador() {
@@ -69,15 +71,10 @@ export default function Operador() {
     load().finally(() => setLoading(false));
   }, [autorizado, load]);
 
-  // Live: si otro operador carga algo, se refresca
-  useEffect(() => {
-    if (!autorizado) return;
-    const channel = supabase
-      .channel('operador-partidos-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'torneo_partidos' }, () => { load(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [autorizado, load]);
+  // Live eficiente: solo se vuelve a pedir el partido que cambió
+  const { refrescar } = useTorneoPartidosLive({
+    enabled: autorizado, channel: 'operador-partidos-live', setPartidos, reloadAll: load,
+  });
 
   const discMap = useMemo(() => new Map(disciplinas.map((d) => [d.id, d])), [disciplinas]);
 
@@ -87,6 +84,18 @@ export default function Operador() {
     if (soloPendientes) out = out.filter((p) => p.estado !== 'finalizado');
     return [...out].sort((a, b) => (a.inicio ?? 'zzz').localeCompare(b.inicio ?? 'zzz'));
   }, [partidos, canchaSel, soloPendientes]);
+
+  const enJuego = useMemo(
+    () => partidos.filter((p) => p.estado === 'en_juego' && (canchaSel === 'todas' || p.cancha_id === canchaSel)),
+    [partidos, canchaSel],
+  );
+  const [resolviendo, setResolviendo] = useState(false);
+  async function actualizarLlaves(discId: string) {
+    setResolviendo(true);
+    try { await resolverAvances(discId); await load(); avisar('Listo', 'Llaves actualizadas.'); }
+    catch (e: any) { avisar('Error', e?.message ?? String(e)); }
+    finally { setResolviendo(false); }
+  }
 
   const porDia = useMemo(() => {
     const map = new Map<string, TorneoPartido[]>();
@@ -194,6 +203,17 @@ export default function Operador() {
 
       {loading && <ActivityIndicator size="large" />}
 
+      {enJuego.length > 0 && (
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={{ fontSize: 16, fontWeight: '900', color: colors.error, marginBottom: 8 }}>🔴 En juego ahora</Text>
+          {enJuego.map((p) => (
+            <View key={`live-${p.id}`} style={[s.card, { marginBottom: 8 }]}>
+              <PartidoEditor partido={p} disciplina={discMap.get(p.disciplina_id)} defaultOpen onSaved={() => refrescar(p.id)} />
+            </View>
+          ))}
+        </View>
+      )}
+
       {!loading && lista.length === 0 && (
         <View style={s.card}><Text style={s.text}>No hay partidos para esta cancha.</Text></View>
       )}
@@ -203,20 +223,39 @@ export default function Operador() {
           <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
             {fmtDia(grupo[0].inicio)}
           </Text>
-          {grupo.map((p) => (
+          {grupo.filter((p) => p.estado !== 'en_juego').map((p) => (
             <View key={p.id} style={[s.card, { marginBottom: 8 }]}>
               <Text style={{ fontSize: 11, color: colors.neutral[500], fontWeight: '700', marginBottom: 4 }}>
                 🕒 {fmtHora(p.inicio)} · {discMap.get(p.disciplina_id)?.nombre ?? ''}
               </Text>
               <PartidoEditor
                 partido={p}
-                usaSets={!!discMap.get(p.disciplina_id)?.usa_sets}
-                onSaved={load}
+                disciplina={discMap.get(p.disciplina_id)}
+                onSaved={() => refrescar(p.id)}
               />
             </View>
           ))}
         </View>
       ))}
+
+      {disciplinas.length > 0 && (
+        <View style={s.card}>
+          <Text style={[s.label, { marginBottom: 4 }]}>⏭️ Clasificados y llaves</Text>
+          <Text style={[s.small, { marginBottom: 8 }]}>
+            Se actualizan solas al finalizar cada partido. Usá esto solo si algo no se completó.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {disciplinas.map((d) => (
+              <Pressable key={d.id} disabled={resolviendo} onPress={() => actualizarLlaves(d.id)} style={{
+                backgroundColor: resolviendo ? colors.neutral[300] : colors.info, paddingVertical: 10,
+                paddingHorizontal: 12, borderRadius: radius.sm, marginRight: 8, marginBottom: 8,
+              }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{d.emoji} Actualizar {d.nombre}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
