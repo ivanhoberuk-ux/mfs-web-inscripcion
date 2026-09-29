@@ -65,7 +65,6 @@ async function enviarConfirmacion(apiKey: string, email: string, link: string) {
       text: `Confirmá tu cuenta de MFS Paraguay: ${link}`,
       purpose: 'transactional',
       unsubscribe_token: await unsubscribeToken(email),
-
       idempotency_key: `signup-confirm-${email}-${Date.now()}`,
     },
     { apiKey },

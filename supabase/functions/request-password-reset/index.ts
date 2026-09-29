@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from '../_shared/email.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
 const FROM_DOMAIN = 'mfspy.org.py'
@@ -135,7 +136,7 @@ Deno.serve(async (req) => {
         `,
         text: `Recibimos una solicitud para restablecer tu contraseña en MFS Paraguay. Abrí este enlace para cambiarla: ${data.properties.action_link}`,
         purpose: 'transactional',
-        unsubscribe_token: `password-reset-${emailHash}`,
+        unsubscribe_token: await unsubscribeToken(cleanEmail),
         idempotency_key: `password-reset-${emailHash}-${Date.now()}`,
       },
       { apiKey: lovableApiKey }

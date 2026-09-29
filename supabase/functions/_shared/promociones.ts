@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from './email.ts'
 import { fechaAsuncion } from './monitoreo.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -91,7 +92,8 @@ export async function notificarPromocionesPendientes(
           html,
           text,
           purpose: 'transactional',
-          idempotency_key: `promocion-${r.id}`,
+          unsubscribe_token: await unsubscribeToken(r.email),
+          idempotency_key: `promocion-${r.id}-${Date.now()}`,
         },
         { apiKey: lovableApiKey },
       )

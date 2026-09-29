@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendLovableEmail } from "npm:@lovable.dev/email-js";
+import { unsubscribeToken } from "../_shared/email.ts";
 import { escapeHtml } from "../_shared/promociones.ts";
 import { isCronOrSuperAdmin } from "../_shared/cron-auth.ts";
 import { alertar, errorMsg, registrarTarea } from "../_shared/monitoreo.ts";
@@ -133,8 +134,8 @@ Deno.serve(async (req) => {
             html,
             text: `Te recordamos que faltan estos documentos:\n${text}`,
             purpose: "transactional",
-            unsubscribe_token: `doc-reminder-${email}`,
-            idempotency_key: `doc-reminder-${email}-${today}`,
+            unsubscribe_token: await unsubscribeToken(email),
+            idempotency_key: `doc-reminder-${email}-${today}-${Date.now()}`,
           },
           { apiKey: LOVABLE_API_KEY },
         );
@@ -237,8 +238,8 @@ Deno.serve(async (req) => {
                 html: summaryHtml,
                 text: `Resumen diario de documentos pendientes en ${puebloNombre}. Total pendientes: ${items.length}.`,
                 purpose: "transactional",
-                unsubscribe_token: `doc-summary-${to}`,
-                idempotency_key: `doc-summary-${puebloId}-${to}-${today}`,
+                unsubscribe_token: await unsubscribeToken(to),
+                idempotency_key: `doc-summary-${puebloId}-${to}-${today}-${Date.now()}`,
               },
               { apiKey: LOVABLE_API_KEY },
             );

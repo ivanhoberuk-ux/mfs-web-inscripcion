@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendLovableEmail } from "npm:@lovable.dev/email-js";
+import { unsubscribeToken } from "../_shared/email.ts";
 import { escapeHtml, notificarPromocionesPendientes } from "../_shared/promociones.ts";
 import { isCronOrSuperAdmin } from "../_shared/cron-auth.ts";
 import { alertar, errorMsg, registrarTarea } from "../_shared/monitoreo.ts";
@@ -75,7 +76,8 @@ Deno.serve(async (req) => {
             html,
             text: `Hola ${r.nombres} ${r.apellidos}. Venció tu lugar en la lista de espera del pueblo ${r.pueblo_nombre}. Podés inscribirte en otro pueblo con cupo: https://mfspy.org.py/pueblos`,
             purpose: "transactional",
-            idempotency_key: `lista-vencida-${r.id}`,
+            unsubscribe_token: await unsubscribeToken(r.email),
+            idempotency_key: `lista-vencida-${r.id}-${Date.now()}`,
           },
           { apiKey: LOVABLE_API_KEY },
         );
@@ -121,7 +123,8 @@ Deno.serve(async (req) => {
             html,
             text: `Hola ${r.nombres}. Tu lugar en ${pueblo} fue liberado porque no confirmaste dentro del plazo. Si todavía querés misionar, podés inscribirte en otro pueblo con lugares disponibles: https://mfspy.org.py/pueblos`,
             purpose: "transactional",
-            idempotency_key: `promocion-vencida-${r.id}`,
+            unsubscribe_token: await unsubscribeToken(r.email),
+            idempotency_key: `promocion-vencida-${r.id}-${Date.now()}`,
           },
           { apiKey: LOVABLE_API_KEY },
         );

@@ -178,7 +178,6 @@ Deno.serve(async (req) => {
         text: `Hola ${displayName || ''}. ${created ? 'Te creamos una cuenta en MFS Paraguay.' : 'Acceso a MFS Paraguay habilitado.'} Configurá tu contraseña: ${accessUrl}`,
         purpose: 'transactional',
         unsubscribe_token: await unsubscribeToken(targetEmail),
-
         idempotency_key: `admin-access-${targetEmail}-${Date.now()}`,
       },
       { apiKey: lovableApiKey }

@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from '../_shared/email.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
 const FROM_DOMAIN = 'mfspy.org.py'
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
         `,
         text: `¡Email de prueba exitoso!\n\nEste es un email de prueba del sistema de inscripciones MFS.\nLa configuración de correos está funcionando correctamente.\nFecha: ${new Date().toLocaleString()}`,
         purpose: 'transactional',
-        unsubscribe_token: `test-email-${email.toLowerCase()}-${user.id}`,
+        unsubscribe_token: await unsubscribeToken(email),
         idempotency_key: `test-email-${user.id}-${Date.now()}`,
       },
       { apiKey: lovableApiKey }
