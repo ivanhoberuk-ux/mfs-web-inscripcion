@@ -5,44 +5,28 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import { colors, radius, spacing, shadows, typography } from '../lib/designSystem';
+import { colors, radius, typography } from '../lib/designSystem';
+import { Card } from './Card';
 
-type Resumen = { misioneros: number; pueblos: number };
+export type ResumenPublicoTemporada = { año: number; misioneros: number; pueblos: number };
 
-export function PortadaInstitucional({ año }: { año: number | null }) {
+export function useResumenPublicoTemporada(año: number | null) {
   const [loading, setLoading] = useState(true);
-  const [resumen, setResumen] = useState<Resumen | null>(null);
+  const [resumen, setResumen] = useState<ResumenPublicoTemporada | null>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       if (!año) { setLoading(false); return; }
       try {
-        // Supabase limita a 1000 filas por request: paginamos para contar todo
-        const PAGE = 1000;
-        let desde = 0;
-        const pueblosSet = new Set<string>();
-        let total = 0;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data, error } = await supabase
-            .from('registros')
-            .select('pueblo_id')
-            .eq('año', año)
-            .eq('estado', 'confirmado')
-            .is('deleted_at', null)
-            .eq('no_clasifico', false)
-            .range(desde, desde + PAGE - 1);
-          if (error) throw error;
-          const rows = (data ?? []) as { pueblo_id: string }[];
-          total += rows.length;
-          rows.forEach(r => { if (r.pueblo_id) pueblosSet.add(r.pueblo_id); });
-          if (rows.length < PAGE) break;
-          desde += PAGE;
-        }
-        if (mounted) {
-          setResumen({ misioneros: total, pueblos: pueblosSet.size });
-        }
+        const { data, error } = await supabase.rpc('resumen_publico_temporada', { p_año: año });
+        if (error) throw error;
+        const value = data as Partial<ResumenPublicoTemporada> | null;
+        if (mounted) setResumen({
+          año: Number(value?.año ?? año),
+          misioneros: Number(value?.misioneros ?? 0),
+          pueblos: Number(value?.pueblos ?? 0),
+        });
       } catch (e) {
         console.warn('No se pudo cargar el resumen institucional:', e);
       } finally {
@@ -52,21 +36,21 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
     return () => { mounted = false; };
   }, [año]);
 
+  return { resumen, loading };
+}
+
+export function PortadaInstitucional({ año, resumen, loading }: { año: number | null; resumen: ResumenPublicoTemporada | null; loading: boolean }) {
+
   const proximo = año ? año + 1 : null;
 
   return (
     <View style={{ width: '100%', gap: 16 }}>
       {/* Misión finalizada */}
-      <View
+      <Card
         style={{
           width: '100%',
-          padding: 20,
-          borderRadius: radius.xl,
           backgroundColor: colors.primary[50],
-          borderWidth: 1,
-          borderColor: colors.secondary[400],
           gap: 12,
-          ...shadows.md,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -87,10 +71,10 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
                 MISIÓN FINALIZADA
               </Text>
             </View>
-            <Text style={{ fontSize: 20, fontFamily: typography.family.extrabold, color: colors.primary[700], lineHeight: 25 }}>
+            <Text style={{ fontSize: 20, fontFamily: typography.family.extrabold, color: colors.text.primary.light, lineHeight: 25 }}>
               ¡Gracias por las Misiones {año ?? ''}!
             </Text>
-            <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, fontFamily: typography.family.regular, color: colors.text.secondary.light, lineHeight: 18 }}>
               Con María, de la mano del Padre, llevamos el Evangelio a cada pueblo. Hasta la próxima misión.
             </Text>
           </View>
@@ -104,52 +88,30 @@ export function PortadaInstitucional({ año }: { año: number | null }) {
             <Stat icon="map-outline" valor={String(resumen.pueblos)} label="pueblos" />
           </View>
         ) : null}
-      </View>
+      </Card>
 
       {/* Próximas inscripciones */}
-      <View
-        style={{
-          width: '100%',
-          padding: 20,
-          borderRadius: radius.xl,
-          backgroundColor: colors.surface.light,
-          borderWidth: 1,
-          borderColor: colors.primary[100],
-          gap: 8,
-          ...shadows.sm,
-        }}
-      >
+      <Card style={{ width: '100%', gap: 8 }}>
         <Ionicons name="calendar-outline" size={30} color={colors.primary[600]} />
-        <Text style={{ fontSize: 18, fontWeight: '800', color: colors.primary[700] }}>
+        <Text style={{ fontSize: 18, fontFamily: typography.family.extrabold, color: colors.text.primary.light }}>
           Inscripciones {proximo ?? ''} próximamente
         </Text>
-        <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 19 }}>
+        <Text style={{ fontSize: 13, fontFamily: typography.family.regular, color: colors.text.secondary.light, lineHeight: 19 }}>
           Todavía no están abiertas las inscripciones para la próxima misión. Cuando se habiliten, vas a poder
           inscribirte desde acá y te avisamos por nuestras redes. ¡Seguí atento!
         </Text>
-      </View>
+      </Card>
 
       {/* Contacto */}
-      <View
-        style={{
-          width: '100%',
-          padding: spacing.lg,
-          borderRadius: radius.lg,
-          backgroundColor: colors.surface.light,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.secondary[500],
-          gap: 4,
-          ...shadows.sm,
-        }}
-      >
-        <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary[700] }}>
+      <Card style={{ width: '100%', gap: 4 }}>
+        <Text style={{ fontSize: 15, fontFamily: typography.family.extrabold, color: colors.text.primary.light }}>
           ¿Querés más información?
         </Text>
-        <Text style={{ fontSize: 13, color: colors.text.secondary.light, lineHeight: 19 }}>
+        <Text style={{ fontSize: 13, fontFamily: typography.family.regular, color: colors.text.secondary.light, lineHeight: 19 }}>
           Escribinos a mfspy.org.py o contactate con el coordinador de tu pueblo. También podés seguirnos en
           nuestras redes para enterarte de todas las novedades de las Misiones Familiares de Schoenstatt Paraguay.
         </Text>
-      </View>
+      </Card>
     </View>
   );
 }
@@ -169,8 +131,8 @@ function Stat({ icon, valor, label }: { icon: React.ComponentProps<typeof Ionico
     >
       <Ionicons name={icon} size={21} color={colors.primary[600]} />
       <View>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: colors.primary[700] }}>{valor}</Text>
-        <Text style={{ fontSize: 11, color: colors.text.secondary.light, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+        <Text style={{ fontSize: 18, fontFamily: typography.family.extrabold, color: colors.text.primary.light }}>{valor}</Text>
+        <Text style={{ fontSize: 11, fontFamily: typography.family.medium, color: colors.text.secondary.light, textTransform: 'uppercase', letterSpacing: 0.4 }}>
           {label}
         </Text>
       </View>

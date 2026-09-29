@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image, Animated } from 'react-native';
-import { colors, spacing, radius, shadows } from '../lib/designSystem';
+import { colors, spacing, radius, shadows, typography } from '../lib/designSystem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CHAT_SESSION_KEY = 'mfs_chat_session_id';
@@ -183,7 +183,7 @@ export function ChatWidget() {
             }
           ]}
         >
-          <Text style={styles.speechBubbleText}>¡Hola!! Estoy aquí para ayudarte 💬</Text>
+          <Text style={styles.speechBubbleText}>¡Hola! Estoy aquí para ayudarte</Text>
           <View style={styles.speechBubbleArrow} />
         </Animated.View>
       )}
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   speechBubbleText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: typography.family.medium,
     color: colors.text.primary.light,
     textAlign: 'center',
   },
