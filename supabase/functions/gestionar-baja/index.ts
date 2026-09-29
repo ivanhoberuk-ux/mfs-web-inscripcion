@@ -6,6 +6,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from '../_shared/email.ts'
 import { escapeHtml, notificarPromocionesPendientes } from '../_shared/promociones.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -176,8 +177,8 @@ Deno.serve(async (req) => {
                 `,
                 text: `Aviso de baja en ${pueblo.nombre}: ${rc.nombres} ${rc.apellidos}. Estado anterior: ${estadoTxt}.`,
                 purpose: 'transactional',
-                unsubscribe_token: `baja-admin-${adminEmail.toLowerCase()}`,
-                idempotency_key: `baja-admin-${registro_id}-${adminEmail.toLowerCase()}`,
+                unsubscribe_token: await unsubscribeToken(adminEmail),
+                idempotency_key: `baja-admin-${registro_id}-${adminEmail.toLowerCase()}-${Date.now()}`,
               },
               { apiKey: LOVABLE_API_KEY },
             )

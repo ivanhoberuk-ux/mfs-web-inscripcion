@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
+import { unsubscribeToken } from '../_shared/email.ts'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
 const FROM_DOMAIN = 'mfspy.org.py'
@@ -176,7 +177,7 @@ Deno.serve(async (req) => {
         `,
         text: `Hola ${displayName || ''}. ${created ? 'Te creamos una cuenta en MFS Paraguay.' : 'Acceso a MFS Paraguay habilitado.'} Configurá tu contraseña: ${accessUrl}`,
         purpose: 'transactional',
-        unsubscribe_token: `admin-access-${targetEmail}`,
+        unsubscribe_token: await unsubscribeToken(targetEmail),
         idempotency_key: `admin-access-${targetEmail}-${Date.now()}`,
       },
       { apiKey: lovableApiKey }
