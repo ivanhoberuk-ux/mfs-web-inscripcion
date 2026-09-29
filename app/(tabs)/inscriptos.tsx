@@ -687,6 +687,13 @@ export default function VerInscriptosAdmin() {
         Inscriptos {currentUserIsSuperAdmin ? '(Super Admin)' : isPuebloAdmin || isCoAdmin ? '(Mi pueblo)' : ''}
       </Text>
 
+      {(currentUserIsSuperAdmin || isPuebloAdmin || isCoAdmin) && (
+        <Pressable onPress={() => router.push('/seleccion' as any)}
+          style={{ backgroundColor: '#16a34a', padding: 14, borderRadius: 10, marginBottom: 10, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>✅ Selección de misioneros</Text>
+        </Pressable>
+      )}
+
       <Card>
         <Text style={s.label}>Pueblo</Text>
         <View style={{ borderWidth: 1, borderColor: colors.neutral[300], borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>

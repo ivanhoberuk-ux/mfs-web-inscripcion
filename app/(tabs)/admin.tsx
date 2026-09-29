@@ -98,6 +98,7 @@ export default function Admin() {
   const [items, setItems] = useState<OcItem[]>([]);
   const [edit, setEdit] = useState<Record<string, number>>({});
   const [toggle, setToggle] = useState<Record<string, boolean>>({});
+  const [editMision, setEditMision] = useState<Record<string, string>>({});
   const [pueblosMap, setPueblosMap] = useState<Record<string, string>>({});
   const [q, setQ] = useState('');
   
@@ -184,6 +185,10 @@ export default function Admin() {
       });
       setEdit(ed);
       setToggle(tg);
+      const { data: cm } = await supabase.from('pueblos').select('id, cupo_mision');
+      const em: Record<string, string> = {};
+      (cm ?? []).forEach((x: any) => (em[x.id] = x.cupo_mision == null ? '' : String(x.cupo_mision)));
+      setEditMision(em);
       const map: Record<string, string> = {};
       (pueblos as PuebloBase[]).forEach((p) => (map[p.id] = p.nombre));
       setPueblosMap(map);
@@ -423,7 +428,17 @@ export default function Admin() {
         if (!ok) return;
       }
 
+      const misTxt = (editMision[puebloId] ?? '').trim();
+      const nuevoMision = misTxt === '' ? null : parseInt(misTxt, 10);
+      if (nuevoMision != null && (Number.isNaN(nuevoMision) || nuevoMision < 0)) {
+        Alert.alert('Valor inválido', 'Ingresá un número válido para el cupo para misionar (o dejalo vacío).');
+        return;
+      }
       setSaving(puebloId);
+      {
+        const { error: eMis } = await supabase.from('pueblos').update({ cupo_mision: nuevoMision } as any).eq('id', puebloId);
+        if (eMis) throw eMis;
+      }
       try {
         await updatePueblo(puebloId, { cupo_max: nuevoMax, activo: nuevoActivo } as any);
       } catch {
@@ -1117,6 +1132,17 @@ export default function Admin() {
                 >
                   <Text style={s.buttonText}>{saving === p.id ? 'Guardando…' : 'Guardar'}</Text>
                 </Pressable>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+                <Text style={s.small}>✅ Cupo para misionar:</Text>
+                <TextInput
+                  style={[s.input, { width: 110, textAlign: 'center' }]}
+                  keyboardType="number-pad"
+                  placeholder="Sin definir"
+                  value={editMision[p.id] ?? ''}
+                  onChangeText={(t) => setEditMision((prev) => ({ ...prev, [p.id]: t.replace(/[^0-9]/g, '') }))}
+                />
+                <Text style={[s.small, { color: '#6b7280' }]}>(se guarda con “Guardar”)</Text>
               </View>
             </View>
           );
