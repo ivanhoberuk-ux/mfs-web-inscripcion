@@ -3,6 +3,7 @@
 // Envía un email de prueba usando Lovable Emails — solo super_admin
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -106,6 +107,7 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error('Error en test-email:', error)
+    await alertar(null, 'edge:test-email', 'Error en test-email', errorMsg(error), 'edge:test-email')
     return new Response(
       JSON.stringify({ 
         error: 'Error al enviar email de prueba'

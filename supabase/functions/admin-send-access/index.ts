@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 
 const SENDER_DOMAIN = 'notify.mfspy.org.py'
@@ -184,6 +185,7 @@ Deno.serve(async (req) => {
     return json({ success: true, created, email: targetEmail })
   } catch (error) {
     console.error('admin-send-access failed', error)
+    await alertar(null, 'edge:admin-send-access', 'Error en admin-send-access', errorMsg(error), 'edge:admin-send-access')
     return json({ error: 'No se pudo enviar el acceso. Intentá de nuevo.' }, 500)
   }
 })

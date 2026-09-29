@@ -4,6 +4,7 @@
 // desde lista de espera la hace el trigger registros_promover_al_liberar.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { alertar, errorMsg } from '../_shared/monitoreo.ts'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { escapeHtml, notificarPromocionesPendientes } from '../_shared/promociones.ts'
 
@@ -190,6 +191,7 @@ Deno.serve(async (req) => {
     return json({ success: true, mensaje: 'Baja procesada exitosamente', ...resultado })
   } catch (error: any) {
     console.error('Error en gestionar-baja:', error)
+    await alertar(null, 'edge:gestionar-baja', 'Error en gestionar-baja', errorMsg(error), 'edge:gestionar-baja')
     return json({ error: 'Error al procesar la baja' }, 500)
   }
 })
