@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendLovableEmail } from "npm:@lovable.dev/email-js";
 import { escapeHtml } from "../_shared/promociones.ts";
 import { isCronOrSuperAdmin } from "../_shared/cron-auth.ts";
+import { alertar, errorMsg, registrarTarea } from "../_shared/monitoreo.ts";
 
 const SENDER_DOMAIN = "notify.mfspy.org.py";
 const FROM_DOMAIN = "mfspy.org.py";
@@ -24,12 +25,12 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
+  let supabase: any = null;
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     if (!(await isCronOrSuperAdmin(req, supabase))) {
       return json({ error: "No autorizado" }, 401);
@@ -42,7 +43,9 @@ Deno.serve(async (req) => {
       .eq("activo", true)
       .maybeSingle();
     if (!config || config.modo !== "mision") {
-      return json({ ok: true, skipped: "modo institucional" });
+      const res = { ok: true, skipped: "modo institucional" };
+      await registrarTarea(supabase, "daily-doc-reminders", true, res);
+      return json(res);
     }
 
     const today = new Date().toISOString().split("T")[0];
@@ -263,7 +266,7 @@ Deno.serve(async (req) => {
       if (logErr) console.error("Error inserting logs:", logErr);
     }
 
-    return json({
+    const res = {
       ok: true,
       año: config.año,
       pendientes: pendientes.length,
@@ -271,9 +274,14 @@ Deno.serve(async (req) => {
       restantes,
       summariesSent,
       logsInserted: logInserts.length,
-    });
+    };
+    await registrarTarea(supabase, "daily-doc-reminders", true, res);
+    return json(res);
   } catch (error: any) {
     console.error("daily-doc-reminders error:", error);
-    return json({ ok: false, error: error.message }, 500);
+    const msg = errorMsg(error);
+    await registrarTarea(supabase, "daily-doc-reminders", false, { error: msg });
+    await alertar(supabase, "edge:daily-doc-reminders", "Falló daily-doc-reminders", msg, "edge:daily-doc-reminders");
+    return json({ ok: false, error: msg }, 500);
   }
 });
