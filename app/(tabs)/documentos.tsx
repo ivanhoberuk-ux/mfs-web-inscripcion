@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad';
 import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf';
 import { uploadToStorage, updateDocumento, publicUrl, fetchAñoActivo } from '../../src/lib/api';
+import { compressImage } from '../../src/lib/imageCompress';
 import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { useAuth } from '../../src/context/AuthProvider';
@@ -508,10 +509,15 @@ export default function Documentos() {
         return;
       }
 
-      const ext = (asset.fileName?.split('.').pop() || 'jpg').toLowerCase();
+      let ext = (asset.fileName?.split('.').pop() || 'jpg').toLowerCase();
+      let srcUri: string = asset.uri;
+      if (ext !== 'pdf' && !/^application\/pdf/.test(asset.mimeType || '')) {
+        const comp = await compressImage(asset.uri);
+        if (comp) { srcUri = comp.uri; ext = comp.ext; }
+      }
       const path = `registros/${record.id}/${kind}.${ext}`;
       setUploadProgress({ kind, pct: 0 });
-      const url = await uploadToStorage('documentos', path, asset.uri, (pct) =>
+      const url = await uploadToStorage('documentos', path, srcUri, (pct) =>
         setUploadProgress({ kind, pct })
       );
       setUploadProgress(null);
@@ -609,8 +615,9 @@ export default function Documentos() {
       }
       setFirmaPreview(dataUrl);
       const path = `registros/${record.id}/firma.png`;
+      const firmaComp = await compressImage(dataUrl, { keepPng: true });
       setUploadProgress({ kind: 'firma', pct: 0 });
-      const url = await uploadToStorage('documentos', path, dataUrl, (pct) =>
+      const url = await uploadToStorage('documentos', path, firmaComp?.uri ?? dataUrl, (pct) =>
         setUploadProgress({ kind: 'firma', pct })
       );
       setUploadProgress(null);
