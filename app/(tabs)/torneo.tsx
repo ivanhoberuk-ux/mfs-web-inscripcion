@@ -1,5 +1,5 @@
 // FILE: app/(tabs)/torneo.tsx
-// Torneo Interpueblos: fixture, posiciones, goleadores y administración
+// Torneo Interpueblos: fixture, posiciones, llaves, inscripción de equipos y administración
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl, Alert } from 'react-native';
 import { s, colors } from '../../src/lib/theme';
@@ -99,14 +99,14 @@ export default function Torneo() {
 
   const enJuego = useMemo(() => partidos.filter((p) => p.estado === 'en_juego'), [partidos]);
 
-  // Disciplina concreta para posiciones/goleadores
+  // Disciplina concreta para posiciones
   const discSel = useMemo(() => {
     if (filtroDisc !== 'todas') return disciplinas.find((d) => d.id === filtroDisc) ?? disciplinas[0] ?? null;
     return disciplinas[0] ?? null;
   }, [filtroDisc, disciplinas]);
 
   // Se recalcula también cuando cambian los partidos (p.ej. por un evento en vivo),
-  // así la tabla de posiciones y los goleadores se actualizan en tiempo real.
+  // así la tabla de posiciones se actualiza en tiempo real.
   useEffect(() => {
     if (!discSel) { setTabla([]); return; }
     if (vista === 'posiciones') fetchTabla(discSel.id).then(setTabla).catch(() => setTabla([]));
@@ -289,7 +289,7 @@ export default function Torneo() {
       </ScrollView>
 
       {vista === 'admin' && isSuperAdmin && edicion && (
-        <TorneoAdminPanel edicion={edicion} onChanged={load} />
+        <TorneoAdminPanel edicion={edicion} onChanged={load} onEdicionCreada={(id) => setEdicionSel(id ?? null)} />
       )}
 
       {vista === 'misequipos' && esCoordinador && edicion && (
