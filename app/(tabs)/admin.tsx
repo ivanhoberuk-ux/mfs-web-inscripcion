@@ -22,6 +22,7 @@ import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src
 import { useAuth } from '../../src/context/AuthProvider';
 import { InscripcionConfigPanel } from '../../src/components/InscripcionConfigPanel';
 import { TemporadaPanel } from '../../src/components/TemporadaPanel';
+import { ChequeoTemporadaPanel, AuditoriaPanel, AlertasTareasPanel } from '../../src/components/MonitoreoPanels';
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
 import { AsesoresValidacionPanel } from '../../src/components/AsesoresValidacionPanel';
@@ -115,6 +116,7 @@ export default function Admin() {
   // Panel de configuración de inscripciones
   const [showInscripcionConfig, setShowInscripcionConfig] = useState(false);
   const [showPlantillas, setShowPlantillas] = useState(false);
+  const [monitorTab, setMonitorTab] = useState<null | 'chequeo' | 'auditoria' | 'alertas'>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showAsesores, setShowAsesores] = useState(false);
   
@@ -644,6 +646,7 @@ export default function Admin() {
           <Pressable 
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showRolesPanel ? '#0a7ea4' : '#6b7280' }]} 
             onPress={() => {
+              setMonitorTab(null)
               setShowRolesPanel(!showRolesPanel)
               setShowCreatePueblo(false)
               setShowInscripcionConfig(false)
@@ -660,6 +663,7 @@ export default function Admin() {
           <Pressable 
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showCreatePueblo ? '#0b9850' : '#6b7280' }]} 
             onPress={() => {
+              setMonitorTab(null)
               setShowCreatePueblo(!showCreatePueblo)
               setShowRolesPanel(false)
               setShowInscripcionConfig(false)
@@ -675,6 +679,7 @@ export default function Admin() {
           <Pressable
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showInscripcionConfig ? '#7c3aed' : '#6b7280' }]}
             onPress={() => {
+              setMonitorTab(null)
               setShowInscripcionConfig(!showInscripcionConfig)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
@@ -690,6 +695,7 @@ export default function Admin() {
           <Pressable
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showPlantillas ? '#0891b2' : '#6b7280' }]}
             onPress={() => {
+              setMonitorTab(null)
               setShowPlantillas(!showPlantillas)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
@@ -705,6 +711,7 @@ export default function Admin() {
           <Pressable
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showDashboard ? '#0a7ea4' : '#6b7280' }]}
             onPress={() => {
+              setMonitorTab(null)
               setShowDashboard(!showDashboard)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
@@ -721,6 +728,7 @@ export default function Admin() {
           <Pressable
             style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showAsesores ? '#16a34a' : '#6b7280' }]}
             onPress={() => {
+              setMonitorTab(null)
               setShowAsesores(!showAsesores)
               setShowRolesPanel(false)
               setShowCreatePueblo(false)
@@ -733,9 +741,27 @@ export default function Admin() {
               {showAsesores ? 'Ver Exportes' : '🙏 Validar Asesores'}
             </Text>
           </Pressable>
+        {([['chequeo','🩺 Chequeo de temporada','#0f766e'],['auditoria','🕵️ Auditoría','#9333ea'],['alertas','🔔 Alertas y tareas','#d97706']] as const).map(([k,label,col]) => (
+            <Pressable key={k}
+              style={[s.button, { flex: 1, minWidth: 140, backgroundColor: monitorTab === k ? col : '#6b7280' }]}
+              onPress={() => {
+                setMonitorTab(monitorTab === k ? null : k)
+                setShowRolesPanel(false); setShowCreatePueblo(false); setShowInscripcionConfig(false)
+                setShowPlantillas(false); setShowDashboard(false); setShowAsesores(false)
+              }}
+            >
+              <Text style={s.buttonText}>{monitorTab === k ? 'Ver Exportes' : label}</Text>
+            </Pressable>
+          ))}
         </View>
         
-        {showAsesores ? (
+        {monitorTab === 'chequeo' ? (
+          <ChequeoTemporadaPanel />
+        ) : monitorTab === 'auditoria' ? (
+          <AuditoriaPanel />
+        ) : monitorTab === 'alertas' ? (
+          <AlertasTareasPanel />
+        ) : showAsesores ? (
           <AsesoresValidacionPanel />
         ) : showDashboard ? (
           <DashboardGeneralPanel />
