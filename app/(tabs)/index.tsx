@@ -226,7 +226,7 @@ export default function Home() {
               <Text style={{ marginTop: 14, color: colors.primary[900], fontFamily: typography.family.extrabold, fontSize: 21, textAlign: 'center' }}>{user ? `Hola, ${user.email?.split('@')[0]}` : '¿Ya te inscribiste?'}</Text>
               <Text style={{ marginTop: 6, maxWidth: 520, color: colors.text.secondary.light, fontFamily: typography.family.regular, fontSize: 13, lineHeight: 20, textAlign: 'center' }}>{user ? 'Desde tu cuenta podés seguir tu inscripción y mantener tus documentos al día.' : 'Creá tu cuenta para ver tu inscripción, tus documentos y toda la información de tu misión.'}</Text>
               <View style={{ marginTop: 18, width: compact ? '100%' : 320, gap: 8 }}>
-                {user ? <Button variant="ghost" onPress={async () => { try { await signOut(); } catch {} }}><Text>Cerrar sesión</Text></Button> : <><Button variant="primary" onPress={() => router.push('/login?mode=signup')}>Crear cuenta</Button><Button variant="outline" onPress={() => router.push('/login')}>Ya tengo cuenta</Button></>}
+                {user ? <Button variant="ghost" onPress={async () => { try { await signOut(); } catch {} }}>Cerrar sesión</Button> : <><Button variant="primary" onPress={() => router.push('/login?mode=signup')}>Crear cuenta</Button><Button variant="outline" onPress={() => router.push('/login')}>Ya tengo cuenta</Button></>}
               </View>
             </View>
           </FadeIn>

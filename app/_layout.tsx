@@ -1,10 +1,10 @@
 // app/_layout.tsx
 import { Stack } from 'expo-router'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { View } from 'react-native'
 import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans'
 import { AuthProvider } from '../src/context/AuthProvider'
-import { colors, setTypographyFontsReady } from '../src/lib/designSystem'
+import { colors } from '../src/lib/designSystem'
 import { ChatWidget } from '../src/components/ChatWidget'
 
 export default function RootLayout() {
@@ -13,11 +13,9 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold,
   })
 
-  useEffect(() => { setTypographyFontsReady(fontsLoaded) }, [fontsLoaded])
-
   return (
     <AuthProvider>
-      <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+      <View key={fontsLoaded ? 'fonts-ready' : 'fonts-loading'} style={{ flex: 1, backgroundColor: colors.background.light }}>
         <Stack
           screenOptions={{
             headerShown: false,

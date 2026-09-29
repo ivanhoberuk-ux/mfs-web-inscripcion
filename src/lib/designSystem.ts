@@ -88,11 +88,11 @@ export const gradients = {
 export const typography = {
   // Familia de fuente (React Native usa system fonts)
   family: {
-    regular: 'System',
-    medium: 'System',
-    semibold: 'System',
-    bold: 'System',
-    extrabold: 'System',
+    regular: 'PlusJakartaSans_400Regular',
+    medium: 'PlusJakartaSans_500Medium',
+    semibold: 'PlusJakartaSans_600SemiBold',
+    bold: 'PlusJakartaSans_700Bold',
+    extrabold: 'PlusJakartaSans_800ExtraBold',
   },
   
   // Tamaños más generosos y modernos
@@ -178,15 +178,6 @@ export const shadows = {
     elevation: 12,
   },
 };
-
-export function setTypographyFontsReady(ready: boolean) {
-  const family = typography.family;
-  family.regular = ready ? 'PlusJakartaSans_400Regular' : 'System';
-  family.medium = ready ? 'PlusJakartaSans_500Medium' : 'System';
-  family.semibold = ready ? 'PlusJakartaSans_600SemiBold' : 'System';
-  family.bold = ready ? 'PlusJakartaSans_700Bold' : 'System';
-  family.extrabold = ready ? 'PlusJakartaSans_800ExtraBold' : 'System';
-}
 
 // Opacidades
 export const opacity = {

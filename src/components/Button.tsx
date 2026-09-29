@@ -37,6 +37,7 @@ export function Button({
   };
 
   const getTextStyle = (): TextStyle => {
+    if (variant === 'secondary') return s.buttonTextSecondary;
     if (variant === 'outline' || variant === 'ghost') {
       return s.buttonTextOutline;
     }

@@ -97,7 +97,7 @@ export const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
   buttonPrimary: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.primary[600],
   },
   buttonSecondary: {
     backgroundColor: colors.secondary[500],
@@ -124,6 +124,10 @@ export const s = StyleSheet.create({
   },
   buttonTextOutline: {
     color: colors.primary[500],
+    fontFamily: typography.family.semibold,
+  },
+  buttonTextSecondary: {
+    color: colors.text.primary.light,
     fontFamily: typography.family.semibold,
   },
   
