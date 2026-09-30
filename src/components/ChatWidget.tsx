@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform, Image, Animated } from 'react-native';
 import { colors, spacing, radius, shadows, typography } from '../lib/designSystem';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { gradients } from '../lib/designSystem';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CHAT_SESSION_KEY = 'mfs_chat_session_id';
@@ -209,15 +212,15 @@ export function ChatWidget() {
         <View style={styles.modalOverlay}>
           <View style={styles.chatContainer}>
             {/* Header */}
-            <View style={styles.header}>
+             <LinearGradient colors={[...gradients.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
               <View style={styles.headerLeft}>
                 <Image source={{ uri: MISIONERITO_AVATAR }} style={styles.headerAvatar} />
                 <Text style={styles.headerTitle}>Misionerito</Text>
               </View>
-              <Pressable onPress={() => setIsOpen(false)} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>✕</Text>
+               <Pressable onPress={() => setIsOpen(false)} style={styles.closeButton} accessibilityLabel="Cerrar chat">
+                 <Ionicons name="close" size={20} color={colors.surface.light} />
               </Pressable>
-            </View>
+             </LinearGradient>
 
             {/* Messages */}
             <ScrollView
@@ -264,7 +267,7 @@ export function ChatWidget() {
                 onPress={sendMessage}
                 disabled={!inputText.trim() || isLoading}
               >
-                <Text style={styles.sendButtonText}>➤</Text>
+                 <Ionicons name="arrow-up" size={20} color={colors.surface.light} />
               </Pressable>
             </View>
           </View>
@@ -279,7 +282,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 150,
     right: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface.light,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.lg,
@@ -304,27 +307,27 @@ const styles = StyleSheet.create({
     borderTopWidth: 10,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#ffffff',
+    borderTopColor: colors.surface.light,
   },
   floatingButton: {
     position: 'absolute',
     bottom: 24,
     right: 24,
-    width: 140,
-    height: 140,
+    width: 92,
+    height: 92,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
     zIndex: 1000,
   },
   floatingButtonImage: {
-    width: 140,
-    height: 140,
+    width: 92,
+    height: 92,
     resizeMode: 'contain',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(31, 33, 64, 0.36)',
     justifyContent: 'flex-end',
   },
   chatContainer: {
@@ -340,8 +343,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[200],
+    borderBottomWidth: 0,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -356,13 +358,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text.primary.light,
+    color: colors.surface.light,
+    fontFamily: typography.family.bold,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.neutral[100],
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -380,7 +383,7 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '80%',
-    padding: spacing.sm,
+    padding: spacing.md,
     borderRadius: radius.lg,
   },
   userMessage: {
@@ -389,11 +392,12 @@ const styles = StyleSheet.create({
   },
   botMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.neutral[100],
+    backgroundColor: colors.primary[50],
   },
   messageText: {
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: typography.family.regular,
   },
   userMessageText: {
     color: '#ffffff',
@@ -417,6 +421,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     fontSize: 14,
     color: colors.text.primary.light,
+    fontFamily: typography.family.regular,
   },
   sendButton: {
     width: 44,

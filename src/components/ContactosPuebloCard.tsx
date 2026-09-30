@@ -3,6 +3,8 @@ import { View, Text, Pressable, Linking } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthProvider'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
+import { Ionicons } from '@expo/vector-icons'
+import { InitialAvatar } from './PageHeader'
 
 type Contacto = {
   nombres: string
@@ -74,17 +76,15 @@ export function ContactosPuebloCard() {
       borderRadius: radius.lg,
       padding: spacing.lg,
       ...shadows.md,
-      borderWidth: 2,
-      borderColor: colors.primary[200],
+      borderWidth: 1,
+      borderColor: colors.primary[50],
       gap: 12,
     }}>
-      <Text style={{ fontSize: 16, fontWeight: '800', color: colors.primary[700] }}>
-        📞 Contactos para informes del pueblo
-      </Text>
+       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Ionicons name="call-outline" size={21} color={colors.primary[600]} /><Text style={{ fontSize: 16, fontWeight: '800', color: colors.text.primary.light }}>Contactos para informes del pueblo</Text></View>
       {groups.map((g) => (
         <View key={g.puebloId} style={{ gap: 8 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary[600] }}>
-            🏠 {g.puebloNombre}
+             {g.puebloNombre}
           </Text>
           {g.contactos.length === 0 ? (
             <Text style={{ fontSize: 12, color: colors.text.tertiary.light, fontStyle: 'italic' }}>
@@ -105,13 +105,14 @@ export function ContactosPuebloCard() {
                   gap: 8,
                   flexWrap: 'wrap',
                 }}>
-                  <View style={{ flex: 1, minWidth: 160 }}>
+                   <InitialAvatar name={nombre} tone="mint" />
+                   <View style={{ flex: 1, minWidth: 130 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary[800] }}>
                       {nombre}
                     </Text>
                     {c.telefono ? (
                       <Text style={{ fontSize: 12, color: colors.text.secondary.light, marginTop: 2 }}>
-                        📱 {c.telefono}
+                         {c.telefono}
                       </Text>
                     ) : (
                       <Text style={{ fontSize: 11, color: colors.text.tertiary.light, fontStyle: 'italic', marginTop: 2 }}>

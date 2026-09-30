@@ -4,6 +4,8 @@ import { View, Text, ActivityIndicator } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { fetchAsesoresConfirmados, fetchAñoActivo, type AsesorRow } from '../lib/api'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
+import { Ionicons } from '@expo/vector-icons'
+import { InitialAvatar } from './PageHeader'
 
 
 const TIPO_LABEL: Record<string, string> = {
@@ -48,16 +50,14 @@ export function AsesoresAnioCard() {
   return (
     <View style={{
       backgroundColor: colors.surface.light, borderRadius: radius.lg, padding: spacing.md,
-      ...shadows.md, borderWidth: 2, borderColor: colors.sky?.[200] ?? '#bae6fd',
+       ...shadows.md, borderWidth: 1, borderColor: colors.primary[50],
       width: '100%',
     }}>
-      <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
-        🙏 Asesores espirituales {AÑO ?? ''}
-      </Text>
+       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}><Ionicons name="heart-outline" size={21} color={colors.primary[600]} /><Text style={{ fontSize: 14, fontWeight: '800', color: colors.text.primary.light }}>Asesores espirituales {AÑO ?? ''}</Text></View>
       {asesores.map((a) => {
         const pueblos = (a.pueblos_acompana ?? []).map(id => pueblosMap[id]).filter(Boolean)
         return (
-          <View key={a.id} style={{ paddingVertical: 6 }}>
+           <View key={a.id} style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}><InitialAvatar name={`${a.nombres} ${a.apellidos}`} /> <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text.primary.light }}>
               {a.nombres} {a.apellidos}
             </Text>
@@ -69,7 +69,7 @@ export function AsesoresAnioCard() {
                 Acompaña: {pueblos.join(', ')}
               </Text>
             )}
-          </View>
+           </View></View>
         )
       })}
     </View>

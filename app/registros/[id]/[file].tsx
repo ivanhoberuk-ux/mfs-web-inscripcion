@@ -3,6 +3,9 @@ import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { publicUrl } from '../../../src/lib/api';
 import { s } from '../../../src/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Card } from '../../../src/components/Card';
+import { colors } from '../../../src/lib/designSystem';
 
 export default function RegistroStorageRedirect() {
   const { id, file } = useLocalSearchParams<{ id?: string; file?: string }>();
@@ -35,8 +38,11 @@ export default function RegistroStorageRedirect() {
 
   return (
     <View style={[s.screen, { alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }]}> 
-      <ActivityIndicator />
-      <Text style={[s.text, { marginTop: 12, textAlign: 'center' }]}>{message}</Text>
+      <Card style={{ width: '100%', maxWidth: 420, alignItems: 'center', paddingVertical: 36 }}>
+        <Ionicons name="document-text-outline" size={44} color={colors.primary[500]} />
+        <ActivityIndicator color={colors.primary[600]} style={{ marginTop: 18 }} />
+        <Text style={[s.text, { marginTop: 12, textAlign: 'center' }]}>{message}</Text>
+      </Card>
     </View>
   );
 }

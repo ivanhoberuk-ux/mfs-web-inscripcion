@@ -2,6 +2,7 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { View } from 'react-native';
 import Signature from 'react-native-signature-canvas';
+import { colors, radius, shadows } from '../lib/designSystem';
 
 export type SignaturePadHandle = {
   clear: () => void;
@@ -34,7 +35,7 @@ const SignaturePad = forwardRef<SignaturePadHandle, Props>(({ height = 220 }, re
   }));
 
   return (
-    <View style={{ height, borderWidth: 1, borderColor: '#999', borderRadius: 8, overflow: 'hidden' }}>
+    <View style={{ height, borderWidth: 2, borderColor: colors.primary[100], backgroundColor: colors.surface.light, borderRadius: radius.lg, overflow: 'hidden', ...shadows.sm }}>
       <Signature
         ref={sigRef}
         onOK={(data: string) => {
@@ -44,8 +45,8 @@ const SignaturePad = forwardRef<SignaturePadHandle, Props>(({ height = 220 }, re
         onEmpty={() => {}}
         descriptionText="Firme aquí"
         webStyle=".m-signature-pad--footer {display:none;} .m-signature-pad--body {border:none;}"
-        backgroundColor="#fff"
-        penColor="#111"
+        backgroundColor={colors.surface.light}
+        penColor={colors.text.primary.light}
         autoClear={false}
       />
     </View>
