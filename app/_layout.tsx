@@ -6,6 +6,7 @@ import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJa
 import { AuthProvider } from '../src/context/AuthProvider'
 import { colors } from '../src/lib/designSystem'
 import { ChatWidget } from '../src/components/ChatWidget'
+import { FondoParaguayo } from '../src/components/FondoParaguayo'
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -17,6 +18,12 @@ export default function RootLayout() {
     <AuthProvider>
       <View key={fontsLoaded ? 'fonts-ready' : 'fonts-loading'} style={{ flex: 1, backgroundColor: colors.background.light }}>
         <Stack
+          screenLayout={({ children, route }) => (
+            <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+              {route.name === '(tabs)' ? null : <FondoParaguayo intensidad="suave" />}
+              {children}
+            </View>
+          )}
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.background.light },
