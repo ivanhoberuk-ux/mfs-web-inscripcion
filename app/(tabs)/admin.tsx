@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { s } from '../../src/lib/theme';
+import { s, colors, radius, spacing, shadows, typography } from '../../src/lib/theme';
 import { supabase } from '../../src/lib/supabase';
 import { fetchOcupacion, updatePueblo, fetchPueblos, fetchAñoActivo, fetchRolesPorUsuario } from '../../src/lib/api';
 import { documentosFaltantes, edadDe } from '../../src/lib/documentos';
@@ -26,6 +28,25 @@ import { ChequeoTemporadaPanel, AuditoriaPanel, AlertasTareasPanel } from '../..
 import { PlantillasManagerPanel } from '../../src/components/PlantillasManagerPanel';
 import { DashboardGeneralPanel } from '../../src/components/DashboardGeneralPanel';
 import { AsesoresValidacionPanel } from '../../src/components/AsesoresValidacionPanel';
+import { PageHeader } from '../../src/components/PageHeader';
+import { Badge } from '../../src/components/Badge';
+import { Button } from '../../src/components/Button';
+
+type AdminIcon = React.ComponentProps<typeof Ionicons>['name'];
+
+function AdminAccessCard({ icon, title, description, tone = 'primary', onPress }: { icon: AdminIcon; title: string; description: string; tone?: 'primary' | 'mint' | 'coral' | 'yellow'; onPress: () => void }) {
+  const bg = tone === 'mint' ? colors.mint[100] : tone === 'coral' ? colors.accent[100] : tone === 'yellow' ? colors.secondary[100] : colors.primary[50];
+  const fg = tone === 'mint' ? colors.mint[600] : tone === 'coral' ? colors.accent[700] : tone === 'yellow' ? colors.secondary[800] : colors.primary[600];
+  return <Pressable onPress={onPress} style={({ pressed }) => ({ width: '100%', maxWidth: 360, minWidth: 240, flexGrow: 1, flexBasis: 260, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.primary[50], opacity: pressed ? 0.82 : 1, ...shadows.sm })}>
+    <View style={{ width: 44, height: 44, borderRadius: radius.full, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}><Ionicons name={icon} size={22} color={fg} /></View>
+    <Text style={{ fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 16 }}>{title}</Text>
+    <Text style={{ fontFamily: typography.family.regular, color: colors.text.tertiary.light, fontSize: 12, marginTop: 4, lineHeight: 18 }}>{description}</Text>
+  </Pressable>;
+}
+
+function AdminGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return <View style={{ marginBottom: spacing.xl }}><Text style={{ fontFamily: typography.family.bold, color: colors.text.secondary.light, fontSize: 13, marginBottom: spacing.sm, textTransform: 'uppercase' }}>{title}</Text><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>{children}</View></View>;
+}
 
 // ===== Tipos base =====
 type Registro = {
@@ -85,6 +106,7 @@ function stamp() {
 }
 
 export default function Admin() {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
 
@@ -629,12 +651,24 @@ export default function Admin() {
   }
 
   // ===== UI =====
+  const anyPanel = !!(monitorTab || showRolesPanel || showCreatePueblo || showInscripcionConfig || showPlantillas || showDashboard || showAsesores);
+  const closePanels = () => { setMonitorTab(null); setShowRolesPanel(false); setShowCreatePueblo(false); setShowInscripcionConfig(false); setShowPlantillas(false); setShowDashboard(false); setShowAsesores(false); };
+  const openPanel = (key: 'roles' | 'pueblo' | 'config' | 'plantillas' | 'dashboard' | 'asesores' | 'chequeo' | 'auditoria' | 'alertas') => {
+    closePanels();
+    if (key === 'roles') { setShowRolesPanel(true); if (usuarios.length === 0) loadUsuarios(); }
+    else if (key === 'pueblo') setShowCreatePueblo(true);
+    else if (key === 'config') setShowInscripcionConfig(true);
+    else if (key === 'plantillas') setShowPlantillas(true);
+    else if (key === 'dashboard') setShowDashboard(true);
+    else if (key === 'asesores') setShowAsesores(true);
+    else setMonitorTab(key);
+  };
+  const panelTitle = monitorTab === 'chequeo' ? 'Chequeo de temporada' : monitorTab === 'auditoria' ? 'Auditoría' : monitorTab === 'alertas' ? 'Alertas y tareas' : showRolesPanel ? 'Gestión de roles' : showCreatePueblo ? 'Crear pueblo' : showInscripcionConfig ? 'Temporada e inscripción' : showPlantillas ? 'Plantillas' : showDashboard ? 'Dashboard general' : showAsesores ? 'Validar asesores' : '';
   return (
     <ScrollView
       ref={scrollRef}
       style={s.screen}
-      contentContainerStyle={{ paddingBottom: 40, gap: 12 }}
-      stickyHeaderIndices={[2]}
+      contentContainerStyle={{ width: '100%', maxWidth: 1280, alignSelf: 'center', paddingBottom: 120, gap: 12 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -649,126 +683,17 @@ export default function Admin() {
         />
       }
     >
-      <Text style={s.title}>Panel administrativo</Text>
+      <PageHeader icon="grid-outline" title="Panel administrativo" subtitle={`Gestión central de MFS · ${user?.email || 'Administrador'}`} />
 
       {/* Usuario y exportes */}
-      <View style={s.card}>
-        <Text style={[s.text, { marginBottom: 8 }]}>
-          Usuario: <Text style={{ fontWeight: '700' }}>{user?.email || '—'}</Text> (admin)
-        </Text>
-        
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <Pressable 
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showRolesPanel ? '#0a7ea4' : '#6b7280' }]} 
-            onPress={() => {
-              setMonitorTab(null)
-              setShowRolesPanel(!showRolesPanel)
-              setShowCreatePueblo(false)
-              setShowInscripcionConfig(false)
-              setShowPlantillas(false)
-              setShowDashboard(false); setShowAsesores(false)
-              if (!showRolesPanel && usuarios.length === 0) loadUsuarios()
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showRolesPanel ? 'Ver Exportes' : 'Gestionar Roles'}
-            </Text>
-          </Pressable>
-          
-          <Pressable 
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showCreatePueblo ? '#0b9850' : '#6b7280' }]} 
-            onPress={() => {
-              setMonitorTab(null)
-              setShowCreatePueblo(!showCreatePueblo)
-              setShowRolesPanel(false)
-              setShowInscripcionConfig(false)
-              setShowPlantillas(false)
-              setShowDashboard(false); setShowAsesores(false)
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showCreatePueblo ? 'Ver Exportes' : 'Crear Pueblo'}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showInscripcionConfig ? '#7c3aed' : '#6b7280' }]}
-            onPress={() => {
-              setMonitorTab(null)
-              setShowInscripcionConfig(!showInscripcionConfig)
-              setShowRolesPanel(false)
-              setShowCreatePueblo(false)
-              setShowPlantillas(false)
-              setShowDashboard(false); setShowAsesores(false)
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showInscripcionConfig ? 'Ver Exportes' : '📅 Fechas Inscripción'}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showPlantillas ? '#0891b2' : '#6b7280' }]}
-            onPress={() => {
-              setMonitorTab(null)
-              setShowPlantillas(!showPlantillas)
-              setShowRolesPanel(false)
-              setShowCreatePueblo(false)
-              setShowInscripcionConfig(false)
-              setShowDashboard(false); setShowAsesores(false)
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showPlantillas ? 'Ver Exportes' : '📚 Plantillas'}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showDashboard ? '#0a7ea4' : '#6b7280' }]}
-            onPress={() => {
-              setMonitorTab(null)
-              setShowDashboard(!showDashboard)
-              setShowRolesPanel(false)
-              setShowCreatePueblo(false)
-              setShowInscripcionConfig(false)
-              setShowPlantillas(false)
-              setShowAsesores(false)
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showDashboard ? 'Ver Exportes' : '📊 Dashboard'}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[s.button, { flex: 1, minWidth: 140, backgroundColor: showAsesores ? '#16a34a' : '#6b7280' }]}
-            onPress={() => {
-              setMonitorTab(null)
-              setShowAsesores(!showAsesores)
-              setShowRolesPanel(false)
-              setShowCreatePueblo(false)
-              setShowInscripcionConfig(false)
-              setShowPlantillas(false)
-              setShowDashboard(false)
-            }}
-          >
-            <Text style={s.buttonText}>
-              {showAsesores ? 'Ver Exportes' : '🙏 Validar Asesores'}
-            </Text>
-          </Pressable>
-        {([['chequeo','🩺 Chequeo de temporada','#0f766e'],['auditoria','🕵️ Auditoría','#9333ea'],['alertas','🔔 Alertas y tareas','#d97706']] as const).map(([k,label,col]) => (
-            <Pressable key={k}
-              style={[s.button, { flex: 1, minWidth: 140, backgroundColor: monitorTab === k ? col : '#6b7280' }]}
-              onPress={() => {
-                setMonitorTab(monitorTab === k ? null : k)
-                setShowRolesPanel(false); setShowCreatePueblo(false); setShowInscripcionConfig(false)
-                setShowPlantillas(false); setShowDashboard(false); setShowAsesores(false)
-              }}
-            >
-              <Text style={s.buttonText}>{monitorTab === k ? 'Ver Exportes' : label}</Text>
-            </Pressable>
-          ))}
-        </View>
+      <View style={{ width: '100%' }}>
+        {!anyPanel ? <>
+          <AdminGroup title="Temporada e inscripción"><AdminAccessCard icon="stats-chart-outline" title="Dashboard general" description="Indicadores, distribución y ocupación por pueblo." onPress={() => openPanel('dashboard')} /><AdminAccessCard icon="calendar-outline" title="Fechas de inscripción" description="Año activo, aperturas, cierre y lista de espera." tone="yellow" onPress={() => openPanel('config')} /><AdminAccessCard icon="location-outline" title="Gestión de pueblos" description="Cupos generales, cupos de misión y disponibilidad." tone="mint" onPress={() => openPanel('pueblo')} /></AdminGroup>
+          <AdminGroup title="Personas y roles"><AdminAccessCard icon="people-outline" title="Roles de usuario" description="Administradores generales y coordinadores de pueblo." onPress={() => openPanel('roles')} /><AdminAccessCard icon="shield-checkmark-outline" title="Validar asesores" description="Revisá y confirmá solicitudes pendientes." tone="mint" onPress={() => openPanel('asesores')} /><AdminAccessCard icon="list-outline" title="Inscriptos" description="Consulta, documentos, accesos y exportaciones." tone="coral" onPress={() => router.push('/inscriptos' as any)} /><AdminAccessCard icon="checkmark-done-outline" title="Selección de misioneros" description="Seleccionados, suplentes y publicación por pueblo." tone="yellow" onPress={() => router.push('/seleccion' as any)} /></AdminGroup>
+          <AdminGroup title="Documentos y plantillas"><AdminAccessCard icon="documents-outline" title="Plantillas" description="Archivos comunes, permisos y protocolos." onPress={() => openPanel('plantillas')} /><AdminAccessCard icon="mail-outline" title="Prueba de email" description="Comprobá el envío de comunicaciones." tone="yellow" onPress={() => router.push('/test-email' as any)} /></AdminGroup>
+          <AdminGroup title="Monitoreo"><AdminAccessCard icon="pulse-outline" title="Chequeo de temporada" description="Estado general de la configuración activa." tone="mint" onPress={() => openPanel('chequeo')} /><AdminAccessCard icon="time-outline" title="Auditoría" description="Historial de acciones y cambios administrativos." onPress={() => openPanel('auditoria')} /><AdminAccessCard icon="notifications-outline" title="Alertas y tareas" description="Ejecuciones automáticas, avisos y archivos huérfanos." tone="coral" onPress={() => openPanel('alertas')} /></AdminGroup>
+          <AdminGroup title="Torneo"><AdminAccessCard icon="trophy-outline" title="Torneo Interpueblos" description="Ediciones, equipos, fixture y resultados." tone="coral" onPress={() => router.push('/torneo' as any)} /></AdminGroup>
+        </> : <View style={{ flexDirection: width < 520 ? 'column' : 'row', alignItems: width < 520 ? 'flex-start' : 'center', gap: spacing.md, marginBottom: spacing.lg }}><Button variant="outline" onPress={closePanels} style={{ marginTop: 0 }}><Ionicons name="arrow-back" size={17} /> Volver</Button><Text style={{ fontFamily: typography.family.extrabold, fontSize: 22, color: colors.text.primary.light }}>{panelTitle}</Text></View>}
         
         {monitorTab === 'chequeo' ? (
           <ChequeoTemporadaPanel />
