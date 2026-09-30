@@ -9,7 +9,8 @@ import {
   Pressable,
   Alert,
 } from 'react-native'
-import { s } from '../../src/lib/theme'
+import { s, colors, radius, spacing } from '../../src/lib/theme'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
 import * as FileSystem from 'expo-file-system'
@@ -18,6 +19,10 @@ import { generateExcelBase64, fileStamp, humanDate, safeFileName, type ExcelOpti
 import { useUserRoles } from '../../src/hooks/useUserRoles'
 import { estadoDocumentos, edadDe } from '../../src/lib/documentos'
 import { fetchAñoActivo } from '../../src/lib/api'
+import { Button } from '../../src/components/Button'
+import { Card } from '../../src/components/Card'
+import { Badge } from '../../src/components/Badge'
+import { InitialAvatar, PageHeader } from '../../src/components/PageHeader'
 
 const añoRef = { current: new Date().getFullYear() }
 
@@ -330,26 +335,17 @@ export default function Buscador() {
   }
 
   return (
-    <ScrollView style={[s.screen, { backgroundColor: '#f9fafb' }]} contentContainerStyle={{ paddingBottom: 120 }}>
-      <Text style={[s.title, { color: '#0f172a' }]}>
-        Buscador de inscriptos {isPuebloAdmin && !isSuperAdmin && '(Mi pueblo)'}
-      </Text>
+    <ScrollView style={s.screen} contentContainerStyle={s.pageContent}>
+      <PageHeader icon="search-outline" title="Buscador de inscriptos" subtitle={isPuebloAdmin && !isSuperAdmin ? 'Personas de mi pueblo' : 'Encontrá personas y revisá su documentación'} />
 
       {/* Controles */}
-      <View style={[s.card, { gap: 8 }]}>
-        <Text style={s.label}>Buscar por nombre o apellido</Text>
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          style={s.input}
-          placeholder="Ej: Juan / Pérez"
-          autoCapitalize="none"
-        />
+      <Card style={{ gap: 8 }}> 
+        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primary[100], borderRadius: radius.full, backgroundColor: colors.surface.light, paddingHorizontal: spacing.lg }}><Ionicons name="search" size={22} color={colors.primary[500]} /><TextInput value={q} onChangeText={setQ} style={[s.input, { flex: 1, borderWidth: 0, marginBottom: 0 }]} placeholder="Buscar por nombre o apellido" autoCapitalize="none" /></View>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
             <Text style={s.label}>Pueblo</Text>
-            <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden' }}>
+            <View style={[s.input, { padding: 0, overflow: 'hidden' }]}> 
               <Picker selectedValue={puebloId} onValueChange={setPuebloId}>
                 <Picker.Item label="Todos" value="todos" />
                 {puebloList.map((p) => (
@@ -361,7 +357,7 @@ export default function Buscador() {
 
           <View style={{ flex: 1 }}>
             <Text style={s.label}>Rol</Text>
-            <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden' }}>
+            <View style={[s.input, { padding: 0, overflow: 'hidden' }]}> 
               <Picker selectedValue={rol} onValueChange={(v) => setRol(v as RolFilter)}>
                 <Picker.Item label="Todos" value="todos" />
                 <Picker.Item label="Misionero" value="Misionero" />
@@ -373,7 +369,7 @@ export default function Buscador() {
         </View>
 
         <Text style={s.label}>Documentos (según edad)</Text>
-        <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, overflow: 'hidden' }}>
+        <View style={[s.input, { padding: 0, overflow: 'hidden' }]}> 
           <Picker selectedValue={docStatus} onValueChange={(v) => setDocStatus(v as DocStatusFilter)}>
             <Picker.Item label="Todos" value="todos" />
             <Picker.Item label="Completos (requeridos OK)" value="completos" />
@@ -382,11 +378,9 @@ export default function Buscador() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-          <Pressable style={[s.button, { paddingVertical: 10 }]} onPress={() => runSearch(true)}>
-            <Text style={s.buttonText}>Aplicar filtros</Text>
-          </Pressable>
+          <Button variant="primary" onPress={() => runSearch(true)}>Aplicar filtros</Button>
           <Pressable
-            style={[s.button, { paddingVertical: 10, backgroundColor: '#6c757d' }]}
+            style={[s.button, s.buttonGhost]}
             onPress={() => {
               setQ('')
               setPuebloId('todos')
@@ -400,28 +394,28 @@ export default function Buscador() {
 
           {/* Botones de exporte */}
           <Pressable
-            style={[s.button, { paddingVertical: 10, backgroundColor: '#0a7ea4' }]}
+            style={[s.button, s.buttonOutline]}
             onPress={exportCsvPage}
             disabled={exporting !== null || loading}
           >
-            <Text style={s.buttonText}>
+            <Text style={s.buttonTextOutline}>
               {exporting === 'page' ? 'Exportando…' : 'Exportar Excel (página)'}
             </Text>
           </Pressable>
 
           <Pressable
-            style={[s.button, { paddingVertical: 10, backgroundColor: '#0b6b86' }]}
+            style={[s.button, s.buttonOutline]}
             onPress={exportCsvAll}
             disabled={exporting !== null || loading}
           >
-            <Text style={s.buttonText}>
+            <Text style={s.buttonTextOutline}>
               {exporting === 'all' ? 'Exportando…' : 'Exportar Excel (todo)'}
             </Text>
           </Pressable>
         </View>
 
         <Text style={[s.small, { color: '#64748b', marginTop: 2 }]}>Resultados en pantalla: {total}</Text>
-      </View>
+      </Card>
 
       {/* Resultados */}
       {loading ? (
@@ -442,10 +436,8 @@ export default function Buscador() {
             const st = requiredDocsOk(r)
 
             return (
-              <View key={r.id} style={[s.card, { marginBottom: 10 }]}>
-                <Text style={[s.text, { fontWeight: '700', color: '#0f172a' }]}>
-                  {r.nombres} {r.apellidos}
-                </Text>
+              <Card key={r.id} style={{ marginBottom: 10 }}> 
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><InitialAvatar name={`${r.nombres} ${r.apellidos}`} /><View style={{ flex: 1 }}><Text style={s.cardTitle}>{r.nombres} {r.apellidos}</Text><Text style={s.small}>{pueblo} · {r.rol}</Text></View></View>
 
                 {/* PRIVACIDAD: CI oculto por política */}
                 {/* <Text style={s.small}>CI: {r.ci || '-'}</Text> */}
@@ -470,7 +462,7 @@ export default function Buscador() {
                 <Text style={[s.small, { color: '#666', marginTop: 6 }]}>
                   Fecha: {new Date(r.created_at).toLocaleString()}
                 </Text>
-              </View>
+              </Card>
             )
           })}
 
@@ -490,16 +482,5 @@ export default function Buscador() {
 }
 
 function Chip({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: ok ? '#16a34a' : '#e5e7eb',
-      }}
-    >
-      <Text style={{ color: ok ? '#fff' : '#374151', fontWeight: '700', fontSize: 12 }}>{label}</Text>
-    </View>
-  )
+  return <Badge tone={ok ? 'success' : 'neutral'}>{label}</Badge>
 }
