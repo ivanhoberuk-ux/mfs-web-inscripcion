@@ -88,7 +88,7 @@ export function FondoParaguayo({ intensidad = 'suave' }: { intensidad?: Intensid
 
 export function LineaTricolor() {
   return (
-    <View pointerEvents="none" style={{ width: '100%', height: 4, flexDirection: 'row' }}>
+    <View pointerEvents="none" style={{ width: '100%', height: 4 }}>
       <View style={{ flex: 1, backgroundColor: colors.paraguay.red }} />
       <View style={{ flex: 1, backgroundColor: colors.paraguay.white }} />
       <View style={{ flex: 1, backgroundColor: colors.paraguay.blue }} />

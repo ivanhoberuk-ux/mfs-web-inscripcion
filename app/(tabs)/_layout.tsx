@@ -160,6 +160,7 @@ export default function TabLayout() {
       {isDesktop ? <DesktopHeader items={navItems} /> : null}
       <Tabs screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarActiveTintColor: colors.primary[600], tabBarInactiveTintColor: colors.text.tertiary.light,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 9, fontFamily: typography.family.semibold, marginTop: 1 },
