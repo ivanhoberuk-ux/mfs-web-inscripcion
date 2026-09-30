@@ -41,7 +41,7 @@ export default function BajaScreen() {
   if (!user) {
     return (
       <ScrollView
-        style={[s.screen, { backgroundColor: colors.background.light }]}
+        style={[s.screen, { backgroundColor: 'transparent' }]}
         contentContainerStyle={{ padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 }}
       >
         <Text style={{ fontSize: 48 }}>🔒</Text>
@@ -133,7 +133,7 @@ export default function BajaScreen() {
 
   return (
     <ScrollView
-      style={[s.screen, { backgroundColor: colors.background.light }]}
+      style={[s.screen, { backgroundColor: 'transparent' }]}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>

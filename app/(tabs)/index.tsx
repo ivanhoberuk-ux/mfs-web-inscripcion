@@ -15,6 +15,7 @@ import { ContactosPuebloCard } from '../../src/components/ContactosPuebloCard';
 import { PortadaInstitucional, useResumenPublicoTemporada } from '../../src/components/PortadaInstitucional';
 import { useTemporada } from '../../src/hooks/useTemporada';
 import { fetchEdicionActiva, fetchDisciplinas, TorneoDisciplina } from '../../src/lib/torneo';
+import { NandutiDecorativo } from '../../src/components/FondoParaguayo';
 // @ts-ignore
 import familiaImg from '../../src/assets/familia-misionera.png';
 // @ts-ignore
@@ -122,13 +123,13 @@ export default function Home() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: compact ? 14 : 24, paddingTop: compact ? 14 : 28, gap: desktop ? 34 : 24 }}>
           <FadeIn>
             <LinearGradient colors={[...gradients.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius['2xl'], overflow: 'hidden', minHeight: desktop ? 430 : 560, ...shadows.xl }}>
-              <View pointerEvents="none" style={{ position: 'absolute', width: 240, height: 240, borderRadius: 120, right: -60, top: -70, backgroundColor: 'rgba(255,200,61,0.22)' }} />
-              <View pointerEvents="none" style={{ position: 'absolute', width: 190, height: 190, borderRadius: 95, left: '36%', bottom: -110, backgroundColor: 'rgba(255,122,89,0.28)' }} />
+              <View pointerEvents="none" style={{ position: 'absolute', right: -48, top: -58 }}><NandutiDecorativo size={230} color={colors.surface.light} opacity={0.18} animated duration={72000} /></View>
+              <View pointerEvents="none" style={{ position: 'absolute', left: desktop ? '43%' : -35, bottom: -48 }}><NandutiDecorativo size={145} color={colors.surface.light} opacity={0.14} /></View>
               <View style={{ flex: 1, flexDirection: desktop ? 'row' : 'column', padding: compact ? 24 : 42, alignItems: 'center' }}>
                 <View style={{ flex: 1, width: '100%', zIndex: 2, alignItems: compact ? 'center' : 'flex-start' }}>
                   <View style={{ width: 70, height: 70, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', marginBottom: 22, ...shadows.md }}>
