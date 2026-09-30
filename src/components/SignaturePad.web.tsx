@@ -3,6 +3,7 @@
 // FILE: src/components/SignaturePad.web.tsx
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { View } from 'react-native';
+import { colors, radius, shadows } from '../lib/designSystem';
 // @ts-ignore - No hay tipos para react-signature-canvas
 import SignatureCanvas from 'react-signature-canvas';
 
@@ -30,11 +31,11 @@ const SignaturePad = forwardRef<SignaturePadHandle, Props>(({ height = 220 }, re
   }));
 
   return (
-    <View style={{ height, borderWidth: 1, borderColor: '#999', borderRadius: 8, overflow: 'hidden' }}>
+    <View style={{ height, borderWidth: 2, borderColor: colors.primary[100], backgroundColor: colors.surface.light, borderRadius: radius.lg, overflow: 'hidden', ...shadows.sm }}>
       <SignatureCanvas
         ref={sigRef as any}
-        backgroundColor="#fff"
-        penColor="#111"
+        backgroundColor={colors.surface.light}
+        penColor={colors.text.primary.light}
         canvasProps={{ style: { width: '100%', height: '100%' } as any }}
       />
     </View>

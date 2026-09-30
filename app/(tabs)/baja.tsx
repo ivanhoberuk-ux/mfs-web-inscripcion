@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { View, Text, ScrollView, Alert, ActivityIndicator, Animated, Platform } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
 import { supabase } from '../../src/lib/supabase'
@@ -10,6 +11,8 @@ import { colors, radius } from '../../src/lib/designSystem'
 import { s } from '../../src/lib/theme'
 import { useAuth } from '../../src/context/AuthProvider'
 import { fetchAñoActivo } from '../../src/lib/api'
+import { Badge } from '../../src/components/Badge'
+import { InitialAvatar, PageHeader } from '../../src/components/PageHeader'
 
 type Registro = {
   id: string
@@ -44,7 +47,7 @@ export default function BajaScreen() {
         style={[s.screen, { backgroundColor: 'transparent' }]}
         contentContainerStyle={{ padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 }}
       >
-        <Text style={{ fontSize: 48 }}>🔒</Text>
+        <Ionicons name="lock-closed-outline" size={48} color={colors.primary[500]} />
         <Text style={[s.title, { textAlign: 'center', marginTop: 12 }]}>Iniciar sesión requerido</Text>
         <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light, marginTop: 8 }]}>
           Para dar de baja tu inscripción, primero necesitás iniciar sesión con tu cuenta.
@@ -134,30 +137,24 @@ export default function BajaScreen() {
   return (
     <ScrollView
       style={[s.screen, { backgroundColor: 'transparent' }]}
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      contentContainerStyle={[s.pageContent, { paddingHorizontal: 0 }]}
     >
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        <View style={{ alignItems: 'center', marginBottom: 20 }}>
-          <Text style={{ fontSize: 48 }}>👋</Text>
-          <Text style={[s.title, { textAlign: 'center', marginTop: 8 }]}>Dar de baja</Text>
-          <Text style={[s.text, { textAlign: 'center', color: colors.text.secondary.light }]}>
-            Buscá tus inscripciones para solicitar la baja
-          </Text>
-        </View>
+        <PageHeader icon="exit-outline" title="Dar de baja" subtitle="Elegí la inscripción que querés cancelar" />
 
-        <Card style={{ marginBottom: 16, borderWidth: 2, borderColor: colors.primary[100] }}>
+        <Card style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 14, color: colors.text.secondary.light, marginBottom: 16 }}>
-            🔍 Inscripciones de: <Text style={{ fontWeight: '600' }}>{user.email}</Text>
+             Inscripciones de: <Text style={{ fontWeight: '600' }}>{user.email}</Text>
           </Text>
           <Button onPress={() => cargarInscripciones()} disabled={loading} variant="primary">
-            {loading ? '🔄 Buscando...' : buscado ? '🔄 Actualizar lista' : '🔍 Buscar mis inscripciones'}
+             {loading ? 'Buscando...' : buscado ? 'Actualizar lista' : 'Buscar mis inscripciones'}
           </Button>
         </Card>
       </Animated.View>
 
       {loading && (
         <View style={{ alignItems: 'center', padding: 32 }}>
-          <Text style={{ fontSize: 48 }}>🔎</Text>
+          <Ionicons name="search-outline" size={44} color={colors.primary[300]} />
           <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 16 }} />
           <Text style={[s.text, { marginTop: 8 }]}>Buscando...</Text>
         </View>
@@ -168,20 +165,21 @@ export default function BajaScreen() {
           key={registro.id}
           style={{
             marginBottom: 16,
-            borderWidth: 2,
-            borderColor: registro.estado === 'confirmado' ? colors.success : colors.warning,
+            borderWidth: 1,
+            borderColor: colors.primary[50],
           }}
         >
-          <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 40 }}>📋</Text>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 8, textAlign: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <InitialAvatar name={`${registro.nombres} ${registro.apellidos}`} tone={registro.estado === 'confirmado' ? 'mint' : 'coral'} />
+            <Text style={[s.cardTitle, { flex: 1, marginBottom: 0 }]}> 
               {registro.nombres} {registro.apellidos}
             </Text>
+            <Badge tone={registro.estado === 'confirmado' ? 'success' : 'warning'}>{registro.estado === 'confirmado' ? 'Confirmado' : registro.estado === 'lista_espera' ? 'Lista de espera' : 'Pendiente'}</Badge>
           </View>
 
           <View style={{ gap: 12 }}>
-            <InfoRow label="Pueblo" value={registro.pueblo_nombre} emoji="🏠" />
-            <InfoRow label="Rol" value={registro.rol} emoji="🎭" />
+            <InfoRow label="Pueblo" value={registro.pueblo_nombre} />
+            <InfoRow label="Rol" value={registro.rol} />
             <View
               style={{
                 backgroundColor: registro.estado === 'confirmado' ? '#dcfce7' :
@@ -209,7 +207,6 @@ export default function BajaScreen() {
               value={new Date(registro.created_at).toLocaleDateString('es-ES', {
                 year: 'numeric', month: 'long', day: 'numeric',
               })}
-              emoji="📅"
             />
           </View>
 
@@ -219,7 +216,7 @@ export default function BajaScreen() {
               disabled={procesandoId !== null}
               variant="danger"
             >
-              {procesandoId === registro.id ? '⏳ Procesando...' : '🚪 Dar de baja'}
+              {procesandoId === registro.id ? 'Procesando...' : 'Dar de baja'}
             </Button>
           </View>
         </Card>
@@ -229,14 +226,14 @@ export default function BajaScreen() {
         <View
           style={{
             padding: 20,
-            backgroundColor: colors.primary[50],
+            backgroundColor: colors.accent[50],
             borderRadius: radius.lg,
             borderWidth: 1,
-            borderColor: colors.primary[100],
+            borderColor: colors.accent[100],
           }}
         >
           <Text style={{ fontSize: 14, color: colors.text.secondary.light, textAlign: 'center' }}>
-            🔄 Si te das de baja y el cupo estaba lleno, la próxima persona en lista de espera será promovida automáticamente
+             Si te das de baja y el cupo estaba lleno, la próxima persona en lista de espera será promovida automáticamente.
           </Text>
         </View>
       )}
@@ -244,11 +241,11 @@ export default function BajaScreen() {
   )
 }
 
-function InfoRow({ label, value, emoji }: { label: string; value: string; emoji: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View>
       <Text style={{ fontSize: 12, color: colors.text.tertiary.light, marginBottom: 2 }}>
-        {emoji} {label}
+        {label}
       </Text>
       <Text style={{ fontSize: 16, fontWeight: '500', color: colors.text.primary.light }}>{value}</Text>
     </View>

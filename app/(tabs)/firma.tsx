@@ -1,6 +1,7 @@
 // FILE: app/(tabs)/firma.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { View, Text, Pressable, Alert, Image, ActivityIndicator } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { s, colors, spacing } from '../../src/lib/theme'
 import SignaturePad, { SignaturePadHandle } from '../../src/components/SignaturePad'
@@ -11,6 +12,8 @@ import { generarAutorizacionPDF, type Datos } from '../../src/lib/pdf'
 // import { generarPermisoPDF } from '../../src/lib/pdf'
 import { uploadToStorage, updateDocumento } from '../../src/lib/api'
 import { supabase } from '../../src/lib/supabase'
+import { PageHeader, InitialAvatar } from '../../src/components/PageHeader'
+import { Badge } from '../../src/components/Badge'
 
 type Registro = {
   id: string
@@ -174,28 +177,26 @@ export default function Firma() {
   }
 
   return (
-    <View style={[s.screen, { gap: 12 }]}>
-      <Text style={s.title}>Firma</Text>
+    <View style={[s.screen, s.pageContent, { gap: 12 }]}> 
+      <PageHeader icon="create-outline" title="Firma" subtitle="Firmá dentro del recuadro y revisá el resultado" />
 
       {/* Resumen del inscrito (sin mostrar CI aquí para privacidad visual) */}
       <Card>
-        <Text style={[s.text, { fontWeight: '700' }]}>
-          {registro.nombres} {registro.apellidos}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><InitialAvatar name={`${registro.nombres} ${registro.apellidos}`} /><View style={{ flex: 1 }}><Text style={s.cardTitle}>{registro.nombres} {registro.apellidos}</Text><Badge tone="primary">{registro.rol}</Badge></View></View>
         <Text style={[s.small, { color: colors.text.tertiary.light }]}>
           Pueblo: {pueblo?.nombre || registro.pueblo_id} · Rol: {registro.rol}
         </Text>
         <Text style={[s.small, { color: colors.text.tertiary.light }]}>
           Edad: {age == null ? '—' : age} {age == null ? '' : isAdult ? '(Adulto)' : '(Menor)'}
         </Text>
-        <View style={{ marginTop: 6, padding: 8, borderRadius: 8, backgroundColor: colors.neutral[100] }}>
+        <View style={{ marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: colors.primary[50], flexDirection: 'row', alignItems: 'center', gap: 10 }}><Ionicons name="document-text-outline" size={20} color={colors.primary[600]} /><View style={{ flex: 1 }}>
           <Text style={[s.small, { fontWeight: '700', marginBottom: 4 }]}>Documento requerido</Text>
           <Text style={s.small}>{docLabel}</Text>
-        </View>
+        </View></View>
       </Card>
 
       {/* Pad de firma */}
-      <SignaturePad ref={padRef} height={280} />
+      <Card><Text style={[s.cardTitle, { marginBottom: 12 }]}>Espacio para firma</Text><SignaturePad ref={padRef} height={280} /></Card>
 
       {/* Acciones del pad */}
       <View style={{ flexDirection: 'row', gap: 12 }}>

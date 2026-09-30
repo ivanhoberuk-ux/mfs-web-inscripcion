@@ -10,7 +10,9 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  useWindowDimensions,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 
 // Web-compatible Alert wrapper. React Native's Alert.alert is a no-op on web,
 // which made the "Confirmar inscripción" button appear to do nothing when
@@ -57,6 +59,7 @@ import { Card } from '../../src/components/Card'
 import { registrationSchema, normalizeEmail, normalizePhone, normalizeCi } from '../../src/lib/validation'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
 import { z } from 'zod'
+import { PageHeader, SectionHeader } from '../../src/components/PageHeader'
 
 type Pueblo = { id: string; nombre: string; cupo_max: number; activo: boolean }
 type Errs = Record<string, string | null>
@@ -64,6 +67,8 @@ type Errs = Record<string, string | null>
 const inputErrorStyle = { borderColor: colors.error, borderWidth: 1 }
 
 export default function Inscribir() {
+  const { width } = useWindowDimensions()
+  const isMobile = width < 600
   const router = useRouter()
   const params = useLocalSearchParams<{ edit?: string; nuevoHijo?: string }>()
   const [pueblos, setPueblos] = useState<Pueblo[]>([])
@@ -407,24 +412,24 @@ export default function Inscribir() {
   }: { value: boolean | null; onChange: (v: boolean) => void; labels?: [string, string] | string[]; err?: string | null }) {
     return (
       <View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={s.segmented}>
           <Pressable
             onPress={() => onChange(false)}
             style={[
-              s.button,
-              { paddingVertical: 8, backgroundColor: value === false ? colors.primary[500] : colors.neutral[300] },
+              s.segmentedItem,
+              value === false && s.segmentedItemActive,
             ]}
           >
-            <Text style={[s.buttonText, { color: 'white' }]}>{labels[0]}</Text>
+            <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', color: value === false ? colors.primary[700] : colors.text.tertiary.light }}>{labels[0]}</Text>
           </Pressable>
           <Pressable
             onPress={() => onChange(true)}
             style={[
-              s.button,
-              { paddingVertical: 8, backgroundColor: value === true ? colors.primary[500] : colors.neutral[300] },
+              s.segmentedItem,
+              value === true && s.segmentedItemActive,
             ]}
           >
-            <Text style={[s.buttonText, { color: 'white' }]}>{labels[1]}</Text>
+            <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', color: value === true ? colors.primary[700] : colors.text.tertiary.light }}>{labels[1]}</Text>
           </Pressable>
         </View>
         {!!err && <Text style={{ color: colors.error, marginTop: 4, fontSize: 12 }}>{err}</Text>}
@@ -980,8 +985,9 @@ export default function Inscribir() {
   }
 
   return (
-    <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>{modoEdicion ? 'Actualizar inscripción' : 'Inscripción'}</Text>
+    <ScrollView ref={scrollRef} style={s.screen} contentContainerStyle={[s.pageContent, { paddingBottom: isMobile ? 160 : 120 }]}>
+      <PageHeader icon="create-outline" title={modoEdicion ? 'Actualizar inscripción' : 'Inscripción'} subtitle="Completá tus datos para vivir la próxima misión" />
+      <View style={{ marginBottom: 16 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>{[1,2,3,4,5].map(n => <Text key={n} style={{ flex: 1, textAlign: 'center', fontSize: 11, color: colors.primary[600], fontWeight: '700' }}>{n}</Text>)}</View><View style={{ height: 6, backgroundColor: colors.primary[100], borderRadius: radius.full }}><View style={{ width: '100%', height: '100%', backgroundColor: colors.primary[500], borderRadius: radius.full }} /></View></View>
 
       <Card style={{ backgroundColor: '#10B981', borderLeftWidth: 4, borderLeftColor: '#059669', marginVertical: 8 }}>
         <Text style={[s.text, { fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }]}>
@@ -1169,6 +1175,7 @@ export default function Inscribir() {
 
       {/* Pueblo */}
       <Card>
+        <SectionHeader step={4} icon="location-outline" title="Pueblo y rol" subtitle="Elegí el lugar de misión" />
         <Label>Pueblo (Elegí uno)</Label>
         {loading ? (
           <ActivityIndicator />
@@ -1182,12 +1189,9 @@ export default function Inscribir() {
                     setPuebloId(p.id)
                     setErrs((prev) => ({ ...prev, puebloId: null }))
                   }}
-                  style={[
-                    s.button,
-                    { paddingVertical: 8, backgroundColor: puebloId === p.id ? colors.primary[500] : colors.neutral[300] },
-                  ]}
+                  style={{ width: isMobile ? '100%' : '31%', minHeight: 72, borderRadius: radius.md, padding: 12, justifyContent: 'center', backgroundColor: puebloId === p.id ? colors.primary[600] : colors.surface.light, borderWidth: 1, borderColor: puebloId === p.id ? colors.primary[600] : colors.primary[100] }}
                 >
-                  <Text style={[s.buttonText, { color: 'white' }]}>{p.nombre}</Text>
+                  <Text style={{ color: puebloId === p.id ? colors.surface.light : colors.text.primary.light, fontFamily: 'PlusJakartaSans_700Bold' }}>{p.nombre}</Text><Text style={{ marginTop: 3, color: puebloId === p.id ? colors.primary[50] : colors.text.tertiary.light, fontSize: 11 }}>Cupo {p.cupo_max}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1198,6 +1202,7 @@ export default function Inscribir() {
 
       {/* Datos personales */}
       <Card>
+        <SectionHeader step={1} icon="person-outline" title="Datos personales" subtitle="Tu información básica" />
         <Label>Nombres</Label>
         <TextInput
           style={[s.input, errs.nombres && inputErrorStyle]}
@@ -1306,7 +1311,7 @@ export default function Inscribir() {
 
       {/* Contacto de emergencia */}
       <Card>
-        <Text style={s.text}>(Emergencia)</Text>
+        <SectionHeader step={2} icon="call-outline" title="Contacto y emergencia" subtitle="A quién podemos llamar si hace falta" />
         <Label>Nombre</Label>
         <TextInput
           style={[s.input, errs.emNombre && inputErrorStyle]}
@@ -1330,6 +1335,7 @@ export default function Inscribir() {
 
       {/* Rol */}
       <Card>
+        <SectionHeader step={4} icon="people-outline" title="Rol en la misión" />
         <Label>Tipo de participante</Label>
         <SegRol />
         {rol === 'Hijo' && computedAge !== null && computedAge < 12 && (
@@ -1420,6 +1426,7 @@ export default function Inscribir() {
 
       {/* Tratamiento / Medicación */}
       <View style={s.card}>
+        <SectionHeader step={3} icon="medkit-outline" title="Salud y alimentación" />
         <Label>¿Tratamiento o medicación especial?</Label>
         <SegToggle
           value={tratamiento}
@@ -1624,6 +1631,7 @@ export default function Inscribir() {
 
       {/* Aceptación de términos y plantillas */}
       <View style={s.card}>
+        <SectionHeader step={5} icon="checkmark-circle-outline" title="Confirmación" subtitle="Revisá y aceptá antes de enviar" />
         <Label>Aceptación</Label>
         <Pressable
           onPress={() => {
@@ -1668,7 +1676,7 @@ export default function Inscribir() {
       </View>
 
       <Pressable
-        style={[s.button, { marginTop: 12, paddingVertical: 12, opacity: saving ? 0.7 : 1 }]}
+        style={[s.button, s.buttonPrimary, { marginTop: 12, paddingVertical: 12, opacity: saving ? 0.7 : 1, ...(isMobile && Platform.OS === 'web' ? { position: 'sticky' as any, bottom: 78, zIndex: 10 } : {}) }]}
         onPress={onSubmit}
         disabled={saving}
       >

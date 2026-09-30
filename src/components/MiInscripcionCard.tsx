@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthProvider'
 import { fetchMiInscripcion, fetchAñoActivo } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
+import { Ionicons } from '@expo/vector-icons'
+import { Badge } from './Badge'
+import { Button } from './Button'
 
 function fechaAsuncion(iso: string) {
   return new Date(iso).toLocaleString('es-PY', {
@@ -126,11 +129,9 @@ export function MiInscripcionCard() {
     <>
       <View style={{
         backgroundColor: colors.surface.light, borderRadius: radius.lg, padding: spacing.md,
-        ...shadows.md, borderWidth: 2, borderColor: colors.primary[200],
+         ...shadows.md, borderWidth: 1, borderColor: colors.primary[50],
       }}>
-        <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary[700], marginBottom: 8 }}>
-          📋 Mi inscripción {AÑO}
-        </Text>
+       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}><Ionicons name="clipboard-outline" size={21} color={colors.primary[600]} /><Text style={{ fontSize: 14, fontWeight: '800', color: colors.text.primary.light }}>Mi inscripción {AÑO}</Text></View>
         {rows.map((r) => {
           const info = estadoInfo(r.estado)
           const pendiente = promocionPendiente(r, now)
@@ -144,9 +145,7 @@ export function MiInscripcionCard() {
               <Text style={{ fontSize: 13, color: colors.text.secondary.light, marginTop: 2 }}>
                 {r.rol === 'Asesor' ? '🙏 Asesor' : `🏠 ${r.pueblo_nombre}`} · {r.rol}
               </Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: info.color, marginTop: 4 }}>
-                {info.emoji} {info.label}
-              </Text>
+               <View style={{ marginTop: 6 }}><Badge tone={r.estado === 'confirmado' ? 'success' : r.estado === 'lista_espera' ? 'warning' : r.estado === 'baja' || r.estado === 'cancelado' ? 'danger' : 'primary'}>{info.label}</Badge></View>
               {enEspera && r.lista_espera_pos != null && (
                 <View style={{
                   marginTop: 8, padding: 10, backgroundColor: '#fef3c7', borderRadius: radius.sm,
@@ -171,15 +170,7 @@ export function MiInscripcionCard() {
                   <Text style={{ fontSize: 13, color: '#0369a1', marginTop: 4 }}>
                     ⏱️ Te quedan {restante(r.promocion_vence_at, now)}. Si no confirmás, el lugar pasa a la siguiente persona.
                   </Text>
-                  <Pressable
-                    onPress={() => confirmar(r)}
-                    disabled={confirmando === r.id}
-                    style={{ marginTop: 10, backgroundColor: '#16a34a', paddingVertical: 12, borderRadius: radius.sm, alignItems: 'center', opacity: confirmando === r.id ? 0.6 : 1 }}
-                  >
-                    <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>
-                      {confirmando === r.id ? 'Confirmando...' : '✅ Confirmar mi lugar'}
-                    </Text>
-                  </Pressable>
+                   <Button variant="primary" onPress={() => confirmar(r)} disabled={confirmando === r.id} style={{ marginTop: 10 }}>{confirmando === r.id ? 'Confirmando...' : 'Confirmar mi lugar'}</Button>
                 </View>
               )}
               {r.seleccion_publicada && r.estado === 'confirmado' && r.seleccion === 'seleccionado' && (
@@ -222,10 +213,10 @@ export function MiInscripcionCard() {
           justifyContent: 'center', alignItems: 'center', padding: 24,
         }}>
           <View style={{
-            backgroundColor: '#fff', borderRadius: radius.lg, padding: spacing.lg,
+            backgroundColor: colors.surface.light, borderRadius: radius.xl, padding: spacing.xl,
             maxWidth: 420, width: '100%', ...shadows.md,
           }}>
-            <Text style={{ fontSize: 48, textAlign: 'center', marginBottom: 8 }}>🎉</Text>
+            <Ionicons name="sparkles-outline" size={44} color={colors.secondary[600]} style={{ alignSelf: 'center', marginBottom: 8 }} />
             <Text style={{ fontSize: 20, fontWeight: '800', textAlign: 'center', color: colors.primary[700], marginBottom: 12 }}>
               {isAsesor ? '¡Tu inscripción fue confirmada!' : '¡Bienvenido/a!'}
             </Text>

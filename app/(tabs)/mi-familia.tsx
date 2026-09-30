@@ -1,12 +1,15 @@
 // FILE: app/(tabs)/mi-familia.tsx
 import React, { useEffect, useState } from 'react'
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 import { s, colors, spacing, radius } from '../../src/lib/theme'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
 import { fetchAñoActivo } from '../../src/lib/api'
+import { Badge } from '../../src/components/Badge'
+import { InitialAvatar, PageHeader } from '../../src/components/PageHeader'
 
 type Registro = {
   id: string
@@ -79,10 +82,10 @@ export default function MiFamilia() {
     return (
       <View style={{ flex: 1, padding: spacing.lg, backgroundColor: 'transparent' }}>
         <Card>
-          <Text style={s.cardTitle}>👨‍👩‍👧 Mi Familia</Text>
+          <Text style={s.cardTitle}>Mi Familia</Text>
           <Text style={[s.text, s.mt2]}>Iniciá sesión para ver tus inscripciones.</Text>
           <Button variant="primary" onPress={() => router.push('/login')} style={s.mt3}>
-            Iniciar sesión 🔑
+            Iniciar sesión
           </Button>
         </Card>
       </View>
@@ -92,12 +95,9 @@ export default function MiFamilia() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: 'transparent' }}
-      contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md, maxWidth: 720, alignSelf: 'center', width: '100%' }}
+      contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md, maxWidth: 1120, alignSelf: 'center', width: '100%' }}
     >
-      <View>
-        <Text style={[s.cardTitle, { fontSize: 24 }]}>👨‍👩‍👧 Mi Familia</Text>
-        <Text style={[s.small, s.mt1]}>Inscripciones bajo tu cuenta ({user.email})</Text>
-      </View>
+      <PageHeader icon="people-outline" title="Mi Familia" subtitle={`Inscripciones bajo tu cuenta (${user.email})`} />
 
       {registros.length === 0 ? (
         <Card>
@@ -109,19 +109,19 @@ export default function MiFamilia() {
       ) : (
         <>
           {registros.map((r) => (
-            <Card key={r.id} style={{ borderLeftWidth: 4, borderLeftColor: r.rol === 'Hijo' ? colors.secondary[500] : colors.primary[600] }}>
+            <Card key={r.id}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm }}>
+                <InitialAvatar name={`${r.nombres} ${r.apellidos}`} tone={r.rol === 'Hijo' ? 'coral' : 'primary'} />
                 <View style={{ flex: 1 }}>
-                  <Text style={s.cardTitle}>
-                    {r.rol === 'Hijo' ? '👶 ' : '👤 '}{r.nombres} {r.apellidos}
-                  </Text>
+                  <Text style={s.cardTitle}>{r.nombres} {r.apellidos}</Text>
+                  <Badge tone={r.rol === 'Hijo' ? 'warning' : 'primary'}>{r.rol}</Badge>
                   <Text style={[s.small, s.mt1]}>
-                    {r.rol} · CI {r.ci || '—'}
+                     CI {r.ci || '—'}
                   </Text>
                   <Text style={[s.small]}>
-                    🏕️ {pueblos[r.pueblo_id] || '—'}
+                     {pueblos[r.pueblo_id] || '—'}
                   </Text>
-                  {r.telefono ? <Text style={[s.small]}>📞 {r.telefono}</Text> : null}
+                   {r.telefono ? <Text style={[s.small]}>{r.telefono}</Text> : null}
                 </View>
               </View>
               <Button
@@ -129,14 +129,14 @@ export default function MiFamilia() {
                 style={s.mt2}
                 onPress={() => router.push(`/inscribir?edit=${r.id}`)}
               >
-                ✏️ Editar
+                 Editar
               </Button>
             </Card>
           ))}
 
           {registros.some(r => r.rol === 'Tio') ? (
-            <Card style={{ backgroundColor: '#ECFEFF', borderWidth: 1, borderColor: colors.primary[300] }}>
-              <Text style={s.cardTitle}>➕ Agregar a un hijo/a</Text>
+            <Card style={{ backgroundColor: colors.sky[50], borderColor: colors.sky[200] }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Ionicons name="person-add-outline" size={22} color={colors.primary[600]} /><Text style={s.cardTitle}>Agregar a un hijo/a</Text></View>
               <Text style={[s.small, s.mt1]}>
                 Podés inscribir a tus hijos bajo tu mismo email. Cada hijo necesita su propio CI.
               </Text>
@@ -145,7 +145,7 @@ export default function MiFamilia() {
                 style={s.mt2}
                 onPress={() => router.push('/inscribir?nuevoHijo=1')}
               >
-                👶 Inscribir un hijo/a
+                 Inscribir un hijo/a
               </Button>
             </Card>
           ) : (

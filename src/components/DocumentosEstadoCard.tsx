@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthProvider'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
 import { Button } from './Button'
 import { documentosFaltantes } from '../lib/documentos'
+import { Ionicons } from '@expo/vector-icons'
+import { Badge } from './Badge'
 
 type Reg = {
   id: string
@@ -78,12 +80,12 @@ export function DocumentosEstadoCard() {
         backgroundColor: '#ECFDF5',
         borderRadius: radius.lg,
         padding: spacing.lg,
-        borderWidth: 2,
-        borderColor: '#34D399',
+        borderWidth: 1,
+        borderColor: colors.mint[100],
         ...shadows.sm,
         gap: 8,
       }}>
-        <Text style={{ fontSize: 28, textAlign: 'center' }}>✅</Text>
+        <Ionicons name="checkmark-circle-outline" size={30} color={colors.mint[600]} style={{ alignSelf: 'center' }} />
         <Text style={{
           fontSize: 16, fontWeight: '800', textAlign: 'center', color: '#065F46',
         }}>
@@ -102,12 +104,12 @@ export function DocumentosEstadoCard() {
       backgroundColor: '#FFFBEB',
       borderRadius: radius.lg,
       padding: spacing.lg,
-      borderWidth: 2,
-      borderColor: '#F59E0B',
+       borderWidth: 1,
+       borderColor: colors.secondary[200],
       ...shadows.sm,
       gap: 10,
     }}>
-      <Text style={{ fontSize: 28, textAlign: 'center' }}>📄</Text>
+      <Ionicons name="document-text-outline" size={30} color={colors.secondary[700]} style={{ alignSelf: 'center' }} />
       <Text style={{
         fontSize: 16, fontWeight: '800', textAlign: 'center', color: '#78350F',
       }}>
@@ -117,15 +119,13 @@ export function DocumentosEstadoCard() {
       <View style={{ gap: 8, marginTop: 4 }}>
         {detalles.map(({ reg, faltan }) => (
           <View key={reg.id} style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: colors.surface.light,
             borderRadius: radius.md,
             padding: spacing.sm,
             borderLeftWidth: 3,
             borderLeftColor: faltan.length === 0 ? '#10B981' : '#F59E0B',
           }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary[700] }}>
-              {faltan.length === 0 ? '✅ ' : '⚠️ '}{reg.nombres} {reg.apellidos}
-            </Text>
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}><Text style={{ fontSize: 13, fontWeight: '700', color: colors.text.primary.light }}>{reg.nombres} {reg.apellidos}</Text><Badge tone={faltan.length === 0 ? 'success' : 'warning'}>{faltan.length === 0 ? 'Completo' : 'Falta'}</Badge></View>
             {faltan.length === 0 ? (
               <Text style={{ fontSize: 12, color: '#047857', marginTop: 2 }}>
                 Documentos completos
@@ -148,7 +148,7 @@ export function DocumentosEstadoCard() {
         onPress={() => router.push('/documentos')}
         style={{ marginTop: 6 }}
       >
-        📤 Cargar mis documentos
+         Cargar mis documentos
       </Button>
     </View>
   )
