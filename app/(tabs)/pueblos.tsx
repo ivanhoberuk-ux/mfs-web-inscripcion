@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   Pressable,
   Animated,
+  useWindowDimensions,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { radius } from '../../src/lib/designSystem'
 import { fetchOcupacion, type Ocupacion } from '../../src/lib/api'
@@ -16,9 +18,13 @@ import { useRouter } from 'expo-router'
 import { Button } from '../../src/components/Button'
 import { Card } from '../../src/components/Card'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
+import { Badge as StatusBadge } from '../../src/components/Badge'
+import { PageHeader } from '../../src/components/PageHeader'
 
 export default function Pueblos() {
   const router = useRouter()
+  const { width } = useWindowDimensions()
+  const columns = width >= 1180 ? 3 : width >= 720 ? 2 : 1
   const { isSuperAdmin, isPuebloAdmin, puebloId: userPuebloId, loading: rolesLoading } = useUserRoles();
   
   const [items, setItems] = useState<Ocupacion[]>([])
@@ -67,29 +73,15 @@ export default function Pueblos() {
     <ScrollView
       style={[s.screen, { backgroundColor: 'transparent' }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={[s.pageContent, { paddingHorizontal: width < 600 ? 0 : spacing.md }]}
     >
       {/* Header con emoji */}
       <Animated.View style={{ opacity: fadeAnim }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <Text style={[s.title, { fontSize: 28 }]}>
-            🏠 Pueblos
-          </Text>
-          <Button variant="secondary" onPress={load}>
-            🔄 Actualizar
-          </Button>
-        </View>
+        <PageHeader icon="map-outline" title="Pueblos" subtitle="Elegí dónde querés vivir la misión" trailing={<Button variant="ghost" onPress={load}><Ionicons name="refresh" size={20} color={colors.primary[600]} /></Button>} />
 
         {!!lastUpdated && (
           <Text style={[s.small, { color: colors.text.tertiary.light, marginBottom: 10 }]}>
-            ⏰ Última actualización: {lastUpdated}
+            Última actualización: {lastUpdated}
           </Text>
         )}
       </Animated.View>
@@ -97,19 +89,19 @@ export default function Pueblos() {
       {/* Lista de pueblos */}
       {loading ? (
         <View style={{ marginTop: 40, alignItems: 'center' }}>
-          <Text style={{ fontSize: 48 }}>🏕️</Text>
+          <Ionicons name="map-outline" size={48} color={colors.primary[300]} />
           <ActivityIndicator size="large" style={{ marginTop: 16 }} />
           <Text style={[s.text, { marginTop: 8, color: colors.text.tertiary.light }]}>Cargando pueblos…</Text>
         </View>
       ) : items.length === 0 ? (
         <View style={{ alignItems: 'center', marginTop: 40 }}>
-          <Text style={{ fontSize: 48 }}>🤷</Text>
+          <Ionicons name="map-outline" size={48} color={colors.text.tertiary.light} />
           <Text style={[s.text, { color: colors.text.tertiary.light, marginTop: 8 }]}>No hay pueblos registrados.</Text>
         </View>
       ) : (
-        items.map((p, index) => (
-          <PuebloCard key={p.id} pueblo={p} router={router} delay={index * 100} />
-        ))
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
+          {items.map((p, index) => <View key={p.id} style={{ width: `${100 / columns}%`, paddingHorizontal: 6 }}><PuebloCard pueblo={p} router={router} delay={index * 70} /></View>)}
+        </View>
       )}
     </ScrollView>
   )
@@ -128,7 +120,7 @@ function PuebloActions({ puebloId, router }: { puebloId: string; router: any }) 
         style={{ flex: 1 }}
         onPress={() => router.push({ pathname: '/inscribir', params: { p: puebloId } })}
       >
-        ✍️ Inscribir
+        Inscribirme
       </Button>
       {canVerInscriptos && (
         <Button
@@ -136,7 +128,7 @@ function PuebloActions({ puebloId, router }: { puebloId: string; router: any }) 
           style={{ flex: 1 }}
           onPress={() => router.push({ pathname: '/pueblos/[id]', params: { id: puebloId, hideCi: '1' } })}
         >
-          👀 Ver inscriptos
+          Ver inscriptos
         </Button>
       )}
     </View>
@@ -176,14 +168,10 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
   const completo = libres <= 0
   const inactivo = !p.activo
 
-  // Emoji y color según estado
-  let emoji = '🟢'
   let barColor = colors.success
   if (completo) {
-    emoji = '🔴'
-    barColor = colors.error
+    barColor = colors.accent[500]
   } else if (pct >= 80) {
-    emoji = '🟡'
     barColor = colors.warning
   }
 
@@ -198,8 +186,9 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
         style={{
           marginBottom: 14,
           opacity: inactivo ? 0.6 : 1,
-          borderWidth: 2,
-          borderColor: completo ? colors.error : colors.primary[100],
+          borderWidth: 1,
+          borderColor: colors.primary[50],
+          minHeight: 330,
         }}
       >
         {/* Cabecera del pueblo */}
@@ -211,7 +200,7 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-            <Text style={{ fontSize: 24 }}>{emoji}</Text>
+             <View style={{ width: 42, height: 42, borderRadius: radius.md, backgroundColor: completo ? colors.accent[50] : colors.mint[100], alignItems: 'center', justifyContent: 'center' }}><Ionicons name="location-outline" size={22} color={completo ? colors.accent[700] : colors.mint[600]} /></View>
             <Text
               style={[
                 s.text,
@@ -222,8 +211,8 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
             </Text>
           </View>
 
-          {inactivo && <Badge label="INACTIVO" color={colors.neutral[500]} emoji="⏸️" />}
-          {completo && <Badge label="COMPLETO" color={colors.error} emoji="🚫" />}
+           {inactivo && <StatusBadge tone="neutral">Inactivo</StatusBadge>}
+           {completo && <StatusBadge tone="danger">Lista de espera</StatusBadge>}
         </View>
 
         {/* Métricas con emojis */}
@@ -235,13 +224,13 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
             flexWrap: 'wrap',
           }}
         >
-          <Stat label="Cupo" value={String(total)} emoji="👥" />
-          <Stat label="Misioneros" value={String(usados)} emoji="✅" />
-          <Stat label="Restantes" value={String(libres)} emoji="🎫" />
+          <Stat label="Cupo" value={String(total)} />
+          <Stat label="Misioneros" value={String(usados)} />
+          <Stat label="Libres" value={String(libres)} />
           {menores > 0 && (
-            <Stat label="Menores" value={String(menores)} emoji="🧒" />
+            <Stat label="Menores" value={String(menores)} />
           )}
-          <Stat label="En espera" value={String(enEspera)} emoji="⏳" />
+          <Stat label="En espera" value={String(enEspera)} />
 
         </View>
 
@@ -296,7 +285,7 @@ function PuebloCard({ pueblo: p, router, delay }: { pueblo: Ocupacion; router: a
   )
 }
 
-function Stat({ label, value, emoji }: { label: string; value: string; emoji: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View
       style={{
@@ -308,7 +297,7 @@ function Stat({ label, value, emoji }: { label: string; value: string; emoji: st
         borderColor: colors.primary[100],
       }}
     >
-      <Text style={{ fontSize: 12, color: colors.text.tertiary.light }}>{emoji} {label}</Text>
+      <Text style={{ fontSize: 12, color: colors.text.tertiary.light }}>{label}</Text>
       <Text style={[s.text, { fontWeight: '700', fontSize: 16 }]}>{value}</Text>
     </View>
   )
