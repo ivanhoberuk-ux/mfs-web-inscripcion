@@ -291,7 +291,7 @@ export default function SeleccionScreen() {
       ) : (
         <>
           {/* Resumen */}
-          <View style={[s.card, { marginBottom: 10, borderColor: publicada ? colors.mint[300] : colors.primary[50] }]}> 
+          <View style={[s.card, { marginBottom: 10, borderColor: publicada ? colors.mint[500] : colors.primary[50] }]}> 
             {cupo == null && (
               <View style={{ backgroundColor: '#fef3c7', padding: 10, borderRadius: 8, marginBottom: 8 }}>
                 <Text style={{ color: '#92400e', fontWeight: '700' }}>⚠️ El super admin tiene que definir el cupo para misionar de este pueblo.</Text>

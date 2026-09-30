@@ -4,6 +4,8 @@ import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { fetchAsesoresPendientes, validarAsesor, type AsesorRow } from '../lib/api'
 import { colors, spacing, radius, shadows } from '../lib/designSystem'
+import { InitialAvatar } from './PageHeader'
+import { Button } from './Button'
 
 const TIPO_LABEL: Record<string, string> = {
   padre_schoenstatt: 'Padre de Schoenstatt',
@@ -59,7 +61,7 @@ export function AsesoresValidacionPanel() {
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ fontSize: 16, fontWeight: '800', color: colors.primary[700] }}>
-          🙏 Asesores pendientes de validación ({items.length})
+          Asesores pendientes de validación ({items.length})
         </Text>
         <Pressable
           onPress={load}
@@ -79,36 +81,28 @@ export function AsesoresValidacionPanel() {
           return (
             <View key={a.id} style={{
               backgroundColor: colors.surface.light, borderRadius: radius.md, padding: spacing.md,
-              ...shadows.sm, borderWidth: 1, borderColor: colors.primary[100], gap: 4,
+              ...shadows.sm, borderWidth: 1, borderColor: colors.primary[100], gap: 6,
             }}>
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}><InitialAvatar name={`${a.nombres} ${a.apellidos}`} tone="mint" /><View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text.primary.light }}>
                 {a.nombres} {a.apellidos}
               </Text>
               <Text style={{ fontSize: 13, color: colors.text.secondary.light }}>
                 {TIPO_LABEL[a.tipo_asesor ?? ''] ?? '—'} · CI {a.ci}
               </Text>
-              <Text style={{ fontSize: 12, color: colors.text.secondary.light }}>
-                📧 {a.email} · 📞 {a.telefono}
-              </Text>
+              <Text style={{ fontSize: 12, color: colors.text.secondary.light }}>{a.email} · {a.telefono}</Text></View></View>
               {pueblos.length > 0 && (
                 <Text style={{ fontSize: 12, color: colors.primary[600] }}>
                   Acompaña: {pueblos.join(', ')}
                 </Text>
               )}
-              <Pressable
+              <Button variant="primary"
                 onPress={() => onValidar(a.id, `${a.nombres} ${a.apellidos}`)}
                 disabled={validating === a.id}
-                style={{
-                  marginTop: 8, alignSelf: 'flex-start',
-                  paddingHorizontal: 14, paddingVertical: 8,
-                  backgroundColor: '#16a34a', borderRadius: radius.sm,
-                  opacity: validating === a.id ? 0.6 : 1,
-                }}
+                style={{ marginTop: 8, alignSelf: 'flex-start' }}
               >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  {validating === a.id ? 'Validando…' : '✅ Validar'}
-                </Text>
-              </Pressable>
+                {validating === a.id ? 'Validando…' : 'Validar asesor'}
+              </Button>
             </View>
           )
         })

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { s } from '../lib/theme';
+import { s, colors, radius, shadows, typography } from '../lib/theme';
 import * as XLSX from 'xlsx-js-style';
 import { fileStamp, humanDate } from '../lib/excel';
 import { shareOrDownload } from '../lib/sharing';
@@ -31,7 +31,7 @@ type RegistroDash = {
 };
 type Pueblo = { id: string; nombre: string; cupo_max: number };
 
-const COLORS = ['#0a7ea4', '#7c3aed', '#0b9850', '#f59e0b', '#dc2626', '#06b6d4', '#ec4899', '#8b5cf6', '#10b981', '#f97316', '#3b82f6', '#84cc16'];
+const COLORS = [colors.primary[600], colors.accent[500], colors.mint[500], colors.secondary[500], colors.error, colors.primary[400], colors.accent[400], colors.primary[700], colors.mint[600], colors.secondary[600]];
 
 function ageOn(nac: string | null, refDate: Date): number | null {
   if (!nac) return null;
@@ -48,10 +48,10 @@ function BarRow({ label, value, max, color, suffix, onPress }: { label: string; 
   const content = (
     <View style={{ marginBottom: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
-        <Text style={{ fontSize: 13, color: '#374151', flex: 1 }} numberOfLines={1}>{label}</Text>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: '#111827' }}>{value}{suffix || ''}</Text>
+        <Text style={{ fontSize: 13, fontFamily: typography.family.regular, color: colors.text.secondary.light, flex: 1 }} numberOfLines={1}>{label}</Text>
+        <Text style={{ fontSize: 13, fontFamily: typography.family.bold, color: colors.text.primary.light }}>{value}{suffix || ''}</Text>
       </View>
-      <View style={{ height: 10, backgroundColor: '#f3f4f6', borderRadius: 5, overflow: 'hidden' }}>
+      <View style={{ height: 10, backgroundColor: colors.neutral[100], borderRadius: radius.full, overflow: 'hidden' }}>
         <View style={{ width: `${Math.min(100, pct)}%`, height: '100%', backgroundColor: color, borderRadius: 5 }} />
       </View>
     </View>
@@ -63,13 +63,12 @@ function BarRow({ label, value, max, color, suffix, onPress }: { label: string; 
 function StatCard({ label, value, color, emoji, onPress }: { label: string; value: number | string; color: string; emoji: string; onPress?: () => void }) {
   const content = (
     <View style={{
-      flex: 1, minWidth: 130, padding: 14, borderRadius: 12,
-      backgroundColor: 'white', borderLeftWidth: 4, borderLeftColor: color,
-      shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1,
+      flex: 1, minWidth: 150, padding: 18, borderRadius: radius.xl,
+      backgroundColor: colors.surface.light, borderWidth: 1, borderColor: colors.primary[50], borderTopWidth: 4, borderTopColor: color, ...shadows.sm,
     }}>
       <Text style={{ fontSize: 22 }}>{emoji}</Text>
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#111827', marginTop: 4 }}>{value}</Text>
-      <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 28, fontFamily: typography.family.extrabold, color: colors.text.primary.light, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontSize: 12, fontFamily: typography.family.regular, color: colors.text.tertiary.light, marginTop: 2 }}>{label}</Text>
     </View>
   );
   if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, minWidth: 130, opacity: pressed ? 0.7 : 1 })}>{content}</Pressable>;
@@ -79,7 +78,7 @@ function StatCard({ label, value, color, emoji, onPress }: { label: string; valu
 function Section({ title, emoji, children }: any) {
   return (
     <View style={[s.card, { marginBottom: 12 }]}>
-      <Text style={[s.subtitle, { marginBottom: 12 }]}>{emoji} {title}</Text>
+      <Text style={[s.subtitle, { marginBottom: 12 }]}>{title}</Text>
       {children}
     </View>
   );
