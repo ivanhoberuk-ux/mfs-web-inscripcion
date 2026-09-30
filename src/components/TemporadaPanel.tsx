@@ -2,7 +2,7 @@
 // Panel de temporada: cerrar la misión (modo institucional) y abrir el año siguiente.
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
-import { colors, radius, spacing, shadows } from '../lib/designSystem';
+import { colors, radius, spacing, shadows, typography } from '../lib/designSystem';
 import {
   fetchConfiguracionesInscripcion,
   setModoTemporada,
@@ -95,20 +95,20 @@ export function TemporadaPanel() {
         borderRadius: radius.lg,
         padding: spacing.lg,
         gap: 12,
-        borderWidth: 2,
+        borderWidth: 1,
         borderColor: esInstitucional ? colors.secondary[400] : colors.primary[100],
         ...shadows.sm,
       }}
     >
-      <Text style={{ fontSize: 17, fontWeight: '800', color: colors.primary[700] }}>
-        🗓️ Temporada
+      <Text style={{ fontSize: 17, fontFamily: typography.family.bold, color: colors.text.primary.light }}>
+        Temporada
       </Text>
 
       {activa ? (
         <View
           style={{
             backgroundColor: esInstitucional ? colors.secondary[100] : colors.primary[50],
-            borderRadius: radius.md,
+            borderRadius: radius.lg,
             padding: spacing.md,
             gap: 2,
           }}
@@ -183,7 +183,7 @@ function Accion({
           backgroundColor: color,
           paddingVertical: 12,
           paddingHorizontal: 16,
-          borderRadius: radius.md,
+          borderRadius: radius.full,
           opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
           alignItems: 'center',
         })}

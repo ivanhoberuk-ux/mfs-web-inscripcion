@@ -1,6 +1,7 @@
 // FILE: app/(tabs)/inscriptos.tsx — ADMIN + PUEBLO_ADMIN — Ver inscriptos + Export
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native'
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert, useWindowDimensions } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { supabase } from '../../src/lib/supabase'
 import { Picker } from '@react-native-picker/picker'
@@ -13,6 +14,9 @@ import { Field } from '../../src/components/Field'
 import { useUserRoles } from '../../src/hooks/useUserRoles'
 import { estadoDocumentos, edadDe } from '../../src/lib/documentos'
 import { fetchAñoActivo, fetchRolesPorUsuario } from '../../src/lib/api'
+import { PageHeader, InitialAvatar } from '../../src/components/PageHeader'
+import { Badge } from '../../src/components/Badge'
+import { radius, shadows, typography } from '../../src/lib/designSystem'
 
 type Row = {
   id: string
@@ -64,6 +68,8 @@ const PAGE = 200
 
 export default function VerInscriptosAdmin() {
   const router = useRouter()
+  const { width } = useWindowDimensions()
+  const mobile = width < 700
 
   // ===== Guard: super_admin, pueblo_admin, co_admin =====
   const { isSuperAdmin: currentUserIsSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId: userPuebloId, loading: rolesLoading } = useUserRoles();
@@ -682,19 +688,16 @@ export default function VerInscriptosAdmin() {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 120 }}>
-      <Text style={s.title}>
-        Inscriptos {currentUserIsSuperAdmin ? '(Super Admin)' : isPuebloAdmin || isCoAdmin ? '(Mi pueblo)' : ''}
-      </Text>
+    <ScrollView style={s.screen} contentContainerStyle={{ width: '100%', maxWidth: 1280, alignSelf: 'center', paddingBottom: 120 }}>
+      <PageHeader icon="people-outline" title="Inscriptos" subtitle={currentUserIsSuperAdmin ? 'Todos los pueblos · Super Admin' : 'Gestión de mi pueblo'} />
 
       {(currentUserIsSuperAdmin || isPuebloAdmin || isCoAdmin) && (
-        <Pressable onPress={() => router.push('/seleccion' as any)}
-          style={{ backgroundColor: '#16a34a', padding: 14, borderRadius: 10, marginBottom: 10, alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>✅ Selección de misioneros</Text>
-        </Pressable>
+        <Button variant="primary" onPress={() => router.push('/seleccion' as any)} style={{ marginBottom: 12, marginTop: 0 }}><Ionicons name="checkmark-done-outline" size={18} /> Selección de misioneros</Button>
       )}
 
-      <Card>
+      <Card style={{ borderColor: colors.primary[50], ...shadows.sm }}>
+        <View style={{ flexDirection: mobile ? 'column' : 'row', gap: 12 }}>
+        <View style={{ flex: 1, minWidth: 220 }}>
         <Text style={s.label}>Pueblo</Text>
         <View style={{ borderWidth: 1, borderColor: colors.neutral[300], borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
           <Picker selectedValue={puebloId} onValueChange={setPuebloId}>
@@ -705,13 +708,13 @@ export default function VerInscriptosAdmin() {
           </Picker>
         </View>
 
-        <Text style={s.label}>Buscar</Text>
+        </View><View style={{ flex: 2, minWidth: 220 }}><Text style={s.label}>Buscar</Text>
         <Field
           label=""
           value={searchTerm}
           onChangeText={setSearchTerm}
           placeholder="Nombre, apellido, CI o email..."
-        />
+        /></View></View>
 
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
           <Button variant="secondary" onPress={() => runSearch(true)}>
@@ -747,10 +750,11 @@ export default function VerInscriptosAdmin() {
             const adminPuebloNombre = userInfo?.pueblo_id ? pueblosMap[userInfo.pueblo_id] : null
             
             return (
-              <Card key={r.id} style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Card key={r.id} style={{ marginBottom: 10, padding: mobile ? 14 : 18, borderColor: colors.primary[50] }}>
+                <View style={{ flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <View style={{ flexDirection: 'row', gap: 12, flex: 1, minWidth: 0 }}><InitialAvatar name={`${r.nombres} ${r.apellidos}`} tone={r.estado === 'lista_espera' ? 'coral' : 'primary'} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.text, { fontWeight: '700' }]}>{r.nombres} {r.apellidos}</Text>
+                    <Text style={{ fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 15 }}>{r.nombres} {r.apellidos}</Text>
                     {r.no_clasifico && (
                       <View style={{ backgroundColor: '#b45309', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, alignSelf: 'flex-start', marginTop: 4 }}>
                         <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
@@ -801,10 +805,10 @@ export default function VerInscriptosAdmin() {
                     <Text style={[s.small, { color: colors.text.tertiary.light, marginTop: 6 }]}>
                       Fecha: {new Date(r.created_at).toLocaleString()}
                     </Text>
-                  </View>
+                  </View></View>
                   {/* Role management & delete: only super_admin */}
                   {currentUserIsSuperAdmin && (
-                    <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                    <View style={{ flexDirection: mobile ? 'row' : 'column', gap: 6, flexWrap: 'wrap' }}>
                       {r.email && userInfo && (
                         <>
                           <Pressable
@@ -851,7 +855,7 @@ export default function VerInscriptosAdmin() {
                     </View>
                   )}
                   {(currentUserIsSuperAdmin || isPuebloAdmin) && (
-                    <View style={{ flexDirection: 'column', gap: 4, marginLeft: 8 }}>
+                    <View style={{ flexDirection: mobile ? 'row' : 'column', gap: 6, flexWrap: 'wrap' }}>
                       {venceListaEspera && !r.no_clasifico && (
                         <Pressable
                           onPress={() => marcarNoClasifico(r.id, `${r.nombres} ${r.apellidos}`)}
@@ -918,16 +922,5 @@ export default function VerInscriptosAdmin() {
 }
 
 function Chip({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: ok ? colors.success : colors.neutral[300],
-      }}
-    >
-      <Text style={{ color: ok ? '#fff' : colors.text.primary.light, fontWeight: '700', fontSize: 12 }}>{label}</Text>
-    </View>
-  )
+  return <Badge tone={ok ? 'success' : 'neutral'}>{label}</Badge>
 }

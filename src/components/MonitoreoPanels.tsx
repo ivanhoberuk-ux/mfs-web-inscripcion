@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, TextInput, ActivityIndicator, Platform, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { fetchAñoActivo } from '../lib/api';
+import { colors, radius, spacing, shadows, typography } from '../lib/designSystem';
+import { Badge } from './Badge';
 
 const db = supabase as any;
 
@@ -28,16 +30,16 @@ function haceCuanto(iso: string) {
   return `hace ${Math.floor(h / 24)} días`;
 }
 
-const card = { backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB', gap: 8 } as const;
-const input = { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#fff', fontSize: 13 } as const;
-const h2 = { fontSize: 16, fontWeight: '800', color: '#0a7ea4' } as const;
-const small = { fontSize: 12, color: '#6B7280' } as const;
+const card = { backgroundColor: colors.surface.light, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.primary[50], gap: spacing.md, ...shadows.sm } as const;
+const input = { borderWidth: 1, borderColor: colors.neutral[300], borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, minHeight: 46, backgroundColor: colors.surface.light, fontSize: 13, fontFamily: typography.family.regular } as const;
+const h2 = { fontSize: 16, fontFamily: typography.family.bold, color: colors.text.primary.light } as const;
+const small = { fontSize: 12, fontFamily: typography.family.regular, color: colors.text.tertiary.light } as const;
 
-function Btn({ label, onPress, color = '#0a7ea4', disabled }: { label: string; onPress: () => void; color?: string; disabled?: boolean }) {
+function Btn({ label, onPress, color = colors.primary[600], disabled }: { label: string; onPress: () => void; color?: string; disabled?: boolean }) {
   return (
     <Pressable onPress={onPress} disabled={disabled}
-      style={{ backgroundColor: color, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{label}</Text>
+      style={{ backgroundColor: color, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.6 : 1 }}>
+      <Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -45,8 +47,8 @@ function Btn({ label, onPress, color = '#0a7ea4', disabled }: { label: string; o
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress}
-      style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: active ? '#0a7ea4' : '#E5E7EB' }}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#fff' : '#374151' }}>{label}</Text>
+      style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, backgroundColor: active ? colors.primary[600] : colors.neutral[100] }}>
+      <Text style={{ fontSize: 12, fontFamily: typography.family.bold, color: active ? colors.surface.light : colors.text.secondary.light }}>{label}</Text>
     </Pressable>
   );
 }
@@ -84,7 +86,7 @@ export function ChequeoTemporadaPanel() {
 
   return (
     <View style={card}>
-      <Text style={h2}>🩺 Chequeo de temporada</Text>
+      <Text style={h2}>Chequeo de temporada</Text>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <Text style={small}>Año:</Text>
         <TextInput value={año} onChangeText={(t) => setAño(t.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={4} style={[input, { width: 90 }]} />
@@ -98,10 +100,10 @@ export function ChequeoTemporadaPanel() {
           {filas.map((f) => {
             const st = ESTADO[f.estado] ?? ESTADO.aviso;
             return (
-              <View key={f.orden} style={{ backgroundColor: st.bg, borderRadius: 8, padding: 10 }}>
-                <Text style={{ fontWeight: '700', color: st.color }}>{st.icon} {f.chequeo}</Text>
+              <View key={f.orden} style={{ backgroundColor: st.bg, borderRadius: radius.md, padding: 12, flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                <Badge tone={f.estado === 'ok' ? 'success' : f.estado === 'aviso' ? 'warning' : 'danger'}>{st.icon}</Badge><View style={{ flex: 1 }}><Text style={{ fontFamily: typography.family.bold, color: st.color }}>{f.chequeo}</Text>
                 {!!f.detalle && <Text style={{ fontSize: 12, color: '#374151', marginTop: 2 }}>{f.detalle}</Text>}
-              </View>
+              </View></View>
             );
           })}
           {filas.length === 0 && <Text style={small}>Sin resultados.</Text>}
@@ -166,7 +168,7 @@ export function AuditoriaPanel() {
 
   return (
     <View style={card}>
-      <Text style={h2}>🕵️ Auditoría</Text>
+      <Text style={h2}>Auditoría</Text>
       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
         <Chip label="Todas las tablas" active={!tabla} onPress={() => setTabla(null)} />
         {TABLAS.map((t) => <Chip key={t} label={t} active={tabla === t} onPress={() => setTabla(t)} />)}
@@ -187,7 +189,7 @@ export function AuditoriaPanel() {
         const cambios = r.cambios && typeof r.cambios === 'object' ? Object.entries(r.cambios) : [];
         return (
           <Pressable key={r.id} onPress={() => setAbierto(open ? null : r.id)}
-            style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 8, backgroundColor: open ? '#F0F9FF' : '#fff' }}>
+            style={{ borderWidth: 1, borderColor: colors.primary[50], borderRadius: radius.md, padding: 12, backgroundColor: open ? colors.primary[50] : colors.surface.light, borderLeftWidth: 4, borderLeftColor: r.accion === 'DELETE' ? colors.error : r.accion === 'INSERT' ? colors.mint[500] : colors.secondary[500] }}>
             <Text style={{ fontSize: 12, fontWeight: '700' }}>
               {r.accion === 'INSERT' ? '🟢' : r.accion === 'DELETE' ? '🔴' : '🟡'} {r.accion} · {r.tabla} · {fechaPY(r.created_at)}
             </Text>
@@ -295,7 +297,7 @@ export function AlertasTareasPanel() {
   return (
     <View style={{ gap: 12 }}>
       <View style={card}>
-        <Text style={h2}>⏱️ Últimas ejecuciones por tarea</Text>
+        <Text style={h2}>Últimas ejecuciones por tarea</Text>
         {ultimas.length === 0 && <Text style={small}>Sin ejecuciones registradas.</Text>}
         {ultimas.map((t) => (
           <Text key={t.tarea} style={{ fontSize: 13 }}>
@@ -306,20 +308,20 @@ export function AlertasTareasPanel() {
       </View>
 
       <View style={card}>
-        <Text style={h2}>📧 Destinatarios de alertas</Text>
+        <Text style={h2}>Destinatarios de alertas</Text>
         <TextInput value={dest} onChangeText={setDest} placeholder="email1@ejemplo.com, email2@ejemplo.com" style={input} autoCapitalize="none" />
         <Text style={small}>Emails separados por coma.</Text>
         <Btn label={saving ? 'Guardando...' : '💾 Guardar destinatarios'} onPress={guardarDest} disabled={saving} />
       </View>
 
       <View style={card}>
-        <Text style={h2}>🗂️ Archivos huérfanos</Text>
+        <Text style={h2}>Archivos huérfanos</Text>
         <Btn label={buscando ? 'Buscando...' : '🔍 Buscar archivos huérfanos (simulación)'} onPress={buscarHuerfanos} disabled={buscando} color="#7c3aed" />
         {huerfanos && <Text style={{ fontSize: 13 }}>Se encontraron <Text style={{ fontWeight: '700' }}>{huerfanos.archivos}</Text> archivos ({huerfanos.mb} MB). No se borró nada.</Text>}
       </View>
 
       <View style={card}>
-        <Text style={h2}>🔔 Alertas (últimas 100)</Text>
+        <Text style={h2}>Alertas (últimas 100)</Text>
         {alertas.length === 0 && <Text style={small}>Sin alertas. 🎉</Text>}
         {alertas.map((a) => (
           <View key={a.id} style={{ borderWidth: 1, borderColor: a.enviada_at ? '#E5E7EB' : '#F59E0B', backgroundColor: a.enviada_at ? '#fff' : '#FFFBEB', borderRadius: 8, padding: 8 }}>
@@ -331,7 +333,7 @@ export function AlertasTareasPanel() {
       </View>
 
       <View style={card}>
-        <Text style={h2}>📜 Historial de tareas (últimas 50)</Text>
+        <Text style={h2}>Historial de tareas (últimas 50)</Text>
         {tareas.map((t) => (
           <View key={t.id} style={{ borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 4 }}>
             <Text style={{ fontSize: 12 }}>{t.ok ? '✅' : '❌'} <Text style={{ fontWeight: '700' }}>{t.tarea}</Text> · {fechaPY(t.created_at)}</Text>

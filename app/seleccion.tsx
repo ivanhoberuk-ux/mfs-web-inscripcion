@@ -1,9 +1,10 @@
 // FILE: app/seleccion.tsx — ✅ Selección de misioneros (coordinadores de pueblo y super admin)
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, ScrollView, ActivityIndicator, Pressable, TextInput } from 'react-native'
+import { View, Text, ScrollView, ActivityIndicator, Pressable, TextInput, Platform } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
-import { s } from '../src/lib/theme'
+import { s, colors, radius, spacing, shadows, typography } from '../src/lib/theme'
 import { supabase } from '../src/lib/supabase'
 import { useUserRoles } from '../src/hooks/useUserRoles'
 import { fetchAñoActivo } from '../src/lib/api'
@@ -11,6 +12,9 @@ import { documentosCompletos, documentosFaltantes, edadDe } from '../src/lib/doc
 import { avisar, confirmar } from '../src/lib/dialogs'
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../src/lib/excel'
 import { shareOrDownload } from '../src/lib/sharing'
+import { PageHeader, InitialAvatar } from '../src/components/PageHeader'
+import { Badge } from '../src/components/Badge'
+import { Button } from '../src/components/Button'
 
 type Reg = {
   id: string; nombres: string; apellidos: string; ci: string; nacimiento: string | null
@@ -41,23 +45,14 @@ function ocupaCupo(r: Reg, año: number) {
 }
 
 function Chip({ r }: { r: Reg }) {
-  const cfg = r.seleccion === 'seleccionado'
-    ? { t: '✅ Seleccionado', bg: '#dcfce7', c: '#15803d' }
-    : r.seleccion === 'suplente'
-      ? { t: `🕒 Suplente N° ${r.orden_suplente ?? '—'}`, bg: '#fef3c7', c: '#92400e' }
-      : { t: '⚪ Sin definir', bg: '#f3f4f6', c: '#4b5563' }
-  return (
-    <View style={{ backgroundColor: cfg.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, alignSelf: 'flex-start' }}>
-      <Text style={{ color: cfg.c, fontSize: 12, fontWeight: '700' }}>{cfg.t}</Text>
-    </View>
-  )
+  return <Badge tone={r.seleccion === 'seleccionado' ? 'success' : r.seleccion === 'suplente' ? 'warning' : 'neutral'}>{r.seleccion === 'seleccionado' ? 'Seleccionado' : r.seleccion === 'suplente' ? `Suplente N° ${r.orden_suplente ?? '—'}` : 'Sin definir'}</Badge>
 }
 
-function Btn({ label, onPress, color = '#0a7ea4', disabled, small }: { label: string; onPress: () => void; color?: string; disabled?: boolean; small?: boolean }) {
+function Btn({ label, onPress, color, disabled, small }: { label: string; onPress: () => void; color?: string; disabled?: boolean; small?: boolean }) {
   return (
     <Pressable onPress={onPress} disabled={disabled}
-      style={{ backgroundColor: color, opacity: disabled ? 0.5 : 1, paddingVertical: small ? 6 : 10, paddingHorizontal: small ? 10 : 14, borderRadius: 8 }}>
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: small ? 12 : 14 }}>{label}</Text>
+      style={{ backgroundColor: color || colors.primary[600], opacity: disabled ? 0.5 : 1, minHeight: small ? 38 : 46, justifyContent: 'center', alignItems: 'center', paddingVertical: small ? 6 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: radius.full }}>
+      <Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: small ? 12 : 14 }}>{label}</Text>
     </Pressable>
   )
 }
@@ -250,7 +245,7 @@ export default function SeleccionScreen() {
   if (!puedeVer) {
     return (
       <View style={[s.screen, { padding: 20 }]}>
-        <Text style={s.title}>✅ Selección de misioneros</Text>
+        <Text style={s.title}>Selección de misioneros</Text>
         <Text style={s.text}>No tenés permisos para ver esta sección.</Text>
       </View>
     )
@@ -261,11 +256,8 @@ export default function SeleccionScreen() {
   const publicada = !!resumen?.publicada_at
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 120 }}>
-      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/inscriptos' as any))} style={{ marginBottom: 6 }}>
-        <Text style={{ color: '#0a7ea4', fontWeight: '700' }}>← Volver</Text>
-      </Pressable>
-      <Text style={s.title}>✅ Selección de misioneros {año ?? ''}</Text>
+    <ScrollView style={s.screen} contentContainerStyle={s.pageContent}>
+      <PageHeader icon="checkmark-done-outline" title={`Selección de misioneros ${año ?? ''}`} subtitle="Definí quiénes misionan y el orden de suplentes" trailing={<Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/inscriptos' as any))} style={{ padding: 10 }}><Ionicons name="close" size={22} color={colors.text.secondary.light} /></Pressable>} />
 
       {isSuperAdmin && (
         <View style={[s.input, { padding: 0, marginBottom: 8 }]}>
@@ -275,12 +267,11 @@ export default function SeleccionScreen() {
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {([['lista', '📋 Inscriptos'], ['suplentes', `🕒 Suplentes (${suplentes.length})`], ...(isSuperAdmin ? [['general', '🌎 Todos los pueblos']] : [])] as [Vista, string][])
+      <View style={[s.segmented, { marginBottom: spacing.lg, flexWrap: 'wrap' }]}>
+        {([['lista', 'Inscriptos'], ['suplentes', `Suplentes (${suplentes.length})`], ...(isSuperAdmin ? [['general', 'Todos los pueblos']] : [])] as [Vista, string][])
           .map(([k, l]) => (
-            <Pressable key={k} onPress={() => setVista(k)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999,
-              backgroundColor: vista === k ? '#0a7ea4' : '#e0f2fe' }}>
-              <Text style={{ color: vista === k ? '#fff' : '#075985', fontWeight: '700' }}>{l}</Text>
+            <Pressable key={k} onPress={() => setVista(k)} style={[s.segmentedItem, vista === k && s.segmentedItemActive, { minWidth: 120 }]}>
+              <Text style={{ color: vista === k ? colors.primary[700] : colors.text.secondary.light, fontFamily: typography.family.bold }}>{l}</Text>
             </Pressable>
           ))}
       </View>
@@ -300,24 +291,24 @@ export default function SeleccionScreen() {
       ) : (
         <>
           {/* Resumen */}
-          <View style={[s.card, { marginBottom: 10 }]}>
+          <View style={[s.card, { marginBottom: 10, borderColor: publicada ? colors.mint[500] : colors.primary[50] }]}> 
             {cupo == null && (
               <View style={{ backgroundColor: '#fef3c7', padding: 10, borderRadius: 8, marginBottom: 8 }}>
                 <Text style={{ color: '#92400e', fontWeight: '700' }}>⚠️ El super admin tiene que definir el cupo para misionar de este pueblo.</Text>
               </View>
             )}
-            <Text style={{ fontSize: 28, fontWeight: '800', color: '#0a7ea4' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><Text style={{ fontSize: 28, fontFamily: typography.family.extrabold, color: colors.primary[700] }}>
               Seleccionados {resumen?.seleccionados ?? 0} / {cupo ?? '—'}
-            </Text>
-            <View style={{ height: 12, backgroundColor: '#eee', borderRadius: 6, marginTop: 6, overflow: 'hidden' }}>
-              <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pct >= 100 ? '#16a34a' : '#0a7ea4' }} />
+            </Text><Badge tone={publicada ? 'success' : 'neutral'}>{publicada ? 'Publicada' : 'Borrador'}</Badge></View>
+            <View style={{ height: 12, backgroundColor: colors.neutral[100], borderRadius: radius.full, marginTop: 10, overflow: 'hidden' }}>
+              <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pct >= 100 ? colors.mint[500] : colors.primary[500] }} />
             </View>
             <Text style={[s.small, { marginTop: 6 }]}>
               🕒 Suplentes: {resumen?.suplentes ?? 0} · ⚪ Sin definir: {resumen?.sin_definir ?? 0} · Inscriptos que ocupan cupo: {resumen?.inscriptos ?? 0}
               {resumen && resumen.seleccionados_total !== resumen.seleccionados ? ` · (${resumen.seleccionados_total} seleccionados contando hijos menores)` : ''}
             </Text>
-            <Text style={{ marginTop: 6, fontWeight: '700', color: publicada ? '#15803d' : '#6b7280' }}>
-              {publicada ? `📣 Publicada el ${fmtFecha(resumen?.publicada_at)}` : '📝 Borrador'}
+            <Text style={{ marginTop: 6, fontFamily: typography.family.semibold, color: publicada ? colors.mint[600] : colors.text.tertiary.light }}>
+              {publicada ? `Publicada el ${fmtFecha(resumen?.publicada_at)}` : 'Todavía no es visible para los inscriptos'}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
               {!publicada && <Btn label="📣 Publicar selección" color="#16a34a" onPress={publicar} disabled={busy || cupo == null} />}
@@ -333,7 +324,7 @@ export default function SeleccionScreen() {
             <View style={s.card}>
               {!suplentes.length && <Text style={s.small}>No hay suplentes todavía.</Text>}
               {suplentes.map((r, i) => (
-                <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#eee', gap: 8 }}>
+                <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.neutral[100], gap: 8 }}>
                   <Text style={{ fontWeight: '800', width: 36 }}>N° {r.orden_suplente}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontWeight: '700' }}>{r.nombres} {r.apellidos}</Text>
@@ -391,7 +382,7 @@ export default function SeleccionScreen() {
                 </Pressable>
                 <Text style={s.small}>{idsSel.length} marcados · {filtrados.length} de {regs.length}</Text>
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+               <View style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }, idsSel.length > 0 && { backgroundColor: colors.primary[700], padding: 10, borderRadius: radius.xl, ...shadows.md }, Platform.OS === 'web' && idsSel.length > 0 ? ({ position: 'sticky', top: 82, zIndex: 20 } as any) : null]}>
                 <Btn label="✅ Seleccionar" color="#16a34a" onPress={() => marcar(idsSel, 'seleccionado')} disabled={busy || !idsSel.length} />
                 <Btn label="🕒 Pasar a suplente" color="#d97706" onPress={() => marcar(idsSel, 'suplente')} disabled={busy || !idsSel.length} />
                 <Btn label="⚪ Quitar (sin definir)" color="#6b7280" onPress={() => marcar(idsSel, null)} disabled={busy || !idsSel.length} />
@@ -403,12 +394,12 @@ export default function SeleccionScreen() {
                   const faltan = documentosFaltantes(r)
                   const noCupo = año ? !ocupaCupo(r, año) : false
                   return (
-                    <View key={r.id} style={{ flexDirection: 'row', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+                     <View key={r.id} style={{ flexDirection: 'row', gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
                       <Pressable onPress={() => setSel((p) => ({ ...p, [r.id]: !p[r.id] }))} hitSlop={8}>
                         <Text style={{ fontSize: 22 }}>{sel[r.id] ? '☑️' : '⬜'}</Text>
                       </Pressable>
-                      <View style={{ flex: 1, gap: 3 }}>
-                        <Text style={{ fontWeight: '700' }}>{r.nombres} {r.apellidos}</Text>
+                       <InitialAvatar name={`${r.nombres} ${r.apellidos}`} tone={r.seleccion === 'suplente' ? 'coral' : 'primary'} /><View style={{ flex: 1, gap: 3 }}>
+                         <Text style={{ fontFamily: typography.family.bold, color: colors.text.primary.light }}>{r.nombres} {r.apellidos}</Text>
                         <Text style={s.small}>
                           {edadDe(r.nacimiento) ?? '—'} años · {r.rol}{r.es_jefe ? ' (Jefe)' : ''} · {r.misiono_antes ? 'Misionó antes' : 'Primera vez'} · Inscripto {fmtFecha(r.created_at)}
                         </Text>
