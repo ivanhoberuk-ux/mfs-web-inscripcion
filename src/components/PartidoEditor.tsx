@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { s, colors } from '../lib/theme';
 import { radius } from '../lib/designSystem';
+import { shadows, spacing, typography } from '../lib/designSystem';
+import { Badge } from './Badge';
+import { Ionicons } from '@expo/vector-icons';
 import { avisar, confirmar } from '../lib/dialogs';
 import {
   type TorneoPartido, type TorneoDisciplina,
@@ -14,9 +17,9 @@ function MiniBtn({ label, onPress, color = colors.primary[600], disabled }: any)
   return (
     <Pressable onPress={onPress} disabled={disabled} style={{
       backgroundColor: disabled ? colors.neutral[300] : color,
-      paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.sm, marginRight: 8, marginBottom: 8,
+       minHeight: 48, paddingVertical: 10, paddingHorizontal: 15, borderRadius: radius.md, marginRight: 8, marginBottom: 8, alignItems: 'center', justifyContent: 'center', flexGrow: 1,
     }}>
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{label}</Text>
+       <Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -25,10 +28,10 @@ function BigBtn({ label, onPress, color, disabled }: any) {
   return (
     <Pressable onPress={onPress} disabled={disabled} style={{
       minHeight: 56, minWidth: 64, flexGrow: 1, marginHorizontal: 3, marginBottom: 6,
-      borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
+       borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', ...shadows.sm,
       backgroundColor: disabled ? colors.neutral[300] : color,
     }}>
-      <Text style={{ color: '#fff', fontWeight: '900', fontSize: 22 }}>{label}</Text>
+       <Text style={{ color: colors.surface.light, fontFamily: typography.family.extrabold, fontSize: 22 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -194,8 +197,8 @@ export function PartidoEditor({
   const verbo = esBasquet ? 'puntos' : 'goles';
 
   const columnaEquipo = (lado: 'a' | 'b', nombre: string) => (
-    <View style={{ flex: 1 }}>
-      <Text style={{ textAlign: 'center', fontWeight: '800', color: colors.neutral[800], marginBottom: 6 }} numberOfLines={2}>{nombre}</Text>
+     <View style={{ flex: 1 }}>
+       <View style={{ width: 44, height: 44, borderRadius: radius.full, backgroundColor: lado === 'a' ? colors.primary[100] : colors.accent[100], alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 6 }}><Text style={{ fontFamily: typography.family.bold, color: lado === 'a' ? colors.primary[700] : colors.accent[700] }}>{nombre.split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase()}</Text></View><Text style={{ textAlign: 'center', fontWeight: '800', color: colors.neutral[800], marginBottom: 8 }} numberOfLines={2}>{nombre}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {pasos.map((n) => (
           <BigBtn key={n} label={`+${n}`} color={colors.success} disabled={saving || finalizado} onPress={() => sumar(lado, n)} />
@@ -208,19 +211,19 @@ export function PartidoEditor({
 
   return (
     <View style={{
-      borderWidth: enJuego ? 2 : 1, borderColor: enJuego ? colors.success : colors.neutral[200],
-      backgroundColor: enJuego ? 'rgba(34,197,94,0.12)' : 'transparent',
-      borderRadius: radius.sm, padding: 10, marginBottom: 8,
+       borderWidth: 1, borderColor: enJuego ? colors.mint[500] : colors.primary[100],
+       backgroundColor: enJuego ? colors.mint[100] : colors.surface.light,
+       borderRadius: radius.lg, padding: spacing.md, marginBottom: 8, ...shadows.sm,
     }}>
       <Pressable onPress={() => setOpen(!open)}>
         <Text style={{ fontSize: 11, color: colors.neutral[500], fontWeight: '700' }}>
           {FASE_LABEL[partido.fase] ?? partido.fase}{partido.zona ? ` · Zona ${partido.zona}` : ''} · {fmtDia(partido.inicio)} {fmtHora(partido.inicio)} · {partido.cancha?.nombre ?? 'sin cancha'} · {ESTADO_LABEL[partido.estado] ?? partido.estado}
         </Text>
-        <Text style={{ fontWeight: '800', color: colors.neutral[800], marginTop: 2 }}>
-          {enJuego ? '🟢 ' : ''}{nomA} {partido.marcador_a ?? '-'} : {partido.marcador_b ?? '-'} {nomB}
+         <Text style={{ fontFamily: typography.family.bold, color: colors.neutral[800], marginTop: 4 }}>
+           {nomA} {partido.marcador_a ?? '-'} : {partido.marcador_b ?? '-'} {nomB}
           {partido.penales_a != null && partido.penales_b != null ? `  (${partido.penales_a}-${partido.penales_b} pen.)` : ''}
         </Text>
-        <Text style={{ fontSize: 11, color: colors.primary[600], marginTop: 2 }}>{open ? '▲ Cerrar' : '▼ Cargar resultado'}</Text>
+         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 }}><Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={colors.primary[600]} /><Text style={{ fontSize: 11, color: colors.primary[600], fontWeight: '700' }}>{open ? 'Cerrar' : 'Cargar resultado'}</Text></View>
       </Pressable>
 
       {open && (
@@ -265,7 +268,7 @@ export function PartidoEditor({
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 {columnaEquipo('a', nomA)}
                 <View style={{ paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', minWidth: 90 }}>
-                  <Text style={{ fontSize: 40, fontWeight: '900', color: colors.primary[700] }}>
+                   <Text style={{ fontFamily: typography.family.extrabold, fontSize: 46, color: colors.primary[700] }}>
                     {partido.marcador_a ?? 0}-{partido.marcador_b ?? 0}
                   </Text>
                   <Text style={{ fontSize: 10, color: colors.neutral[500] }}>{verbo}</Text>
@@ -300,7 +303,7 @@ export function PartidoEditor({
             </View>
           )}
 
-          <TextInput value={v.mvp} onChangeText={(t) => set('mvp', t)} placeholder="⭐ MVP del partido" style={[s.input, { marginBottom: 8 }]} />
+           <TextInput value={v.mvp} onChangeText={(t) => set('mvp', t)} placeholder="MVP del partido" style={[s.input, { marginBottom: 8 }]} />
 
           {motivoNoFinalizar && !finalizado && (
             <Text style={{ fontSize: 12, color: colors.warning, fontWeight: '700', marginBottom: 6 }}>⚠️ {motivoNoFinalizar}</Text>

@@ -1,11 +1,19 @@
 // FILE: app/operador.tsx
 // Área de operadores de cancha: login propio y carga de resultados en vivo
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator, RefreshControl, Image, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../src/lib/supabase';
 import { s, colors } from '../src/lib/theme';
-import { radius, spacing } from '../src/lib/designSystem';
+import { gradients, radius, shadows, spacing, typography } from '../src/lib/designSystem';
 import { PartidoEditor } from '../src/components/PartidoEditor';
+import { NandutiDecorativo } from '../src/components/FondoParaguayo';
+import { Field } from '../src/components/Field';
+import { Button } from '../src/components/Button';
+import { PageHeader } from '../src/components/PageHeader';
+// @ts-ignore
+import logoMfs from '../src/assets/mfs-logo.png';
 import { useTorneoPartidosLive } from '../src/hooks/useTorneoPartidosLive';
 import { avisar } from '../src/lib/dialogs';
 import {
@@ -15,6 +23,8 @@ import {
 } from '../src/lib/torneo';
 
 export default function Operador() {
+  const { width } = useWindowDimensions();
+  const desktop = width >= 900;
   const [session, setSession] = useState<any>(null);
   const [checking, setChecking] = useState(true);
   const [autorizado, setAutorizado] = useState(false);
@@ -121,24 +131,16 @@ export default function Operador() {
   // ---------- Login propio del área de operadores ----------
   if (!session?.user) {
     return (
-      <ScrollView style={[s.screen, { backgroundColor: colors.background.light }]} contentContainerStyle={{ paddingBottom: 120 }}>
-        <Text style={s.title}>🎛️ Área de operadores</Text>
-        <Text style={[s.subtitle, { marginBottom: spacing.md }]}>
-          Acceso exclusivo para la carga de resultados del torneo.
-        </Text>
-        <View style={s.card}>
-          <Text style={s.label}>Usuario (email)</Text>
-          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address"
-            placeholder="operadores@..." style={s.input} />
-          <Text style={s.label}>Contraseña</Text>
-          <TextInput value={pass} onChangeText={setPass} secureTextEntry placeholder="••••••••" style={s.input} />
+      <ScrollView style={[s.screen, { backgroundColor: colors.background.light }]} contentContainerStyle={{ maxWidth: 1120, alignSelf: 'center', width: '100%', minHeight: desktop ? 760 : undefined, padding: desktop ? spacing['3xl'] : spacing.lg, paddingBottom: 120, justifyContent: 'center' }}>
+        <View style={{ flexDirection: desktop ? 'row' : 'column', borderRadius: radius['2xl'], overflow: 'hidden', ...shadows.xl }}>
+        <LinearGradient colors={[...gradients.hero]} style={{ flex: 1, minHeight: desktop ? 560 : 240, padding: desktop ? 44 : 28, justifyContent: 'space-between', overflow: 'hidden' }}><View pointerEvents="none" style={{ position: 'absolute', right: -45, top: -40 }}><NandutiDecorativo size={210} color={colors.surface.light} opacity={0.18} /></View><View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={{ width: 52, height: 52, borderRadius: radius.full, backgroundColor: colors.surface.light, alignItems: 'center', justifyContent: 'center' }}><Image source={logoMfs} style={{ width: 40, height: 40, resizeMode: 'contain' }} /></View><Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 18 }}>MFS Paraguay</Text></View><View><Ionicons name="football-outline" size={42} color={colors.surface.light} /><Text style={{ color: colors.surface.light, fontFamily: typography.family.extrabold, fontSize: desktop ? 34 : 26, marginTop: 12 }}>Resultados desde la cancha.</Text></View></LinearGradient>
+        <View style={[s.card, { flex: desktop ? 0.9 : undefined, borderRadius: 0, padding: desktop ? 44 : 24, justifyContent: 'center' }]}>
+          <PageHeader icon="keypad-outline" title="Área de operadores" subtitle="Acceso exclusivo para la carga de resultados del torneo" />
+          <Field label="Usuario (email)" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="operadores@..." />
+          <Field label="Contraseña" value={pass} onChangeText={setPass} secureTextEntry placeholder="••••••••" />
           {err && <Text style={{ color: colors.error, marginBottom: 8 }}>{err}</Text>}
-          <Pressable onPress={entrar} disabled={busy} style={{
-            backgroundColor: busy ? colors.neutral[300] : colors.primary[600],
-            paddingVertical: 12, borderRadius: radius.sm, alignItems: 'center',
-          }}>
-            <Text style={{ color: '#fff', fontWeight: '800' }}>{busy ? 'Ingresando…' : 'Ingresar'}</Text>
-          </Pressable>
+          <Button variant="primary" onPress={entrar} disabled={busy}>{busy ? 'Ingresando…' : 'Ingresar'}</Button>
+        </View>
         </View>
       </ScrollView>
     );
@@ -163,18 +165,15 @@ export default function Operador() {
   return (
     <ScrollView
       style={[s.screen, { backgroundColor: colors.background.light }]}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={s.pageContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={s.title}>🎛️ Carga de resultados</Text>
+        <PageHeader icon="keypad-outline" title="Carga de resultados" subtitle={edicion ? `${edicion.nombre} · ${session.user.email}` : `Sin edición activa · ${session.user.email}`} />
         <Pressable onPress={() => supabase.auth.signOut()}>
           <Text style={{ color: colors.error, fontWeight: '800', fontSize: 13 }}>Salir</Text>
         </Pressable>
       </View>
-      <Text style={[s.subtitle, { marginBottom: spacing.md }]}>
-        {edicion ? edicion.nombre : 'Sin edición activa'} · {session.user.email}
-      </Text>
 
       {/* Selector de cancha */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
@@ -184,10 +183,10 @@ export default function Operador() {
           return (
             <Pressable key={c.id} onPress={() => setCanchaSel(c.id)} style={{
               paddingVertical: 8, paddingHorizontal: 14, marginRight: 8, borderRadius: radius.full,
-              backgroundColor: sel ? colors.primary[600] : '#fff',
-              borderWidth: 2, borderColor: sel ? colors.primary[600] : colors.neutral[200],
+               backgroundColor: sel ? colors.primary[600] : colors.surface.light,
+               borderWidth: 1, borderColor: sel ? colors.primary[600] : colors.primary[100],
             }}>
-              <Text style={{ fontWeight: '800', fontSize: 13, color: sel ? '#fff' : colors.neutral[700] }}>
+               <Text style={{ fontWeight: '800', fontSize: 13, color: sel ? colors.surface.light : colors.neutral[700] }}>
                 {d ? `${d.emoji} ` : ''}{c.nombre}
               </Text>
             </Pressable>
@@ -204,8 +203,8 @@ export default function Operador() {
       {loading && <ActivityIndicator size="large" />}
 
       {enJuego.length > 0 && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <Text style={{ fontSize: 16, fontWeight: '900', color: colors.error, marginBottom: 8 }}>🔴 En juego ahora</Text>
+        <View style={{ marginBottom: spacing.lg, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.mint[100], borderWidth: 1, borderColor: colors.mint[500] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontSize: 16, fontWeight: '900', color: colors.mint[600] }}>En juego ahora</Text></View>
           {enJuego.map((p) => (
             <View key={`live-${p.id}`} style={[s.card, { marginBottom: 8 }]}>
               <PartidoEditor partido={p} disciplina={discMap.get(p.disciplina_id)} defaultOpen onSaved={() => refrescar(p.id)} />

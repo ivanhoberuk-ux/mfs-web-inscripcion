@@ -1,9 +1,13 @@
 // FILE: app/(tabs)/torneo.tsx
 // Torneo Interpueblos: fixture, posiciones, llaves, inscripción de equipos y administración
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl, Alert, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { s, colors } from '../../src/lib/theme';
-import { radius, spacing } from '../../src/lib/designSystem';
+import { gradients, radius, shadows, spacing, typography } from '../../src/lib/designSystem';
+import { NandutiDecorativo } from '../../src/components/FondoParaguayo';
+import { Badge } from '../../src/components/Badge';
 import { useUserRoles } from '../../src/hooks/useUserRoles';
 import { TorneoAdminPanel } from '../../src/components/TorneoAdminPanel';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
@@ -21,7 +25,36 @@ import {
 
 type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'llaves' | 'misequipos' | 'admin';
 
+const VISTAS: Record<Vista, { label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
+  fixture: { label: 'Fixture', icon: 'calendar-outline' }, pueblo: { label: 'Mi pueblo', icon: 'home-outline' },
+  posiciones: { label: 'Posiciones', icon: 'podium-outline' }, llaves: { label: 'Llaves', icon: 'trophy-outline' },
+  misequipos: { label: 'Mis equipos', icon: 'people-outline' }, admin: { label: 'Administrar', icon: 'settings-outline' },
+};
+
+function EquipoAvatar({ nombre, lado }: { nombre: string; lado: 'a' | 'b' }) {
+  const iniciales = nombre.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
+  return <View style={{ width: 46, height: 46, borderRadius: radius.full, backgroundColor: lado === 'a' ? colors.primary[100] : colors.accent[100], alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: typography.family.bold, color: lado === 'a' ? colors.primary[700] : colors.accent[700] }}>{iniciales || '?'}</Text></View>;
+}
+
+function EstadoPartido({ estado }: { estado: string }) {
+  const live = estado === 'en_juego';
+  const tone = estado === 'suspendido' ? 'danger' : estado === 'finalizado' || live ? 'success' : 'neutral';
+  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{live ? <View style={{ width: 7, height: 7, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /> : null}<Badge tone={tone}>{ESTADO_LABEL[estado] ?? estado}</Badge></View>;
+}
+
+function PartidoScoreboard({ p, disciplina }: { p: TorneoPartido; disciplina?: TorneoDisciplina }) {
+  const nomA = p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir');
+  const nomB = p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir');
+  const hayMarcador = p.marcador_a != null && p.marcador_b != null;
+  return <View style={[s.card, { marginBottom: spacing.md, padding: spacing.lg, borderColor: p.estado === 'en_juego' ? colors.mint[500] : colors.primary[50], ...shadows.sm }]}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: spacing.md }}><Text style={{ flex: 1, fontFamily: typography.family.semibold, color: colors.text.tertiary.light, fontSize: 11 }}>{disciplina ? `${disciplina.emoji} ${disciplina.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}</Text><EstadoPartido estado={p.estado} /></View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomA} lado="a" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomA}</Text></View><View style={{ minWidth: 90, alignItems: 'center' }}><Text style={{ fontFamily: typography.family.extrabold, fontSize: 30, color: colors.primary[700] }}>{hayMarcador ? `${p.marcador_a} – ${p.marcador_b}` : fmtHora(p.inicio)}</Text>{p.penales_a != null && p.penales_b != null ? <Text style={{ fontFamily: typography.family.semibold, fontSize: 11, color: colors.text.tertiary.light }}>({p.penales_a}-{p.penales_b} pen.)</Text> : null}</View><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomB} lado="b" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomB}</Text></View></View>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: spacing.md }}><Ionicons name="location-outline" size={14} color={colors.text.tertiary.light} /><Text style={s.small}>{p.cancha?.nombre ?? 'Cancha a confirmar'} · {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'}{p.detalle_sets ? ` · ${p.detalle_sets}` : ''}{p.mvp_nombre ? ` · MVP: ${p.mvp_nombre}` : ''}</Text></View>
+  </View>;
+}
+
 export default function Torneo() {
+  const { width } = useWindowDimensions();
   const { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId } = useUserRoles();
   const esCoordinador = isPuebloAdmin || isCoAdmin;
   const [ediciones, setEdiciones] = useState<TorneoEdicion[]>([]);
@@ -197,13 +230,15 @@ export default function Torneo() {
   return (
     <ScrollView
       style={[s.screen, { backgroundColor: 'transparent' }]}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={s.pageContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
     >
-      <Text style={s.title}>🏆 Torneo Interpueblos</Text>
-      <Text style={[s.subtitle, { marginBottom: spacing.md }]}>
-        {edicion ? `${edicion.nombre}` : 'Todavía no hay una edición activa del torneo.'}
-      </Text>
+      <LinearGradient colors={[...gradients.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius['2xl'], padding: width >= 900 ? spacing['3xl'] : spacing.xl, minHeight: width >= 900 ? 230 : 190, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: spacing.lg, ...shadows.lg }}>
+        <View pointerEvents="none" style={{ position: 'absolute', right: -42, top: -52 }}><NandutiDecorativo size={210} color={colors.surface.light} opacity={0.18} /></View>
+        <View style={{ width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.surface.light, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}><Ionicons name="trophy-outline" size={25} color={colors.primary[600]} /></View>
+        <Text style={{ fontFamily: typography.family.extrabold, fontSize: width >= 900 ? 36 : 28, color: colors.surface.light }}>Torneo Interpueblos</Text>
+        <Text style={{ fontFamily: typography.family.medium, color: colors.primary[50], marginTop: 5 }}>{edicion ? edicion.nombre : 'Todavía no hay una edición activa del torneo.'}</Text>
+      </LinearGradient>
 
       {/* Selector de edición (histórico) */}
       {ediciones.length > 1 && (
@@ -213,10 +248,10 @@ export default function Torneo() {
             return (
               <Pressable key={e.id} onPress={() => { setEdicionSel(e.id); setPuebloSel(null); setFiltroDisc('todas'); if (vista === 'misequipos') setVista('fixture'); }} style={{
                 paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, borderRadius: radius.full,
-                backgroundColor: sel ? colors.primary[700] : colors.neutral[100],
+                backgroundColor: sel ? colors.primary[700] : colors.surface.light, borderWidth: 1, borderColor: sel ? colors.primary[700] : colors.primary[100],
               }}>
-                <Text style={{ fontWeight: '700', fontSize: 12, color: sel ? '#fff' : colors.neutral[700] }}>
-                  {e.activo ? '⭐ ' : '📜 '}{e.anio}
+                <Text style={{ fontWeight: '700', fontSize: 12, color: sel ? colors.surface.light : colors.neutral[700] }}>
+                  {e.anio}{e.activo ? ' · Actual' : ''}
                 </Text>
               </Pressable>
             );
@@ -232,28 +267,12 @@ export default function Torneo() {
 
       {/* En juego ahora */}
       {enJuego.length > 0 && vista !== 'admin' && (
-        <View style={[s.card, { marginBottom: spacing.md, borderWidth: 2, borderColor: colors.error }]}>
-          <Text style={{ fontWeight: '900', color: colors.error, marginBottom: 8, fontSize: 16 }}>🔴 En juego ahora</Text>
+        <View style={{ marginBottom: spacing.lg, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.mint[100], borderWidth: 1, borderColor: colors.mint[500] }}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontFamily: typography.family.extrabold, color: colors.mint[600], fontSize: 17 }}>En juego ahora</Text></View>
           {enJuego.map((p) => {
             const d = discNombre(p.disciplina_id);
             return (
-              <View key={p.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500], textAlign: 'center' }}>
-                  {d ? `${d.emoji} ${d.nombre}` : ''} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <Text style={{ flex: 1, fontWeight: '800', textAlign: 'right', color: colors.neutral[800] }} numberOfLines={2}>
-                    {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                  </Text>
-                  <Text style={{ fontSize: 30, fontWeight: '900', color: colors.primary[700], marginHorizontal: 14 }}>
-                    {p.marcador_a ?? 0} - {p.marcador_b ?? 0}
-                  </Text>
-                  <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                    {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                  </Text>
-                </View>
-                {p.detalle_sets ? <Text style={{ fontSize: 11, textAlign: 'center', color: colors.neutral[500] }}>{p.detalle_sets}</Text> : null}
-              </View>
+              <PartidoScoreboard key={p.id} p={p} disciplina={d} />
             );
           })}
         </View>
@@ -264,26 +283,19 @@ export default function Torneo() {
           backgroundColor: colors.success, paddingVertical: 12, paddingHorizontal: 16,
           borderRadius: radius.md, marginBottom: spacing.md, alignItems: 'center',
         }}>
-          <Text style={{ color: '#fff', fontWeight: '800' }}>📝 Inscribir equipos de mi pueblo</Text>
+          <Text style={{ color: colors.surface.light, fontWeight: '800' }}>Inscribir equipos de mi pueblo</Text>
         </Pressable>
       )}
 
       {/* Vistas */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-        {([
-          ['fixture', '📅 Fixture'],
-          ['pueblo', '🏘️ Mi pueblo'],
-          ['posiciones', '📊 Posiciones'],
-          ['llaves', '🏆 Llaves'],
-          ...(esCoordinador ? [['misequipos', '📝 Mis equipos'] as [Vista, string]] : []),
-          ...(isSuperAdmin ? [['admin', '⚙️ Administrar'] as [Vista, string]] : []),
-        ] as [Vista, string][]).map(([k, label]) => (
+        {(['fixture', 'pueblo', 'posiciones', 'llaves', ...(esCoordinador ? ['misequipos' as Vista] : []), ...(isSuperAdmin ? ['admin' as Vista] : [])] as Vista[]).map((k) => (
           <Pressable key={k} onPress={() => setVista(k)} style={{
             paddingVertical: 9, paddingHorizontal: 16, marginRight: 8, borderRadius: radius.full,
-            backgroundColor: vista === k ? colors.primary[600] : '#fff',
-            borderWidth: 2, borderColor: vista === k ? colors.primary[600] : colors.neutral[200],
+            backgroundColor: vista === k ? colors.primary[600] : colors.surface.light,
+            borderWidth: 1, borderColor: vista === k ? colors.primary[600] : colors.primary[100], flexDirection: 'row', alignItems: 'center', gap: 7,
           }}>
-            <Text style={{ color: vista === k ? '#fff' : colors.neutral[700], fontWeight: '800', fontSize: 13 }}>{label}</Text>
+            <Ionicons name={VISTAS[k].icon} size={16} color={vista === k ? colors.surface.light : colors.primary[600]} /><Text style={{ color: vista === k ? colors.surface.light : colors.neutral[700], fontWeight: '800', fontSize: 13 }}>{VISTAS[k].label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -336,7 +348,7 @@ export default function Torneo() {
                   backgroundColor: sel ? colors.secondary[500] : colors.neutral[100],
                 }}>
                   <Text style={{ fontWeight: '700', fontSize: 13, color: sel ? colors.primary[800] : colors.neutral[700] }}>
-                    🏘️ {p.nombre}
+                    {p.nombre}
                   </Text>
                 </Pressable>
               );
@@ -370,37 +382,7 @@ export default function Torneo() {
                 const finalizado = p.estado === 'finalizado';
                 const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
-                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
-                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
-                        {ESTADO_LABEL[p.estado] ?? p.estado}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
-                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                      </Text>
-                      <View style={{
-                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
-                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
-                      }}>
-                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
-                        </Text>
-                      </View>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
-                      🕒 {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                    </Text>
-                  </View>
+                  <PartidoScoreboard key={p.id} p={p} disciplina={d} />
                 );
               })}
             </View>
@@ -435,41 +417,7 @@ export default function Torneo() {
                 const finalizado = p.estado === 'finalizado';
                 const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
-                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
-                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
-                        {ESTADO_LABEL[p.estado] ?? p.estado}
-                      </Text>
-                    </View>
-
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
-                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                      </Text>
-                      <View style={{
-                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
-                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
-                      }}>
-                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
-                        </Text>
-                      </View>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                      </Text>
-                    </View>
-
-                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
-                      🕒 {fmtHora(p.inicio)} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                      {p.detalle_sets ? ` · ${p.detalle_sets}` : ''}
-                      {p.mvp_nombre ? ` · ⭐ MVP: ${p.mvp_nombre}` : ''}
-                    </Text>
-                  </View>
+                  <PartidoScoreboard key={p.id} p={p} disciplina={d} />
                 );
               })}
             </View>
@@ -490,8 +438,8 @@ export default function Torneo() {
                 <Text style={hdr}>PJ</Text><Text style={hdr}>G</Text><Text style={hdr}>E</Text><Text style={hdr}>P</Text>
                 <Text style={hdr}>DIF</Text><Text style={[hdr, { fontWeight: '900' }]}>Pts</Text>
               </View>
-              {tabla.filter((t) => (t.zona ?? '—') === zona).map((t) => (
-                <View key={t.equipo_id} style={{ flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
+              {tabla.filter((t) => (t.zona ?? '—') === zona).map((t, index) => (
+                <View key={t.equipo_id} style={{ flexDirection: 'row', paddingVertical: 9, paddingHorizontal: 5, borderBottomWidth: 1, borderBottomColor: colors.neutral[100], backgroundColor: index % 2 ? colors.primary[50] : colors.surface.light, borderLeftWidth: t.pos <= 2 ? 3 : 0, borderLeftColor: colors.mint[500] }}>
                   <Text style={[cel, { flex: 3, textAlign: 'left', fontWeight: '700' }]} numberOfLines={1}>
                     {t.pos}. {t.equipo_nombre}
                   </Text>

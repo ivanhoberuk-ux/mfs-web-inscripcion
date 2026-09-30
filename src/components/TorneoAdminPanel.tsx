@@ -5,6 +5,8 @@ import { View, Text, Pressable, TextInput, ActivityIndicator, Alert, Switch, Scr
 import { Picker } from '@react-native-picker/picker';
 import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
+import { shadows, typography } from '../lib/designSystem';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchPueblos, type Pueblo } from '../lib/api';
 import { PartidoEditor } from './PartidoEditor';
 import { TorneoEquipoDetalle } from './TorneoEquipoDetalle';
@@ -26,8 +28,8 @@ const ESTADO_INSC: Record<string, string> = { pendiente: '⏳ Pendiente', aproba
 
 function SectionCard({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
   return (
-    <View style={[s.card, { marginBottom: spacing.lg }]}>
-      <Text style={[s.cardTitle, { marginBottom: spacing.md }]}>{emoji} {title}</Text>
+    <View style={[s.card, { marginBottom: spacing.lg, borderColor: colors.primary[50], ...shadows.sm }]}> 
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.md }}><View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.primary[50], alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 18 }}>{emoji}</Text></View><Text style={[s.cardTitle, { flex: 1 }]}>{title}</Text></View>
       {children}
     </View>
   );
@@ -41,10 +43,10 @@ function MiniBtn({ label, onPress, color = colors.primary[600], disabled }: any)
       style={{
         backgroundColor: disabled ? colors.neutral[300] : color,
         paddingVertical: 8, paddingHorizontal: 12,
-        borderRadius: radius.sm, marginRight: 8, marginBottom: 8,
+        minHeight: 42, borderRadius: radius.md, marginRight: 8, marginBottom: 8, alignItems: 'center', justifyContent: 'center',
       }}
     >
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: colors.surface.light, fontFamily: typography.family.bold, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -322,10 +324,10 @@ export function TorneoAdminPanel({ edicion, onChanged, onEdicionCreada }: {
             style={{
               paddingVertical: 8, paddingHorizontal: 14, marginRight: 8,
               borderRadius: radius.full,
-              backgroundColor: seccion === k ? colors.primary[600] : colors.neutral[100],
+               backgroundColor: seccion === k ? colors.primary[600] : colors.surface.light, borderWidth: 1, borderColor: seccion === k ? colors.primary[600] : colors.primary[100],
             }}
           >
-            <Text style={{ color: seccion === k ? '#fff' : colors.neutral[700], fontWeight: '700', fontSize: 13 }}>{label}</Text>
+             <Text style={{ color: seccion === k ? colors.surface.light : colors.neutral[700], fontWeight: '700', fontSize: 13 }}>{label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -341,7 +343,7 @@ export function TorneoAdminPanel({ edicion, onChanged, onEdicionCreada }: {
                 paddingVertical: 6, paddingHorizontal: 12, marginRight: 8,
                 borderRadius: radius.full, borderWidth: 2,
                 borderColor: selDisc === d.id ? colors.secondary[500] : colors.neutral[200],
-                backgroundColor: selDisc === d.id ? colors.secondary[50] : '#fff',
+                 backgroundColor: selDisc === d.id ? colors.secondary[50] : colors.surface.light,
               }}
             >
               <Text style={{ fontWeight: '700', fontSize: 13, color: colors.neutral[800] }}>
@@ -385,8 +387,8 @@ export function TorneoAdminPanel({ edicion, onChanged, onEdicionCreada }: {
             equiposVisibles.map((e) => {
               const zonas = Array.from({ length: Math.max(1, disc.num_zonas) }, (_, i) => String.fromCharCode(65 + i));
               return (
-                <View key={e.id} style={{
-                  paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100],
+                 <View key={e.id} style={{
+                   padding: spacing.md, borderWidth: 1, borderColor: colors.primary[100], borderRadius: radius.md, marginBottom: spacing.sm, backgroundColor: colors.surface.light,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }}>
