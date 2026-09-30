@@ -382,37 +382,7 @@ export default function Torneo() {
                 const finalizado = p.estado === 'finalizado';
                 const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
-                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
-                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
-                        {ESTADO_LABEL[p.estado] ?? p.estado}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
-                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                      </Text>
-                      <View style={{
-                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
-                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
-                      }}>
-                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
-                        </Text>
-                      </View>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
-                      🕒 {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                    </Text>
-                  </View>
+                  <PartidoScoreboard key={p.id} p={p} disciplina={d} />
                 );
               })}
             </View>
@@ -447,41 +417,7 @@ export default function Torneo() {
                 const finalizado = p.estado === 'finalizado';
                 const enJuego = p.estado === 'en_juego';
                 return (
-                  <View key={p.id} style={[s.card, { marginBottom: 8, paddingVertical: 12 },
-                    enJuego && { backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: colors.success }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500] }}>
-                        {d ? `${d.emoji} ${d.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: enJuego ? colors.success : colors.neutral[500] }}>
-                        {ESTADO_LABEL[p.estado] ?? p.estado}
-                      </Text>
-                    </View>
-
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800], textAlign: 'right' }} numberOfLines={2}>
-                        {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                      </Text>
-                      <View style={{
-                        marginHorizontal: 12, paddingVertical: 4, paddingHorizontal: 10,
-                        borderRadius: radius.sm, backgroundColor: finalizado ? colors.primary[600] : colors.neutral[100],
-                      }}>
-                        <Text style={{ fontWeight: '900', color: finalizado ? '#fff' : colors.neutral[600] }}>
-                          {marcadorTexto(p) ?? fmtHora(p.inicio)}
-                        </Text>
-                      </View>
-                      <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                        {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                      </Text>
-                    </View>
-
-                    <Text style={{ fontSize: 11, color: colors.neutral[500], marginTop: 6, textAlign: 'center' }}>
-                      🕒 {fmtHora(p.inicio)} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                      {p.detalle_sets ? ` · ${p.detalle_sets}` : ''}
-                      {p.mvp_nombre ? ` · ⭐ MVP: ${p.mvp_nombre}` : ''}
-                    </Text>
-                  </View>
+                  <PartidoScoreboard key={p.id} p={p} disciplina={d} />
                 );
               })}
             </View>
@@ -502,8 +438,8 @@ export default function Torneo() {
                 <Text style={hdr}>PJ</Text><Text style={hdr}>G</Text><Text style={hdr}>E</Text><Text style={hdr}>P</Text>
                 <Text style={hdr}>DIF</Text><Text style={[hdr, { fontWeight: '900' }]}>Pts</Text>
               </View>
-              {tabla.filter((t) => (t.zona ?? '—') === zona).map((t) => (
-                <View key={t.equipo_id} style={{ flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
+              {tabla.filter((t) => (t.zona ?? '—') === zona).map((t, index) => (
+                <View key={t.equipo_id} style={{ flexDirection: 'row', paddingVertical: 9, paddingHorizontal: 5, borderBottomWidth: 1, borderBottomColor: colors.neutral[100], backgroundColor: index % 2 ? colors.primary[50] : colors.surface.light, borderLeftWidth: t.pos <= 2 ? 3 : 0, borderLeftColor: colors.mint[500] }}>
                   <Text style={[cel, { flex: 3, textAlign: 'left', fontWeight: '700' }]} numberOfLines={1}>
                     {t.pos}. {t.equipo_nombre}
                   </Text>
