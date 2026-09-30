@@ -267,28 +267,12 @@ export default function Torneo() {
 
       {/* En juego ahora */}
       {enJuego.length > 0 && vista !== 'admin' && (
-        <View style={[s.card, { marginBottom: spacing.md, borderWidth: 2, borderColor: colors.error }]}>
-          <Text style={{ fontWeight: '900', color: colors.error, marginBottom: 8, fontSize: 16 }}>🔴 En juego ahora</Text>
+        <View style={{ marginBottom: spacing.lg, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.mint[50], borderWidth: 1, borderColor: colors.mint[200] }}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontFamily: typography.family.extrabold, color: colors.mint[700], fontSize: 17 }}>En juego ahora</Text></View>
           {enJuego.map((p) => {
             const d = discNombre(p.disciplina_id);
             return (
-              <View key={p.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.neutral[100] }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.neutral[500], textAlign: 'center' }}>
-                  {d ? `${d.emoji} ${d.nombre}` : ''} · 📍 {p.cancha?.nombre ?? 'Cancha a confirmar'}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <Text style={{ flex: 1, fontWeight: '800', textAlign: 'right', color: colors.neutral[800] }} numberOfLines={2}>
-                    {p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir')}
-                  </Text>
-                  <Text style={{ fontSize: 30, fontWeight: '900', color: colors.primary[700], marginHorizontal: 14 }}>
-                    {p.marcador_a ?? 0} - {p.marcador_b ?? 0}
-                  </Text>
-                  <Text style={{ flex: 1, fontWeight: '800', color: colors.neutral[800] }} numberOfLines={2}>
-                    {p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir')}
-                  </Text>
-                </View>
-                {p.detalle_sets ? <Text style={{ fontSize: 11, textAlign: 'center', color: colors.neutral[500] }}>{p.detalle_sets}</Text> : null}
-              </View>
+              <PartidoScoreboard key={p.id} p={p} disciplina={d} />
             );
           })}
         </View>
@@ -299,26 +283,19 @@ export default function Torneo() {
           backgroundColor: colors.success, paddingVertical: 12, paddingHorizontal: 16,
           borderRadius: radius.md, marginBottom: spacing.md, alignItems: 'center',
         }}>
-          <Text style={{ color: '#fff', fontWeight: '800' }}>📝 Inscribir equipos de mi pueblo</Text>
+          <Text style={{ color: colors.surface.light, fontWeight: '800' }}>Inscribir equipos de mi pueblo</Text>
         </Pressable>
       )}
 
       {/* Vistas */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-        {([
-          ['fixture', '📅 Fixture'],
-          ['pueblo', '🏘️ Mi pueblo'],
-          ['posiciones', '📊 Posiciones'],
-          ['llaves', '🏆 Llaves'],
-          ...(esCoordinador ? [['misequipos', '📝 Mis equipos'] as [Vista, string]] : []),
-          ...(isSuperAdmin ? [['admin', '⚙️ Administrar'] as [Vista, string]] : []),
-        ] as [Vista, string][]).map(([k, label]) => (
+        {(['fixture', 'pueblo', 'posiciones', 'llaves', ...(esCoordinador ? ['misequipos' as Vista] : []), ...(isSuperAdmin ? ['admin' as Vista] : [])] as Vista[]).map((k) => (
           <Pressable key={k} onPress={() => setVista(k)} style={{
             paddingVertical: 9, paddingHorizontal: 16, marginRight: 8, borderRadius: radius.full,
-            backgroundColor: vista === k ? colors.primary[600] : '#fff',
-            borderWidth: 2, borderColor: vista === k ? colors.primary[600] : colors.neutral[200],
+            backgroundColor: vista === k ? colors.primary[600] : colors.surface.light,
+            borderWidth: 1, borderColor: vista === k ? colors.primary[600] : colors.primary[100], flexDirection: 'row', alignItems: 'center', gap: 7,
           }}>
-            <Text style={{ color: vista === k ? '#fff' : colors.neutral[700], fontWeight: '800', fontSize: 13 }}>{label}</Text>
+            <Ionicons name={VISTAS[k].icon} size={16} color={vista === k ? colors.surface.light : colors.primary[600]} /><Text style={{ color: vista === k ? colors.surface.light : colors.neutral[700], fontWeight: '800', fontSize: 13 }}>{VISTAS[k].label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -371,7 +348,7 @@ export default function Torneo() {
                   backgroundColor: sel ? colors.secondary[500] : colors.neutral[100],
                 }}>
                   <Text style={{ fontWeight: '700', fontSize: 13, color: sel ? colors.primary[800] : colors.neutral[700] }}>
-                    🏘️ {p.nombre}
+                    {p.nombre}
                   </Text>
                 </Pressable>
               );
