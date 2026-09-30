@@ -1,22 +1,23 @@
-# Fondo paraguayo contemporáneo
+# Rediseño visual — Etapa 2, Parte A
 
 ## Resultado
-Incorporar una identidad paraguaya sutil y juvenil en todo el sitio, manteniendo intactas la paleta, los datos y la lógica.
+Actualizar las páginas públicas y del usuario para que compartan el estilo fresco, luminoso y paraguayo del nuevo inicio, sin alterar datos, permisos ni comportamiento.
 
 ## Implementación
-1. Agregar `react-native-svg` si no está disponible.
-2. Crear un fondo reutilizable con ñandutíes geométricos, cintas tricolores y dos niveles de intensidad.
-3. Integrarlo en toda la navegación con intensidad suave y usar la versión normal en Inicio.
-4. Sustituir parte de la decoración del bloque principal por ñandutíes blancos translúcidos.
-5. Añadir el detalle tricolor al encabezado de computadora y a la barra inferior móvil.
-6. Verificar legibilidad, ausencia de desbordes y rendimiento visual en 360 px y 1440 px.
+1. Rediseñar acceso y recuperación con composición dividida en computadora y tarjeta centrada en celular.
+2. Reorganizar visualmente la inscripción en cinco secciones, con progreso, selectores modernos y acción móvil accesible.
+3. Renovar las páginas de pueblos, detalle y búsqueda con encabezados claros, grillas y estados de cupo.
+4. Convertir documentos y firma en una experiencia de tarjetas de estado, zonas de carga y vistas previas limpias.
+5. Actualizar Mi Familia, baja y las tarjetas compartidas con avatares, chips e iconografía consistente.
+6. Modernizar el chat con encabezado degradado y mensajes redondeados.
+7. Verificar las páginas representativas a 360 px y 1440 px, además de tipado y compilación.
 
 ## Límites
-- Sin cambios en base de datos, funciones del servidor, permisos, rutas ni lógica.
-- La paleta actual se mantiene exactamente igual.
-- La animación se limita a web, respeta reducción de movimiento y queda estática en Android.
+- Solo apariencia: se preservan consultas, RPC, validaciones, rutas, permisos y textos legales.
+- Sin cambios en base de datos ni funciones del servidor.
+- Se mantiene exactamente la paleta actual y el fondo paraguayo compartido.
 
 ## Detalles técnicos
-- El fondo será una capa absoluta sin interacción y recortada por su contenedor.
-- Los patrones usarán SVG vectorial y posiciones adaptables para evitar scroll horizontal.
-- Inicio anulará la intensidad suave global para evitar duplicar el patrón.
+- Se reutilizarán los tokens de `designSystem`, los componentes base y `Ionicons`.
+- Los contenedores tendrán un ancho máximo cercano a 1120 px y 120 px de espacio inferior cuando sean desplazables.
+- Los cambios visuales extensos del formulario se harán agrupando el JSX existente, sin mover ni duplicar su estado o sus controladores.

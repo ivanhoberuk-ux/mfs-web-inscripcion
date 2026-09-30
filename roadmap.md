@@ -1,6 +1,9 @@
 # Roadmap
 
-- [x] Crear FondoParaguayo con ñandutíes, cintas tricolores e intensidades.
-- [x] Integrar fondo suave global y normal en Inicio.
-- [x] Agregar ñandutíes blancos al hero y líneas tricolores a la navegación.
-- [x] Verificar 360 px y 1440 px, contraste, rendimiento y compilación.
+- [ ] Rediseñar acceso y recuperación de contraseña.
+- [ ] Organizar inscripción en cinco secciones visuales con progreso y controles modernos.
+- [ ] Rediseñar pueblos, detalle y buscador.
+- [ ] Rediseñar documentos, firma y visor de archivos.
+- [ ] Rediseñar Mi Familia, baja y tarjetas compartidas.
+- [ ] Renovar ChatWidget.
+- [ ] Verificar 360 px y 1440 px, sin desbordes ni errores.
