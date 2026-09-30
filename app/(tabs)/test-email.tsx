@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { View, Text, Alert, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Alert, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
 import { supabase } from '../../src/integrations/supabase/client';
+import { PageHeader } from '../../src/components/PageHeader';
+import { s, colors, radius, spacing, typography } from '../../src/lib/theme';
 
 export default function TestEmailScreen() {
   const [loading, setLoading] = useState(false);
@@ -33,11 +36,11 @@ export default function TestEmailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Text style={styles.title}>Prueba de Email</Text>
+    <ScrollView style={s.screen} contentContainerStyle={s.pageContent}>
+      <PageHeader icon="mail-outline" title="Prueba de email" subtitle="Verificá la configuración de los mensajes del sistema" />
+      <Card style={{ padding: spacing.xl }}>
         
-        <Text style={styles.description}>
+        <Text style={[s.text, { marginBottom: spacing.xl }]}>
           Envía un email de prueba para verificar que la configuración está correcta.
         </Text>
 
@@ -51,62 +54,21 @@ export default function TestEmailScreen() {
         </Button>
 
         {result && (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultText}>{result}</Text>
+          <View style={{ marginTop: spacing.md, padding: spacing.lg, borderRadius: radius.md, backgroundColor: result.startsWith('✅') ? colors.mint[100] : colors.accent[100] }}>
+            <Text style={s.text}>{result}</Text>
           </View>
         )}
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
-            <Text style={styles.bold}>Destinatario:</Text> ivanhoberuk@gmail.com
+        <View style={{ marginTop: spacing.xl, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.primary[50], gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Ionicons name="person-outline" size={17} color={colors.primary[600]} /><Text style={s.text}>
+            <Text style={{ fontFamily: typography.family.bold }}>Destinatario:</Text> ivanhoberuk@gmail.com
           </Text>
-          <Text style={styles.infoText}>
-            <Text style={styles.bold}>Remitente:</Text> noreply@mfspy.org.py
-          </Text>
+          </View><View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Ionicons name="send-outline" size={17} color={colors.primary[600]} /><Text style={s.text}>
+            <Text style={{ fontFamily: typography.family.bold }}>Remitente:</Text> noreply@mfspy.org.py
+          </Text></View>
         </View>
       </Card>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  card: {
-    padding: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  description: {
-    marginBottom: 24,
-    opacity: 0.7,
-  },
-  resultBox: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-  },
-  resultText: {
-    fontSize: 14,
-  },
-  infoBox: {
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-  },
-  infoText: {
-    fontSize: 14,
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  bold: {
-    fontWeight: 'bold',
-  },
-});

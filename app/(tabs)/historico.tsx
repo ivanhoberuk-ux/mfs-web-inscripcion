@@ -13,6 +13,10 @@ import {
 import { Picker } from '@react-native-picker/picker'
 import { s, colors, spacing } from '../../src/lib/theme'
 import { radius } from '../../src/lib/designSystem'
+import { shadows, typography } from '../../src/lib/designSystem'
+import { Ionicons } from '@expo/vector-icons'
+import { PageHeader, InitialAvatar } from '../../src/components/PageHeader'
+import { Badge } from '../../src/components/Badge'
 import { supabase } from '../../src/lib/supabase'
 import { Card } from '../../src/components/Card'
 import { Button } from '../../src/components/Button'
@@ -234,9 +238,9 @@ export default function Historico() {
     <ScrollView
       style={[s.screen, { backgroundColor: 'transparent' }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={s.pageContent}
     >
-      <Text style={[s.title, { fontSize: 28, marginBottom: 12 }]}>📊 Histórico</Text>
+      <PageHeader icon="archive-outline" title="Histórico" subtitle="Consultá temporadas anteriores y exportá sus registros" />
 
       {loading ? (
         <View style={{ alignItems: 'center', marginTop: 40 }}>
@@ -256,15 +260,16 @@ export default function Historico() {
               <Card
                 style={{
                   marginBottom: 10,
-                  borderWidth: 2,
+                  borderWidth: 1,
                   borderColor: selectedYear === y.año ? colors.primary[500] : colors.primary[100],
                   backgroundColor: selectedYear === y.año ? colors.primary[50] : undefined,
+                  ...shadows.sm,
                 }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 22 }}>📅</Text>
-                    <Text style={[s.text, { fontWeight: '700', fontSize: 20 }]}>{y.año}</Text>
+                    <View style={{ width: 42, height: 42, borderRadius: radius.full, backgroundColor: colors.primary[100], alignItems: 'center', justifyContent: 'center' }}><Ionicons name="calendar-outline" size={20} color={colors.primary[600]} /></View>
+                    <Text style={{ fontFamily: typography.family.extrabold, color: colors.text.primary.light, fontSize: 20 }}>{y.año}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <MiniStat label="Total" value={y.total} emoji="👥" />
@@ -281,8 +286,8 @@ export default function Historico() {
           {selectedYear && (
             <View style={{ marginTop: 16 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <Text style={[s.text, { fontWeight: '700', fontSize: 18 }]}>
-                  📋 Inscriptos {selectedYear}
+                  <Text style={[s.text, { fontWeight: '700', fontSize: 18 }]}> 
+                   Inscriptos {selectedYear}
                 </Text>
                 <Button
                   variant="secondary"
@@ -350,9 +355,9 @@ export default function Historico() {
                     Mostrando {filtered.length} de {registros.length} registros
                   </Text>
                   {filtered.map(r => (
-                    <Card key={r.id} style={{ marginBottom: 8, paddingVertical: 10, paddingHorizontal: 12 }}>
+                    <Card key={r.id} style={{ marginBottom: 8, paddingVertical: 12, paddingHorizontal: 14 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <View style={{ flex: 1 }}>
+                        <InitialAvatar name={`${r.nombres} ${r.apellidos}`} tone="primary" /><View style={{ flex: 1, marginLeft: 10 }}>
                           <Text style={[s.text, { fontWeight: '600' }]}>
                             {r.nombres} {r.apellidos}
                           </Text>
@@ -384,16 +389,5 @@ function MiniStat({ label, value, emoji }: { label: string; value: number; emoji
 }
 
 function EstadoBadge({ estado }: { estado: string }) {
-  const config: Record<string, { bg: string; text: string; emoji: string }> = {
-    confirmado: { bg: '#dcfce7', text: '#166534', emoji: '✅' },
-    lista_espera: { bg: '#fef9c3', text: '#854d0e', emoji: '⏳' },
-    cancelado: { bg: '#fee2e2', text: '#991b1b', emoji: '❌' },
-  }
-  const c = config[estado] || config.confirmado
-  return (
-    <View style={{ backgroundColor: c.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-      <Text style={{ fontSize: 10 }}>{c.emoji}</Text>
-      <Text style={{ color: c.text, fontSize: 11, fontWeight: '600' }}>{estado}</Text>
-    </View>
-  )
+  return <Badge tone={estado === 'confirmado' ? 'success' : estado === 'lista_espera' ? 'warning' : 'danger'}>{estado.replace('_', ' ')}</Badge>
 }
