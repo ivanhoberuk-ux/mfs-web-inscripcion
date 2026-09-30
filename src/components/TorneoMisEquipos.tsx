@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { s, colors } from '../lib/theme';
 import { radius, spacing } from '../lib/designSystem';
+import { Badge } from './Badge';
+import { Ionicons } from '@expo/vector-icons';
 import { avisar, confirmar } from '../lib/dialogs';
 import { supabase } from '../lib/supabase';
 import { TorneoEquipoDetalle } from './TorneoEquipoDetalle';
@@ -12,7 +14,7 @@ import {
   fetchEquipos, updateEquipo, deleteEquipo, inscripcionEquiposAbierta, fmtFechaHoraAsu,
 } from '../lib/torneo';
 
-const ESTADO: Record<string, string> = { pendiente: '⏳ Pendiente', aprobado: '✅ Aprobado', rechazado: '❌ Rechazado' };
+const ESTADO: Record<string, string> = { pendiente: 'Pendiente', aprobado: 'Aprobado', rechazado: 'Rechazado' };
 
 function Btn({ label, onPress, color = colors.primary[600], disabled }: any) {
   return (
@@ -73,10 +75,8 @@ export function TorneoMisEquipos({ edicion, disciplinas, puebloId }: {
 
   return (
     <View>
-      <View style={[s.card, { marginBottom: spacing.md, backgroundColor: abierta ? 'rgba(34,197,94,0.12)' : colors.neutral[100] }]}>
-        <Text style={{ fontWeight: '800', color: colors.neutral[800] }}>
-          {abierta ? '🟢 Inscripción de equipos abierta' : '🔒 Inscripción de equipos cerrada'}
-        </Text>
+      <View style={[s.card, { marginBottom: spacing.md, backgroundColor: abierta ? colors.mint[50] : colors.neutral[100], borderColor: abierta ? colors.mint[200] : colors.neutral[200] }]}> 
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Ionicons name={abierta ? 'lock-open-outline' : 'lock-closed-outline'} size={20} color={abierta ? colors.mint[600] : colors.neutral[600]} /><Text style={{ fontWeight: '800', color: colors.neutral[800] }}>{abierta ? 'Inscripción de equipos abierta' : 'Inscripción de equipos cerrada'}</Text></View>
         <Text style={s.small}>
           {edicion.inscripcion_equipos_desde ? `Desde ${fmtFechaHoraAsu(edicion.inscripcion_equipos_desde)} ` : ''}
           {edicion.inscripcion_equipos_hasta ? `hasta ${fmtFechaHoraAsu(edicion.inscripcion_equipos_hasta)} (hora de Asunción)` : ''}
@@ -99,9 +99,7 @@ export function TorneoMisEquipos({ edicion, disciplinas, puebloId }: {
               ) : <Text style={s.small}>Tu pueblo no inscribió equipo en esta disciplina.</Text>
             ) : (
               <View>
-                <Text style={{ fontWeight: '800', marginTop: 6, color: colors.neutral[800] }}>
-                  {ESTADO[eq.estado_inscripcion] ?? eq.estado_inscripcion}{eq.nombre ? ` · ${eq.nombre}` : ''}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}><Badge tone={eq.estado_inscripcion === 'aprobado' ? 'success' : eq.estado_inscripcion === 'rechazado' ? 'danger' : 'warning'}>{ESTADO[eq.estado_inscripcion] ?? eq.estado_inscripcion}</Badge>{eq.nombre ? <Text style={{ fontWeight: '800', color: colors.neutral[800] }}>{eq.nombre}</Text> : null}</View>
                 {eq.estado_inscripcion === 'rechazado' && eq.motivo_rechazo && (
                   <Text style={{ color: colors.error, fontSize: 12 }}>Motivo: {eq.motivo_rechazo}</Text>
                 )}

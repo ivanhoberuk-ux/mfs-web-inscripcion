@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { s, colors } from '../lib/theme';
 import { radius } from '../lib/designSystem';
+import { spacing } from '../lib/designSystem';
+import { Ionicons } from '@expo/vector-icons';
+import { InitialAvatar } from './PageHeader';
 import { avisar, confirmar } from '../lib/dialogs';
 import {
   type TorneoEquipo, type TorneoContacto, type TorneoJugador, type MisioneroMin,
@@ -74,8 +77,8 @@ export function TorneoEquipoDetalle({
   if (loading) return <ActivityIndicator style={{ marginVertical: 8 }} />;
 
   return (
-    <View style={{ marginTop: 8, padding: 10, borderRadius: radius.sm, backgroundColor: colors.primary[50] }}>
-      <Text style={[s.label, { marginBottom: 4 }]}>👤 Delegado del equipo</Text>
+    <View style={{ marginTop: 12, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.primary[50], borderWidth: 1, borderColor: colors.primary[100] }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}><Ionicons name="person-outline" size={19} color={colors.primary[600]} /><Text style={s.cardTitle}>Delegado del equipo</Text></View>
       {editable ? (
         <>
           <TextInput value={contacto.delegado_nombre ?? ''} placeholder="Nombre del delegado"
@@ -94,11 +97,11 @@ export function TorneoEquipoDetalle({
         </Text>
       )}
 
-      <Text style={[s.label, { marginTop: 6, marginBottom: 4 }]}>🏃 Jugadores ({jugadores.length})</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 6 }}><Ionicons name="people-outline" size={19} color={colors.primary[600]} /><Text style={s.cardTitle}>Jugadores ({jugadores.length})</Text></View>
       {jugadores.length === 0 && <Text style={s.small}>Todavía no hay jugadores cargados.</Text>}
       {jugadores.map((j) => (
-        <View key={j.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
-          <Text style={[s.text, { flex: 1 }]}>• {j.nombre}{!j.registro_id ? ' (nombre libre)' : ''}</Text>
+        <View key={j.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6, gap: 10 }}><InitialAvatar name={j.nombre} tone="mint" />
+          <Text style={[s.text, { flex: 1 }]}>{j.nombre}{!j.registro_id ? ' (nombre libre)' : ''}</Text>
           {editable && (
             <Pressable disabled={busy} onPress={() => confirmar('Quitar jugador', `¿Quitar a ${j.nombre} del equipo?`, () => hacer(() => deleteJugador(j.id)))}>
               <Text style={{ color: colors.error, fontWeight: '700', fontSize: 12 }}>Quitar</Text>
@@ -117,8 +120,8 @@ export function TorneoEquipoDetalle({
           )}
           {resultados.map((m) => (
             <Pressable key={m.id} disabled={busy} onPress={() => hacer(async () => { await addJugador(equipo.id, m.id, `${m.nombres} ${m.apellidos}`); setBusqueda(''); })}
-              style={{ paddingVertical: 8, paddingHorizontal: 10, backgroundColor: '#fff', borderRadius: radius.sm, marginBottom: 4 }}>
-              <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>➕ {m.nombres} {m.apellidos}</Text>
+              style={{ paddingVertical: 8, paddingHorizontal: 10, backgroundColor: colors.surface.light, borderRadius: radius.md, marginBottom: 4, borderWidth: 1, borderColor: colors.primary[100] }}>
+              <Text style={{ fontWeight: '700', color: colors.neutral[800] }}>{m.nombres} {m.apellidos}</Text>
               <Text style={s.small}>CI {m.ci}</Text>
             </Pressable>
           ))}
