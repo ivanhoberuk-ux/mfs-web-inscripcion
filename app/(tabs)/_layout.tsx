@@ -156,11 +156,15 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background.light, overflow: 'hidden' }}>
-      <FondoParaguayo intensidad={pathname === '/' ? 'normal' : 'suave'} />
       {isDesktop ? <DesktopHeader items={navItems} /> : null}
-      <Tabs screenOptions={{
+      <Tabs screenLayout={({ children, route }) => (
+        <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+          <FondoParaguayo intensidad={route.name === 'index' ? 'normal' : 'suave'} />
+          {children}
+        </View>
+      )} screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: 'transparent' },
+        sceneStyle: { backgroundColor: colors.background.light },
         tabBarActiveTintColor: colors.primary[600], tabBarInactiveTintColor: colors.text.tertiary.light,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 9, fontFamily: typography.family.semibold, marginTop: 1 },
