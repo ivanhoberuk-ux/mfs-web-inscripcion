@@ -31,7 +31,7 @@ type RegistroDash = {
 };
 type Pueblo = { id: string; nombre: string; cupo_max: number };
 
-const COLORS = [colors.primary[600], colors.accent[500], colors.mint[500], colors.secondary[500], colors.error, colors.primary[300], colors.accent[400], colors.primary[700], colors.mint[600], colors.secondary[600]];
+const COLORS = [colors.primary[600], colors.accent[500], colors.mint[500], colors.secondary[500], colors.error, colors.primary[300], colors.accent[500], colors.primary[700], colors.mint[600], colors.secondary[600]];
 
 function ageOn(nac: string | null, refDate: Date): number | null {
   if (!nac) return null;
