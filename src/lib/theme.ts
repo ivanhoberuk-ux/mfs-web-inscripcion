@@ -9,6 +9,35 @@ export const s = StyleSheet.create({
     backgroundColor: 'transparent',
     padding: spacing.lg,
   },
+  pageContent: {
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
+    paddingBottom: 120,
+  },
+  sectionCard: {
+    marginBottom: spacing.lg,
+    borderColor: colors.primary[50],
+  },
+  segmented: {
+    flexDirection: 'row',
+    backgroundColor: colors.neutral[100],
+    borderRadius: radius.full,
+    padding: spacing.xs,
+    gap: spacing.xs,
+  },
+  segmentedItem: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  segmentedItemActive: {
+    backgroundColor: colors.surface.light,
+    ...shadows.sm,
+  },
   
   // Tipografía
   title: {
