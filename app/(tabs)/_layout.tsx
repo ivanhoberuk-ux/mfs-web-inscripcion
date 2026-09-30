@@ -6,6 +6,7 @@ import { useAuth } from '../../src/context/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
 import { colors, radius, shadows, spacing, typography } from '../../src/lib/designSystem';
 import { useTemporada } from '../../src/hooks/useTemporada';
+import { FondoParaguayo, LineaTricolor } from '../../src/components/FondoParaguayo';
 // @ts-ignore
 import logoMfs from '../../src/assets/mfs-logo.png';
 
@@ -94,6 +95,15 @@ function DesktopHeader({ items }: { items: NavItem[] }) {
           </Pressable>
         )}
       </View>
+      <LineaTricolor />
+    </View>
+  );
+}
+
+function MobileTabBackground() {
+  return (
+    <View style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: radius.xl, backgroundColor: 'rgba(255,255,255,0.96)' }}>
+      <LineaTricolor />
     </View>
   );
 }
@@ -101,6 +111,7 @@ function DesktopHeader({ items }: { items: NavItem[] }) {
 export default function TabLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPuebloAdmin, setIsPuebloAdmin] = useState(false);
@@ -144,18 +155,20 @@ export default function TabLayout() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+    <View style={{ flex: 1, backgroundColor: colors.background.light, overflow: 'hidden' }}>
+      <FondoParaguayo intensidad={pathname === '/' ? 'normal' : 'suave'} />
       {isDesktop ? <DesktopHeader items={navItems} /> : null}
       <Tabs screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary[600], tabBarInactiveTintColor: colors.text.tertiary.light,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 9, fontFamily: typography.family.semibold, marginTop: 1 },
+        tabBarBackground: isDesktop ? undefined : () => <MobileTabBackground />,
         tabBarStyle: isDesktop ? { display: 'none' } : {
           position: 'absolute', left: 10, right: 10, bottom: Platform.OS === 'ios' ? 12 : 8,
           paddingTop: 7, paddingBottom: Platform.OS === 'ios' ? 18 : 7,
           height: Platform.OS === 'ios' ? 72 : 62, borderRadius: radius.xl,
-          backgroundColor: 'rgba(255,255,255,0.96)', borderTopWidth: 0, ...shadows.lg,
+          backgroundColor: 'transparent', borderTopWidth: 0, ...shadows.lg,
           // @ts-ignore web only
           backdropFilter: 'blur(18px)',
         },
