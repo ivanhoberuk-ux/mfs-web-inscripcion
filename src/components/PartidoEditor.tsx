@@ -211,8 +211,8 @@ export function PartidoEditor({
 
   return (
     <View style={{
-       borderWidth: 1, borderColor: enJuego ? colors.mint[300] : colors.primary[100],
-       backgroundColor: enJuego ? colors.mint[50] : colors.surface.light,
+       borderWidth: 1, borderColor: enJuego ? colors.mint[500] : colors.primary[100],
+       backgroundColor: enJuego ? colors.mint[100] : colors.surface.light,
        borderRadius: radius.lg, padding: spacing.md, marginBottom: 8, ...shadows.sm,
     }}>
       <Pressable onPress={() => setOpen(!open)}>

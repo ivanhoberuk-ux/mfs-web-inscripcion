@@ -17,7 +17,7 @@ function Fila({ nombre, marcador, penales, gana }: { nombre: string; marcador: n
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8,
-      backgroundColor: gana ? colors.mint[50] : 'transparent', borderRadius: radius.sm, borderLeftWidth: gana ? 3 : 0, borderLeftColor: colors.mint[500],
+      backgroundColor: gana ? colors.mint[100] : 'transparent', borderRadius: radius.sm, borderLeftWidth: gana ? 3 : 0, borderLeftColor: colors.mint[500],
     }}>
       <Text style={{ flex: 1, fontWeight: gana ? '900' : '600', color: colors.neutral[800], fontSize: 13 }} numberOfLines={1}>
         {nombre}
@@ -36,7 +36,7 @@ function Tarjeta({ p }: { p: TorneoPartido }) {
   return (
     <View style={{
       width: 220, backgroundColor: colors.surface.light, borderRadius: radius.lg, marginBottom: 14, padding: 6,
-      borderWidth: 1, borderColor: p.estado === 'en_juego' ? colors.mint[300] : colors.primary[100], ...shadows.sm,
+      borderWidth: 1, borderColor: p.estado === 'en_juego' ? colors.mint[500] : colors.primary[100], ...shadows.sm,
     }}>
       <Fila nombre={nomA} marcador={p.marcador_a} penales={p.penales_a} gana={g === 'a'} />
       <View style={{ height: 1, backgroundColor: colors.neutral[100] }} />

@@ -75,7 +75,7 @@ export function TorneoMisEquipos({ edicion, disciplinas, puebloId }: {
 
   return (
     <View>
-      <View style={[s.card, { marginBottom: spacing.md, backgroundColor: abierta ? colors.mint[50] : colors.neutral[100], borderColor: abierta ? colors.mint[200] : colors.neutral[200] }]}> 
+      <View style={[s.card, { marginBottom: spacing.md, backgroundColor: abierta ? colors.mint[100] : colors.neutral[100], borderColor: abierta ? colors.mint[500] : colors.neutral[200] }]}> 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Ionicons name={abierta ? 'lock-open-outline' : 'lock-closed-outline'} size={20} color={abierta ? colors.mint[600] : colors.neutral[600]} /><Text style={{ fontWeight: '800', color: colors.neutral[800] }}>{abierta ? 'Inscripción de equipos abierta' : 'Inscripción de equipos cerrada'}</Text></View>
         <Text style={s.small}>
           {edicion.inscripcion_equipos_desde ? `Desde ${fmtFechaHoraAsu(edicion.inscripcion_equipos_desde)} ` : ''}

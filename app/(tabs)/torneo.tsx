@@ -46,7 +46,7 @@ function PartidoScoreboard({ p, disciplina }: { p: TorneoPartido; disciplina?: T
   const nomA = p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir');
   const nomB = p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir');
   const hayMarcador = p.marcador_a != null && p.marcador_b != null;
-  return <View style={[s.card, { marginBottom: spacing.md, padding: spacing.lg, borderColor: p.estado === 'en_juego' ? colors.mint[200] : colors.primary[50], ...shadows.sm }]}>
+  return <View style={[s.card, { marginBottom: spacing.md, padding: spacing.lg, borderColor: p.estado === 'en_juego' ? colors.mint[500] : colors.primary[50], ...shadows.sm }]}>
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: spacing.md }}><Text style={{ flex: 1, fontFamily: typography.family.semibold, color: colors.text.tertiary.light, fontSize: 11 }}>{disciplina ? `${disciplina.emoji} ${disciplina.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}</Text><EstadoPartido estado={p.estado} /></View>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomA} lado="a" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomA}</Text></View><View style={{ minWidth: 90, alignItems: 'center' }}><Text style={{ fontFamily: typography.family.extrabold, fontSize: 30, color: colors.primary[700] }}>{hayMarcador ? `${p.marcador_a} – ${p.marcador_b}` : fmtHora(p.inicio)}</Text>{p.penales_a != null && p.penales_b != null ? <Text style={{ fontFamily: typography.family.semibold, fontSize: 11, color: colors.text.tertiary.light }}>({p.penales_a}-{p.penales_b} pen.)</Text> : null}</View><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomB} lado="b" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomB}</Text></View></View>
     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: spacing.md }}><Ionicons name="location-outline" size={14} color={colors.text.tertiary.light} /><Text style={s.small}>{p.cancha?.nombre ?? 'Cancha a confirmar'} · {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'}{p.detalle_sets ? ` · ${p.detalle_sets}` : ''}{p.mvp_nombre ? ` · MVP: ${p.mvp_nombre}` : ''}</Text></View>
@@ -267,8 +267,8 @@ export default function Torneo() {
 
       {/* En juego ahora */}
       {enJuego.length > 0 && vista !== 'admin' && (
-        <View style={{ marginBottom: spacing.lg, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.mint[50], borderWidth: 1, borderColor: colors.mint[200] }}> 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontFamily: typography.family.extrabold, color: colors.mint[700], fontSize: 17 }}>En juego ahora</Text></View>
+        <View style={{ marginBottom: spacing.lg, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.mint[100], borderWidth: 1, borderColor: colors.mint[500] }}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontFamily: typography.family.extrabold, color: colors.mint[600], fontSize: 17 }}>En juego ahora</Text></View>
           {enJuego.map((p) => {
             const d = discNombre(p.disciplina_id);
             return (

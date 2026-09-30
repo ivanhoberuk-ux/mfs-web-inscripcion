@@ -203,8 +203,8 @@ export default function Operador() {
       {loading && <ActivityIndicator size="large" />}
 
       {enJuego.length > 0 && (
-        <View style={{ marginBottom: spacing.lg, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.mint[50], borderWidth: 1, borderColor: colors.mint[200] }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontSize: 16, fontWeight: '900', color: colors.mint[700] }}>En juego ahora</Text></View>
+        <View style={{ marginBottom: spacing.lg, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.mint[100], borderWidth: 1, borderColor: colors.mint[500] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}><View style={{ width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /><Text style={{ fontSize: 16, fontWeight: '900', color: colors.mint[600] }}>En juego ahora</Text></View>
           {enJuego.map((p) => (
             <View key={`live-${p.id}`} style={[s.card, { marginBottom: 8 }]}>
               <PartidoEditor partido={p} disciplina={discMap.get(p.disciplina_id)} defaultOpen onSaved={() => refrescar(p.id)} />
