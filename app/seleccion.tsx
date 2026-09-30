@@ -245,7 +245,7 @@ export default function SeleccionScreen() {
   if (!puedeVer) {
     return (
       <View style={[s.screen, { padding: 20 }]}>
-        <Text style={s.title}>✅ Selección de misioneros</Text>
+        <Text style={s.title}>Selección de misioneros</Text>
         <Text style={s.text}>No tenés permisos para ver esta sección.</Text>
       </View>
     )

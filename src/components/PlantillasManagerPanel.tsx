@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, TextInput, Alert, ActivityIndicator, Platform, Linking } from 'react-native';
 import { s } from '../lib/theme';
+import { colors, radius, shadows } from '../lib/designSystem';
 import {
   fetchPlantillas,
   upsertPlantilla,
@@ -179,7 +180,7 @@ export function PlantillasManagerPanel() {
 
   return (
     <View style={{ gap: 12 }}>
-      <Text style={[s.subtitle, { marginBottom: 4 }]}>📚 Plantillas / Documentos comunes</Text>
+      <Text style={[s.subtitle, { marginBottom: 4 }]}>Plantillas y documentos comunes</Text>
       <Text style={[s.text, { color: '#6b7280', marginBottom: 8 }]}>
         Acá podés actualizar año a año los PDFs que ven todos los misioneros (Permiso del Menor, Protocolo, Estatutos, etc.). Al subir un nuevo archivo, se reemplaza para todos.
       </Text>
@@ -191,7 +192,7 @@ export function PlantillasManagerPanel() {
           {items.map((p) => {
             const busy = busyKey === p.key;
             return (
-              <View key={p.key} style={[s.card, { padding: 12, gap: 6, opacity: p.activo ? 1 : 0.6 }]}>
+              <View key={p.key} style={[s.card, { padding: 16, gap: 8, opacity: p.activo ? 1 : 0.6, borderColor: colors.primary[50], ...shadows.sm }]}> 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ fontSize: 22 }}>{p.emoji || '📄'}</Text>
                   <View style={{ flex: 1 }}>
@@ -247,7 +248,7 @@ export function PlantillasManagerPanel() {
       <View style={{ marginTop: 8 }}>
         {!showNew ? (
           <Pressable
-            style={[s.button, { backgroundColor: '#7c3aed' }]}
+            style={[s.button, { backgroundColor: colors.primary[600], borderRadius: radius.full }]}
             onPress={() => setShowNew(true)}
           >
             <Text style={s.buttonText}>➕ Agregar nueva plantilla</Text>

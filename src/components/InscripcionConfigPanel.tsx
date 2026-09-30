@@ -500,7 +500,7 @@ export function InscripcionConfigPanel() {
 
   return (
     <View style={{ gap: 14 }}>
-      <Text style={[s.subtitle, { marginBottom: 0 }]}>📅 Fechas de inscripción</Text>
+      <Text style={[s.subtitle, { marginBottom: 0 }]}>Fechas de inscripción</Text>
       <Text style={[s.small, { color: colors.text.tertiary.light, marginBottom: 4 }]}>
         Tocá cada fecha para abrir el calendario. Definí apertura anticipada (Tíos y Jefes Jóvenes),
         apertura general (todos) y cierre. Solo puede haber un año activo a la vez.
@@ -532,9 +532,9 @@ export function InscripcionConfigPanel() {
             key={año}
             style={{
               padding: 14,
-              borderRadius: 14,
+              borderRadius: 22,
               backgroundColor: cfg.activo ? '#ECFDF5' : '#F9FAFB',
-              borderWidth: 2,
+              borderWidth: 1,
               borderColor: cfg.activo ? '#10B981' : '#E5E7EB',
               gap: 12,
             }}
