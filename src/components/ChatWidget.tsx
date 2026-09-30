@@ -337,6 +337,9 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
     minHeight: 400,
     ...shadows.xl,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'flex-end',
   },
   header: {
     flexDirection: 'row',

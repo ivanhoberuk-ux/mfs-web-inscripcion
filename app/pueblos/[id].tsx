@@ -16,6 +16,11 @@ import { shareOrDownload } from '../../src/lib/sharing'
 import { supabase } from '../../src/lib/supabase'
 import { s } from '../../src/lib/theme'
 import { Picker } from '@react-native-picker/picker'
+import { Ionicons } from '@expo/vector-icons'
+import { colors, radius, spacing } from '../../src/lib/designSystem'
+import { PageHeader, InitialAvatar } from '../../src/components/PageHeader'
+import { Card } from '../../src/components/Card'
+import { Badge } from '../../src/components/Badge'
 import { documentosCompletos, documentosFaltantes } from '../../src/lib/documentos'
 import { fetchAñoActivo } from '../../src/lib/api'
 
@@ -317,10 +322,8 @@ export default function PuebloInscriptosScreen() {
     const ok = hasRequiredDoc(item, age)
 
     return (
-      <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-        <Text style={[s.small, { fontWeight: '600' }]}>
-          {item.nombres} {item.apellidos}
-        </Text>
+      <Card style={{ marginBottom: 10, padding: spacing.lg }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><InitialAvatar name={`${item.nombres} ${item.apellidos}`} /><View style={{ flex: 1 }}><Text style={s.cardTitle}>{item.nombres} {item.apellidos}</Text><Text style={s.small}>{item.rol || '-'}{item.rol === 'Misionero' && item.es_jefe ? ' · Jefe' : ''}</Text></View></View>
 
         {/* CI oculto si hideCi === true */}
         {!hideCi && <Text style={s.small}>CI: {item.ci || '-'}</Text>}
@@ -334,20 +337,14 @@ export default function PuebloInscriptosScreen() {
         <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
           <Text style={[s.small, { opacity: 0.9, marginRight: 8 }]}>{reqLabel}:</Text>
           {ok == null ? (
-            <View style={{ backgroundColor: '#999', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
-              <Text style={{ color: 'white', fontSize: 12 }}>Desconocido</Text>
-            </View>
+            <Badge tone="neutral">Desconocido</Badge>
           ) : ok ? (
-            <View style={{ backgroundColor: '#21a179', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
-              <Text style={{ color: 'white', fontSize: 12 }}>Completos</Text>
-            </View>
+            <Badge tone="success">Completos</Badge>
           ) : (
-            <View style={{ backgroundColor: '#d94646', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
-              <Text style={{ color: 'white', fontSize: 12 }}>Falta: {documentosFaltantes(item).join(', ')}</Text>
-            </View>
+            <Badge tone="danger">Falta: {documentosFaltantes(item).join(', ')}</Badge>
           )}
         </View>
-      </View>
+      </Card>
     )
   }, [hideCi])
 
@@ -356,7 +353,7 @@ export default function PuebloInscriptosScreen() {
   const headerList = useMemo(
     () => (
       <View style={{ marginBottom: 8 }}>
-        <Text style={s.title}>{puebloNombre || 'Pueblo'}</Text>
+        <View style={{ backgroundColor: colors.primary[600], borderRadius: radius['2xl'], padding: spacing.xl, marginBottom: spacing.lg }}><PageHeader icon="location-outline" title={puebloNombre || 'Pueblo'} subtitle="Inscriptos y estado de documentación" /></View>
 
         {/* Buscador */}
         <Text style={s.label}>{hideCi ? 'Buscar por nombre' : 'Buscar por nombre o CI'}</Text>
@@ -391,13 +388,13 @@ export default function PuebloInscriptosScreen() {
             onPress={exportCsv}
             style={[s.button, { paddingVertical: 8 }]}
           >
-            <Text style={s.buttonText}>📊 Exportar inscriptos</Text>
+            <Text style={s.buttonText}>Exportar inscriptos</Text>
           </Pressable>
           <Pressable
             onPress={exportWaitlist}
-            style={[s.button, { paddingVertical: 8, backgroundColor: '#d97706' }]}
+            style={[s.button, s.buttonSecondary, { paddingVertical: 8 }]}
           >
-            <Text style={s.buttonText}>⏳ Descargar lista de espera</Text>
+            <Text style={s.buttonTextSecondary}>Descargar lista de espera</Text>
           </Pressable>
         </View>
       </View>
@@ -414,7 +411,7 @@ export default function PuebloInscriptosScreen() {
   }
 
   return (
-    <View style={[s.screen, { paddingBottom: 20 }]}>
+    <View style={[s.screen, { paddingBottom: 20, maxWidth: 1120, width: '100%', alignSelf: 'center' }]}> 
       <FlatList
         ListHeaderComponent={headerList}
         data={filtered}

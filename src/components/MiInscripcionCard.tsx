@@ -213,10 +213,10 @@ export function MiInscripcionCard() {
           justifyContent: 'center', alignItems: 'center', padding: 24,
         }}>
           <View style={{
-            backgroundColor: '#fff', borderRadius: radius.lg, padding: spacing.lg,
+            backgroundColor: colors.surface.light, borderRadius: radius.xl, padding: spacing.xl,
             maxWidth: 420, width: '100%', ...shadows.md,
           }}>
-            <Text style={{ fontSize: 48, textAlign: 'center', marginBottom: 8 }}>🎉</Text>
+            <Ionicons name="sparkles-outline" size={44} color={colors.secondary[600]} style={{ alignSelf: 'center', marginBottom: 8 }} />
             <Text style={{ fontSize: 20, fontWeight: '800', textAlign: 'center', color: colors.primary[700], marginBottom: 12 }}>
               {isAsesor ? '¡Tu inscripción fue confirmada!' : '¡Bienvenido/a!'}
             </Text>

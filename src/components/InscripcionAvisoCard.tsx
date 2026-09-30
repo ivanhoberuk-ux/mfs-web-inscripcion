@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { fetchEstadoInscripcionActivo, type ConfiguracionInscripcion, type EstadoInscripcion } from '../lib/api';
 import { colors } from '../lib/designSystem';
 import { radius } from '../lib/designSystem';
+import { typography, shadows } from '../lib/designSystem';
+import { Ionicons } from '@expo/vector-icons';
 
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -179,16 +181,15 @@ export function InscripcionAvisoCard() {
         backgroundColor: gradient[1],
         // @ts-ignore - web only
         backgroundImage: `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)`,
-        borderWidth: 2,
-        borderColor: border,
+        borderWidth: 1,
+        borderColor: colors.primary[50],
         gap: 14,
-        // @ts-ignore
-        boxShadow: `0 10px 30px -10px ${border}66`,
+        ...shadows.md,
       }}
     >
       {/* Header con chip */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Text {...emojiExtra} style={{ fontSize: 44 }}>{emoji}</Text>
+         <View style={{ width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.surface.light, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="calendar-outline" size={24} color={accent} /></View>
         <View style={{ flex: 1, gap: 4 }}>
           <View
             style={{
@@ -199,14 +200,14 @@ export function InscripcionAvisoCard() {
               borderRadius: 999,
             }}
           >
-            <Text style={{ color: 'white', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>
+             <Text style={{ color: colors.surface.light, fontSize: 11, fontFamily: typography.family.extrabold }}> 
               {chip}
             </Text>
           </View>
-          <Text style={{ fontSize: 19, fontWeight: '800', color: '#111827', lineHeight: 24 }}>
+           <Text style={{ fontSize: 19, fontFamily: typography.family.extrabold, color: colors.text.primary.light, lineHeight: 24 }}> 
             {titulo}
           </Text>
-          <Text style={{ fontSize: 13, color: accent, fontWeight: '600' }}>
+           <Text style={{ fontSize: 13, color: accent, fontFamily: typography.family.semibold }}> 
             {subtitulo}
           </Text>
         </View>
@@ -221,19 +222,19 @@ export function InscripcionAvisoCard() {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 10,
-              backgroundColor: 'rgba(255,255,255,0.7)',
+               backgroundColor: colors.surface.light,
               borderRadius: radius.md,
               padding: 10,
               borderLeftWidth: 4,
               borderLeftColor: h.color,
             }}
           >
-            <Text style={{ fontSize: 22 }}>{h.icon}</Text>
+             <Ionicons name="time-outline" size={21} color={h.color} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: h.color, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+               <Text style={{ fontSize: 11, fontFamily: typography.family.bold, color: h.color, textTransform: 'uppercase' }}> 
                 {h.label}
               </Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#111827' }}>
+               <Text style={{ fontSize: 13, fontFamily: typography.family.bold, color: colors.text.primary.light }}> 
                 {h.value}
               </Text>
               {h.sub ? (
