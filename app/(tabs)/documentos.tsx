@@ -24,6 +24,9 @@ import { supabase } from '../../src/lib/supabase';
 import { shareOrDownload } from '../../src/lib/sharing';
 import { useAuth } from '../../src/context/AuthProvider';
 import { useUserRoles } from '../../src/hooks/useUserRoles';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radius, spacing } from '../../src/lib/designSystem';
+import { PageHeader } from '../../src/components/PageHeader';
 
 const DOC_SELECT_COLS =
   'id,nombres,apellidos,pueblo_id,nacimiento,autorizacion_url,ficha_medica_url,firma_url,ci,email,created_at,año,cedula_frente_url,cedula_dorso_url';
@@ -734,27 +737,16 @@ export default function Documentos() {
   return (
     <View style={{ flex: 1 }}>
     <ScrollView
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={s.pageContent}
       style={s.screen}
       keyboardShouldPersistTaps="handled"
       bounces={false}
     >
-      {/* Header con emoji */}
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
-        <Text style={{ fontSize: 48 }}>📄</Text>
-        <Text style={[s.title, { textAlign: 'center', marginTop: 8 }]}>
-          {isSuperAdmin ? 'Documentos 📋' : isPuebloAdmin ? 'Documentos 📋' : 'Mis documentos'}
-        </Text>
-        <Text style={{ fontSize: 14, color: '#666', textAlign: 'center' }}>
-          {isSuperAdmin || isPuebloAdmin 
-            ? '👑 Modo administrador' 
-            : 'Cargá tus documentos requeridos'}
-        </Text>
-      </View>
+      <PageHeader icon="documents-outline" title={isSuperAdmin || isPuebloAdmin ? 'Documentos' : 'Mis documentos'} subtitle={isSuperAdmin || isPuebloAdmin ? 'Modo administrador' : 'Cargá tus documentos requeridos'} />
 
       {/* Banner edad */}
       {record && (
-        <View style={[s.card, { marginBottom: 12, backgroundColor: '#eef2ff', borderWidth: 2, borderColor: '#c7d2fe' }]}>
+        <View style={[s.card, { marginBottom: 12, backgroundColor: colors.primary[50], borderColor: colors.primary[100] }]}> 
           <Text style={[s.text, { textAlign: 'center' }]}>
             {edad == null
               ? '📅 No hay fecha de nacimiento: podés cargar cualquiera de los documentos.'
@@ -766,8 +758,8 @@ export default function Documentos() {
       )}
 
       {/* === PLANTILLAS === */}
-      <View style={[s.card, { marginBottom: 12, borderWidth: 2, borderColor: '#c7d2fe' }]}>
-        <Text style={[s.text, { fontWeight: '600', marginBottom: 8 }]}>📚 Plantillas para leer y firmar</Text>
+      <View style={[s.card, { marginBottom: 12 }]}> 
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}><Ionicons name="library-outline" size={22} color={colors.primary[600]} /><Text style={s.cardTitle}>Plantillas para leer y firmar</Text></View>
 
         <Pressable
           style={[s.button, { marginTop: 8, paddingVertical: 12, backgroundColor: '#6366f1' }]}
@@ -932,14 +924,14 @@ export default function Documentos() {
 
       {record && (
         <View style={s.card}>
-          <Text style={s.text}>Inscripto</Text>
-          <Text style={s.small}>
+          <Text style={s.cardTitle}>Inscripto</Text>
+          <Text style={[s.text, { marginBottom: 12 }]}> 
             {record.nombres} {record.apellidos}
           </Text>
 
           {/* Permiso del Menor (requerido si menor) */}
           {((docMode !== 'mayor') || !!record.ficha_medica_url) && (
-            <View style={{ marginTop: 12 }}>
+            <View style={{ marginTop: 12, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary[100], backgroundColor: colors.primary[50] }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={s.label}>Permiso del Menor firmado</Text>
                 {docMode === 'menor' && badge('Requerido')}
@@ -983,7 +975,7 @@ export default function Documentos() {
 
           {/* Aceptación de Protocolo (requerido si mayor) */}
           {((docMode !== 'menor') || !!record.autorizacion_url) && (
-            <View style={{ marginTop: 12 }}>
+            <View style={{ marginTop: 12, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary[100], backgroundColor: colors.primary[50] }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={s.label}>Aceptación de Protocolo firmada</Text>
                 {docMode === 'mayor' && badge('Requerido')}
@@ -1026,7 +1018,7 @@ export default function Documentos() {
           )}
 
           {/* Cédula de identidad (frente/dorso) */}
-          <View style={{ marginTop: 12 }}>
+          <View style={{ marginTop: 12, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary[100], backgroundColor: colors.primary[50] }}>
             <Text style={s.label}>Cédula de identidad</Text>
 
             {record.cedula_frente_url &&
@@ -1154,7 +1146,7 @@ export default function Documentos() {
           </View>
 
           {/* Firma digital in-app (SignaturePad multiplataforma) */}
-          <View style={{ marginTop: 12 }}>
+          <View style={{ marginTop: 12, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primary[100], backgroundColor: colors.primary[50] }}>
             <Text style={s.label}>Firma en el teléfono</Text>
 
             <SignaturePad ref={padRef} height={260} />
