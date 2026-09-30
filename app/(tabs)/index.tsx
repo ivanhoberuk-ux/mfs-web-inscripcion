@@ -123,7 +123,7 @@ export default function Home() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background.light }}>
+    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: compact ? 14 : 24, paddingTop: compact ? 14 : 28, gap: desktop ? 34 : 24 }}>
           <FadeIn>

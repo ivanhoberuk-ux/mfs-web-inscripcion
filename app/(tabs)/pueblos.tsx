@@ -65,7 +65,7 @@ export default function Pueblos() {
 
   return (
     <ScrollView
-      style={[s.screen, { backgroundColor: colors.background.light }]}
+      style={[s.screen, { backgroundColor: 'transparent' }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       contentContainerStyle={{ paddingBottom: 120 }}
     >

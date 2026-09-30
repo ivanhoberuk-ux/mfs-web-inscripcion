@@ -69,7 +69,7 @@ export default function MiFamilia() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background.light }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}>
         <ActivityIndicator size="large" color={colors.primary[600]} />
       </View>
     )
@@ -77,7 +77,7 @@ export default function MiFamilia() {
 
   if (!user) {
     return (
-      <View style={{ flex: 1, padding: spacing.lg, backgroundColor: colors.background.light }}>
+      <View style={{ flex: 1, padding: spacing.lg, backgroundColor: 'transparent' }}>
         <Card>
           <Text style={s.cardTitle}>👨‍👩‍👧 Mi Familia</Text>
           <Text style={[s.text, s.mt2]}>Iniciá sesión para ver tus inscripciones.</Text>
@@ -91,7 +91,7 @@ export default function MiFamilia() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background.light }}
+      style={{ flex: 1, backgroundColor: 'transparent' }}
       contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md, maxWidth: 720, alignSelf: 'center', width: '100%' }}
     >
       <View>

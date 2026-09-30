@@ -6,7 +6,7 @@ export const s = StyleSheet.create({
   // Pantallas
   screen: {
     flex: 1,
-    backgroundColor: colors.background.light,
+    backgroundColor: 'transparent',
     padding: spacing.lg,
   },
   

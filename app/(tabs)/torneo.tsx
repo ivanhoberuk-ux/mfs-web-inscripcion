@@ -196,7 +196,7 @@ export default function Torneo() {
 
   return (
     <ScrollView
-      style={[s.screen, { backgroundColor: colors.background.light }]}
+      style={[s.screen, { backgroundColor: 'transparent' }]}
       contentContainerStyle={{ paddingBottom: 120 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
     >
