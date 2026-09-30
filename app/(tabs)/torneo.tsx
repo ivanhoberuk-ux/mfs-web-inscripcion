@@ -1,9 +1,13 @@
 // FILE: app/(tabs)/torneo.tsx
 // Torneo Interpueblos: fixture, posiciones, llaves, inscripción de equipos y administración
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl, Alert, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { s, colors } from '../../src/lib/theme';
-import { radius, spacing } from '../../src/lib/designSystem';
+import { gradients, radius, shadows, spacing, typography } from '../../src/lib/designSystem';
+import { NandutiDecorativo } from '../../src/components/FondoParaguayo';
+import { Badge } from '../../src/components/Badge';
 import { useUserRoles } from '../../src/hooks/useUserRoles';
 import { TorneoAdminPanel } from '../../src/components/TorneoAdminPanel';
 import { generateExcelBlob, fileStamp, humanDate, safeFileName } from '../../src/lib/excel';
@@ -21,7 +25,36 @@ import {
 
 type Vista = 'fixture' | 'pueblo' | 'posiciones' | 'llaves' | 'misequipos' | 'admin';
 
+const VISTAS: Record<Vista, { label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
+  fixture: { label: 'Fixture', icon: 'calendar-outline' }, pueblo: { label: 'Mi pueblo', icon: 'home-outline' },
+  posiciones: { label: 'Posiciones', icon: 'podium-outline' }, llaves: { label: 'Llaves', icon: 'trophy-outline' },
+  misequipos: { label: 'Mis equipos', icon: 'people-outline' }, admin: { label: 'Administrar', icon: 'settings-outline' },
+};
+
+function EquipoAvatar({ nombre, lado }: { nombre: string; lado: 'a' | 'b' }) {
+  const iniciales = nombre.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
+  return <View style={{ width: 46, height: 46, borderRadius: radius.full, backgroundColor: lado === 'a' ? colors.primary[100] : colors.accent[100], alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontFamily: typography.family.bold, color: lado === 'a' ? colors.primary[700] : colors.accent[700] }}>{iniciales || '?'}</Text></View>;
+}
+
+function EstadoPartido({ estado }: { estado: string }) {
+  const live = estado === 'en_juego';
+  const tone = estado === 'suspendido' ? 'danger' : estado === 'finalizado' || live ? 'success' : 'neutral';
+  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{live ? <View style={{ width: 7, height: 7, borderRadius: radius.full, backgroundColor: colors.mint[600] }} /> : null}<Badge tone={tone}>{ESTADO_LABEL[estado] ?? estado}</Badge></View>;
+}
+
+function PartidoScoreboard({ p, disciplina }: { p: TorneoPartido; disciplina?: TorneoDisciplina }) {
+  const nomA = p.equipo_a ? nombreEquipo(p.equipo_a as any) : (p.etiqueta_a ?? 'A definir');
+  const nomB = p.equipo_b ? nombreEquipo(p.equipo_b as any) : (p.etiqueta_b ?? 'A definir');
+  const hayMarcador = p.marcador_a != null && p.marcador_b != null;
+  return <View style={[s.card, { marginBottom: spacing.md, padding: spacing.lg, borderColor: p.estado === 'en_juego' ? colors.mint[200] : colors.primary[50], ...shadows.sm }]}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: spacing.md }}><Text style={{ flex: 1, fontFamily: typography.family.semibold, color: colors.text.tertiary.light, fontSize: 11 }}>{disciplina ? `${disciplina.emoji} ${disciplina.nombre}` : ''} · {FASE_LABEL[p.fase] ?? p.fase}{p.zona ? ` ${p.zona}` : ''}</Text><EstadoPartido estado={p.estado} /></View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomA} lado="a" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomA}</Text></View><View style={{ minWidth: 90, alignItems: 'center' }}><Text style={{ fontFamily: typography.family.extrabold, fontSize: 30, color: colors.primary[700] }}>{hayMarcador ? `${p.marcador_a} – ${p.marcador_b}` : fmtHora(p.inicio)}</Text>{p.penales_a != null && p.penales_b != null ? <Text style={{ fontFamily: typography.family.semibold, fontSize: 11, color: colors.text.tertiary.light }}>({p.penales_a}-{p.penales_b} pen.)</Text> : null}</View><View style={{ flex: 1, alignItems: 'center', gap: 7 }}><EquipoAvatar nombre={nomB} lado="b" /><Text style={{ textAlign: 'center', fontFamily: typography.family.bold, color: colors.text.primary.light, fontSize: 12 }} numberOfLines={2}>{nomB}</Text></View></View>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: spacing.md }}><Ionicons name="location-outline" size={14} color={colors.text.tertiary.light} /><Text style={s.small}>{p.cancha?.nombre ?? 'Cancha a confirmar'} · {p.inicio ? fmtHora(p.inicio) : 'Horario a confirmar'}{p.detalle_sets ? ` · ${p.detalle_sets}` : ''}{p.mvp_nombre ? ` · MVP: ${p.mvp_nombre}` : ''}</Text></View>
+  </View>;
+}
+
 export default function Torneo() {
+  const { width } = useWindowDimensions();
   const { isSuperAdmin, isPuebloAdmin, isCoAdmin, puebloId } = useUserRoles();
   const esCoordinador = isPuebloAdmin || isCoAdmin;
   const [ediciones, setEdiciones] = useState<TorneoEdicion[]>([]);
@@ -197,13 +230,15 @@ export default function Torneo() {
   return (
     <ScrollView
       style={[s.screen, { backgroundColor: 'transparent' }]}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={s.pageContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
     >
-      <Text style={s.title}>🏆 Torneo Interpueblos</Text>
-      <Text style={[s.subtitle, { marginBottom: spacing.md }]}>
-        {edicion ? `${edicion.nombre}` : 'Todavía no hay una edición activa del torneo.'}
-      </Text>
+      <LinearGradient colors={[...gradients.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius['2xl'], padding: width >= 900 ? spacing['3xl'] : spacing.xl, minHeight: width >= 900 ? 230 : 190, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: spacing.lg, ...shadows.lg }}>
+        <View pointerEvents="none" style={{ position: 'absolute', right: -42, top: -52 }}><NandutiDecorativo size={210} color={colors.surface.light} opacity={0.18} /></View>
+        <View style={{ width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.surface.light, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md }}><Ionicons name="trophy-outline" size={25} color={colors.primary[600]} /></View>
+        <Text style={{ fontFamily: typography.family.extrabold, fontSize: width >= 900 ? 36 : 28, color: colors.surface.light }}>Torneo Interpueblos</Text>
+        <Text style={{ fontFamily: typography.family.medium, color: colors.primary[50], marginTop: 5 }}>{edicion ? edicion.nombre : 'Todavía no hay una edición activa del torneo.'}</Text>
+      </LinearGradient>
 
       {/* Selector de edición (histórico) */}
       {ediciones.length > 1 && (
@@ -213,10 +248,10 @@ export default function Torneo() {
             return (
               <Pressable key={e.id} onPress={() => { setEdicionSel(e.id); setPuebloSel(null); setFiltroDisc('todas'); if (vista === 'misequipos') setVista('fixture'); }} style={{
                 paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, borderRadius: radius.full,
-                backgroundColor: sel ? colors.primary[700] : colors.neutral[100],
+                backgroundColor: sel ? colors.primary[700] : colors.surface.light, borderWidth: 1, borderColor: sel ? colors.primary[700] : colors.primary[100],
               }}>
-                <Text style={{ fontWeight: '700', fontSize: 12, color: sel ? '#fff' : colors.neutral[700] }}>
-                  {e.activo ? '⭐ ' : '📜 '}{e.anio}
+                <Text style={{ fontWeight: '700', fontSize: 12, color: sel ? colors.surface.light : colors.neutral[700] }}>
+                  {e.anio}{e.activo ? ' · Actual' : ''}
                 </Text>
               </Pressable>
             );
